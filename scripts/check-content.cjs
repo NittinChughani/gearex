@@ -40,7 +40,7 @@ for(const p of PROJECTS){assert.ok(p.steps.length>=3&&p.acceptance.length>=2&&p.
 assert.equal(LESSONS.length,91);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','themeSelect','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
-for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','gearex-features.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
+for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-features.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
 console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz questions, ${CHALLENGES.length} challenges, ${PROJECTS.length} projects.`);
 
 const languages=['c','cpp','py','js','java','cs','sql'];
@@ -49,7 +49,7 @@ for(const lang of languages){
  assert.ok(course.length>=8,lang+': course needs at least eight lessons');
  assert.ok(bank.length>=8,lang+': assessment requires at least eight questions');
 }
-for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','gearex-features.js']){
+for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-features.js']){
  new vm.Script(fs.readFileSync(path.join(root,'assets',file),'utf8'),{filename:file});
 }
 for(const theme of ['cyberpunk','quantum','synthwave','matrix','hologram']) {
@@ -60,3 +60,32 @@ const app=fs.readFileSync(path.join(root,'assets','app.js'),'utf8');
 assert.ok(!app.includes("'-std=c++17 -Wall -Wextra'"),'Do not reintroduce the combined compiler flag error');
 assert.ok(app.includes('Object.assign(examples,GEAREX_STARTERS)'),'Extra language starter templates missing');
 console.log('GearEx validation OK: seven courses, five themes, editor, tracer and certificate views present.');
+
+const checks=fs.readFileSync(path.join(root,'assets','lesson-assessments.js'),'utf8');
+const sandbox={
+ window:{},
+ localStorage:{getItem(){return null},setItem(){}},
+ document:{querySelector(){return null}},
+ state:{completed:new Set()},
+ persist(){},updateStats(){},renderRoadmap(){},renderLessons(){}
+};
+const verified=vm.runInNewContext(source+'\n'+checks+'\nLESSONS.map(lesson=>({id:lesson.id,items:window.gearexLessonQuestions(lesson)}))',sandbox);
+assert.equal(verified.length,91,'Must generate lesson checks for all 91 lessons');
+for(const lesson of verified){
+ assert.equal(lesson.items.length,5,lesson.id+': exactly five questions required');
+ for(const question of lesson.items){
+  assert.equal(question.options.length,4,lesson.id+': each MCQ needs four options');
+  assert.equal(new Set(question.options).size,4,lesson.id+': duplicate choices');
+  assert.ok(Number.isInteger(question.answer)&&question.answer>=0&&question.answer<4,lesson.id+': bad answer index');
+  assert.equal(question.options[question.answer],question.explain,lesson.id+': answer mismatch');
+ }
+}
+const featureJS=fs.readFileSync(path.join(root,'assets','gearex-features.js'),'utf8');
+for(const lang of ['c','cpp','py','js','java']){
+ assert.ok(featureJS.includes(lang+':') || featureJS.includes(lang+': '),'Missing language mapping '+lang);
+}
+assert.ok(featureJS.includes('iframe-embed.html'),'Missing actual execution visualizer integration');
+assert.ok(featureJS.includes('lessonMarks+examMarks')||featureJS.includes('lessonMarks+examMarks'),'Missing 100-mark grade calculation');
+assert.ok(html.includes('<title>GearEx | Learn Programming Languages</title>'),'Outdated browser tab title');
+assert.ok(html.includes('assets/unslop.css'),'Missing workbench visual stylesheet');
+console.log('Assessment check OK: 455 valid lesson questions across 91 lessons, real tracer embed and updated tab title.');
