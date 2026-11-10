@@ -63,7 +63,7 @@
     mismatch();
     const code=traceSource.value.trim(),lang=traceLang.value,guessed=detect(code);
     if(!code){area.replaceChildren(el('p','','Enter code or import it from the playground.'));return;}
-    if(guessed&&guessed!==lang){setStatus('Choose the matching language before tracing');return;}
+    if(guessed&&guessed!==lang){setStatus('Possible language mismatch · running as '+LANG[lang]);}
     if(TUTOR[lang]){
       if(code.length>2000){area.replaceChildren(el('p','','The execution visualizer works best with short snippets (under 2,000 characters). Reduce the example and try again.'));return;}
       const url=externalURL(code,lang),embed=url.replace('/visualize.html?via=ai','/iframe-embed.html');
@@ -111,7 +111,7 @@
   const certKey='gearex-certificates-v2',nameKey='gearex-certificate-name-v1';
   const final=read(certKey);
   const save=()=>{try{localStorage.setItem(certKey,JSON.stringify(final));}catch{}};
-  const getName=()=>String(localStorage.getItem(nameKey)||'').trim();
+  const getName=()=>{try{return String(localStorage.getItem(nameKey)||'').trim();}catch{return '';}};
   const lessons=lang=>LESSONS.filter(l=>l.lang===lang);
   const snapshot=lang=>{
     const ls=lessons(lang);
