@@ -18,7 +18,7 @@
 
 **[Open GearEx](https://nittinchughani.github.io/gearex/)** · **[Report a bug](../../issues/new?template=bug_report.md)** · **[Contribute](CONTRIBUTING.md)**
 
-> **Repository URL note:** The repository currently retains the original `codelab-academy` slug so the working GitHub Pages URL stays active. The application name and site branding are GearEx. A repository rename requires a separate GitHub settings action; if renamed, update this URL and GitHub Pages configuration.
+The repository is published as **[NittinChughani/gearex](https://github.com/NittinChughani/gearex)**, with its current live deployment on GitHub Pages.
 
 ## ✨ At a glance
 
@@ -26,12 +26,14 @@
 |---|---|
 | Languages | **C, C++, Python, JavaScript, Java, C#, SQL** |
 | Guided lessons | **91** (51 original C/C++ + 40 new lessons) |
-| Quiz questions | **113** (73 original + 40 new questions) |
+| Mixed/free quiz questions | **113** (73 original + 40 new questions) |
+| Per-lesson knowledge checks | **5 per lesson (455 total)**, generated from that lesson's teaching material; pass with **4/5** |
 | C/C++ coding challenges | **138**, including sample-input testing |
 | C/C++ guided mini-projects | **12** |
 | Code playground | Remote execution through **Wandbox** |
-| Trace & visualization | Guided line-by-line source annotations + interactive loops, arrays and pointers |
-| Completion certificates | One per language, unlocked with complete lessons and passing final assessment |
+| Real execution visualization | **Python, C, C++, Java, JavaScript** using [Python Tutor](https://pythontutor.com/for-ai-assistants.html) iframe execution; local C#/SQL guided annotations only |
+| Other demonstrations | Interactive loop, array and pointer exercises |
+| Completion certificates | Five-question checks for every lesson, ≥70% final assessment, **70/30 weighted score out of 100**, one-time local name confirmation |
 | Privacy | Local progress storage; no required account |
 
 ### 🎨 Five custom themes
@@ -48,19 +50,31 @@ Themes are selectable from the **top-right corner** and persist in this browser.
 
 ## 🧠 A complete learning loop
 
-1. Pick a roadmap and read a lesson's introduction, syntax essentials, annotated example and practice challenge.
-2. Click **Try in playground** to run code or **Visualize step by step** for guided source annotations.
-3. Check understanding with quizzes and C/C++ practice challenges.
-4. Track your progress, export a backup, and return whenever you want.
-5. Complete all lessons in a language, pass its final assessment at **70% or higher**, and print a personal completion certificate.
+1. Choose one of seven learning roadmaps. Read the lesson's intro, syntax, sample code and practice task.
+2. Open the example in the playground. Click **Visualize this code** to transfer its exact source and language to the execution explorer.
+3. Complete the **five-question check** after the lesson and score **4/5 or better**. Your best verified score counts toward your certificate.
+4. Finish all the verified lessons in a language, then take its final assessment and score **70% or higher**.
+5. Confirm your certificate recipient name once, review your score breakdown, and print or save the certificate as a PDF.
 
-### About the tracer
+### Real execution explorer
 
-The tracer currently provides **guided, source-order annotations** for snippets in all seven languages. It is **not an interpreter, instrumented runtime or full debugger**: it does not simulate control-flow decisions, loops, arbitrary functions, actual variable values or SQL query results. The separate visualizer includes interactive demonstrations of loops, arrays and pointers. For authoritative program output, use the remote runner. Future debugger support will require per-language runtime instrumentation or a secure backend.
+For **Python, C, C++, Java, and JavaScript**, GearEx embeds the actual [Python Tutor](https://pythontutor.com/) runtime visualization. It can step through executed lines, stack frames, heap allocations, references, variable values and output. This is an external integration, **not a GearEx-developed debugger**. Press **Visualize this code** next to Run code or import directly from the editor; the language is synchronized, and a mismatch warning helps catch pasted code with the wrong selection. Source is sent to Python Tutor only when you click **Visualize execution**.
 
-### About the certificates
+**Limits:** Python Tutor is optimized for short, single-file examples (conservatively under 2,000 source characters), is online-only, and does not support all libraries, I/O or asynchronous JavaScript. Its embedded UI supplies the step controls; use **Open full-page trace** if embedding is blocked. **C# and SQL remain educational source-order annotations**, not runtime heap/stack tracers. The playground uses the separate Wandbox service for executing code.
 
-Certificates display the learner's name, the completed language, marks earned/total, percentage, overall performance, issue date and **Certified by creator · Nittin Chughani**. Completion is marked by the learner, and the assessment and certificate data live in local browser storage. These are **creator-issued self-paced learning achievements**, not institution-accredited, identity-verified credentials.
+### Verified lessons and 100-mark certificates
+
+Each of the **91 lessons** includes **five lesson-specific multiple-choice questions**, drawn from its actual topic, key points, worked syntax, explanation and exercise. At least **4/5** must be correct for that lesson to count as completed. Retakes are supported; the **best** recorded score counts.
+
+| Component | Raw marks | Weight |
+|---|---|---|
+| Lesson checks | Best score of each lesson, summed (e.g., C has 125 possible points) | **70 marks** |
+| Final language assessment | Earned / possible on the final quiz; pass threshold 70% | **30 marks** |
+| **Certificate total** | Sum of weighted components, rounded | **100 marks** |
+
+Certificates show learner name, language, both raw and weighted mark breakdowns, secured marks out of 100, overall performance, date and **Certified by creator: Nittin Chughani**. The recipient confirms their name **once for this browser**, and the site no longer offers a name-edit action afterward.
+
+**Important:** GearEx uses browser-local storage and has no identity-verification backend. Users can clear or alter their browser data; the name lock and assessment scores are **not tamper-proof** or institution-accredited. Certificates are creator-issued evidence of self-paced completion, not independently verified qualifications. Earlier versions let visitors mark lessons completed without quizzes; the new system preserves those older IDs in an archival browser entry but requires re-verification with the lesson checks before they count toward awards.
 
 ## 🚀 Get started
 
@@ -80,12 +94,14 @@ GearEx/
 ├── assets/
 │   ├── favicon.svg            # Original GearEx symbol
 │   ├── style.css              # Responsive design + 5 themes
+│   ├── unslop.css             # Workbench-inspired UI refinements
 │   ├── data.js                # Original C/C++ lessons + quizzes
 │   ├── challenges.js          # C/C++ coding challenges
 │   ├── projects.js            # C/C++ guided projects
 │   ├── gearex-courses.js      # 5 new language courses
 │   ├── app.js                 # Core progress, quizzes, editor and compiler
-│   └── gearex-features.js     # Theme selector, tracer, certificates
+│   ├── lesson-assessments.js  # Five-question lesson completion gate
+│   └── gearex-features.js     # Theme selector, Python Tutor embed, certificates
 ├── docs/                       # Curriculum and development notes
 ├── scripts/check-content.cjs   # Content integrity test
 └── .github/workflows/          # GitHub Actions validation
@@ -95,11 +111,17 @@ GearEx/
 
 GearEx stores bookmarks, lessons, quiz history, work-in-progress code, themes and certificate records in **localStorage** on your device. No account or cloud sync is required. Use **Export progress** to keep a backup; clearing browser data can erase local progress.
 
-The pre-upgrade storage keys are intentionally retained to preserve progress for returning CodeLab Academy learners. Older progress exports can also be imported.
+The original general progress storage keys remain compatible with earlier GearEx and CodeLab Academy versions. Existing self-ticked lessons are archived as `gearex-legacy-completed-v1` and need quiz verification under the new system. New progress exports also contain lesson-check and final-assessment records. Certificate name confirmation persists separately so resetting lesson progress does not provide a name-edit control.
 
 ## 🤝 Contribute
 
 Bug reports, accessibility fixes, corrections to teaching explanations, multilingual course material and new visualizers are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Please only submit code and learning material you have permission to share.
+
+## Attribution and design direction
+
+Execution diagrams are provided by **[Python Tutor](https://pythontutor.com/)**, created by Philip Guo, under that service's own terms and limitations. GearEx does not copy or reimplement Python Tutor's tracing engine.
+
+The interface refresh follows the [Unslop](https://github.com/heydamir/unslop) design-review principles by Damir Sokolovsky (CC BY 4.0): deliberate spacing, quiet chrome, reduced gradient effects and greater attention to code as the primary visual element. This is a manual application of those principles, not a bundled copy of the Unslop tool.
 
 ## 👨‍💻 Creator
 
