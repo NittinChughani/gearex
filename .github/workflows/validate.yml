@@ -18,6 +18,7 @@ jobs:
           node --check assets/challenges.js
           node --check assets/projects.js
           node --check assets/app.js
+          node --check assets/lesson-assessments.js
           node --check assets/gearex-features.js
       - name: Validate educational content
         run: node scripts/check-content.cjs
