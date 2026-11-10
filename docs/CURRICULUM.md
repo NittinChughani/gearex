@@ -1,6 +1,6 @@
 # GearEx — Curriculum
 
-The course currently has **91 lessons** (25 C, 26 C++, and 8 each in Python, JavaScript, Java, C# and SQL), **113 quiz questions**, **138 C/C++ challenges** and **12 C/C++ mini-projects**. You can filter lessons by language, bookmark an item and mark it complete.
+The course currently has **91 lessons** (25 C, 26 C++, and 8 each in Python, JavaScript, Java, C# and SQL), **113 quiz questions**, **138 C/C++ challenges** and **12 C/C++ mini-projects**. You can filter lessons by language, bookmark an item and complete its required five-question assessment (at least 4/5 correct).
 
 ## C learning track (25 lessons)
 
@@ -85,4 +85,4 @@ The five additional tracks have eight guided lessons each. Each lesson includes 
 
 ### Assessment and awards
 
-Complete all lessons in a track and score at least 70% on its final assessment to unlock a printable, self-paced GearEx certificate. The certificates are generated in the browser and are not independently verified or accredited.
+Complete each lesson's five-question check (minimum 4/5), finish every lesson in the track, and pass the final assessment with at least 70%. Your certificate lists best lesson scores weighted to 70 marks and final assessment weighted to 30, for a total out of 100. Recipient name is confirmed once in this browser. Records remain local and are not independently verified or accredited.
