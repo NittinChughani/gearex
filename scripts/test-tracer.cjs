@@ -90,5 +90,5 @@ test('the site uses only its native trace engine and local controls',()=>{
  assert.ok(html.includes('id="tracePlay"'));
  assert.ok(ui.includes('GearExEngine'));
  assert.ok(!html.includes('<iframe'));
- for(const str of ['pythontutor.com','iframe-embed.html'])assert.ok(!html.includes(str)&&!ui.includes(str));
+ assert.ok(!/<iframe\b/i.test(ui),'Trace UI must be fully local');
 });
