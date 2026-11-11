@@ -19,6 +19,11 @@ jobs:
           node --check assets/projects.js
           node --check assets/app.js
           node --check assets/lesson-assessments.js
+          node --check assets/gearex-engine.js
+          node --check assets/gearex-trace-ui.js
+          node --check assets/studio-motion.js
           node --check assets/gearex-features.js
       - name: Validate educational content
         run: node scripts/check-content.cjs
+      - name: Trace engine unit tests
+        run: node --test scripts/test-tracer.cjs

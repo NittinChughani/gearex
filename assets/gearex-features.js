@@ -1,112 +1,13 @@
-/* GearEx UI: execution-backed visualizer via Python Tutor, local achievements and certificates. */
+/* GearEx achievement records and appearance settings. */
 'use strict';
 (() => {
   const LANG={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
-  const TUTOR={c:'c',cpp:'cpp',py:'311',js:'js',java:'java'};
   const $=s=>document.querySelector(s);
-  const el=(tag,cls,txt)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(txt!==undefined)node.textContent=String(txt);return node;};
-  const btn=(txt,fn,cls='button secondary compact')=>{const b=el('button',cls,txt);b.type='button';b.addEventListener('click',fn);return b;};
-  const read=(key)=>{try{const d=JSON.parse(localStorage.getItem(key)||'{}');return d&&typeof d==='object'&&!Array.isArray(d)?d:{};}catch{return {};}};
+  const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=String(txt);return n;};
+  const btn=(text,fn,cls='button secondary compact')=>{const b=el('button',cls,text);b.type='button';b.addEventListener('click',fn);return b;};
+  const read=key=>{try{const d=JSON.parse(localStorage.getItem(key)||'{}');return d&&typeof d==='object'&&!Array.isArray(d)?d:{};}catch{return {};}};
   $('#themeSelect').value=state.theme;
   $('#themeSelect').addEventListener('change',e=>{state.theme=e.target.value;setTheme();persist();});
-  /* Language sync is explicit: detect mismatches, but never silently rewrite source. */
-  const detect=code=>{
-    const s=String(code||'');
-    if(/^\s*(?:SELECT|WITH|CREATE\s+TABLE|INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM)\b/im.test(s))return 'sql';
-    if(/\b(Console\.WriteLine|using System|namespace\s+\w+\s*\{)\b/.test(s))return 'cs';
-    if(/\b(System\.out\.print|public class\s+\w+|class\s+prog|@Override)\b/.test(s))return 'java';
-    if(/^\s*#include\s*<iostream>|\bstd::|\bcout\s*<</m.test(s))return 'cpp';
-    if(/^\s*#include\s*<|\bprintf\s*\(|\bscanf\s*\(/m.test(s))return 'c';
-    if(/\bconsole\.log\s*\(|\b(?:const|let)\s+[A-Za-z_$]|=>|function\s+[A-Za-z_$]/.test(s))return 'js';
-    if(/^\s*(?:def |from \w+ import|import \w+|print\(|class \w+:|for \w+ in )/m.test(s))return 'py';
-    return null;
-  };
-  const traceSource=$('#traceSource'),traceLang=$('#traceLanguage'),info=$('#traceProgress'),area=$('#traceSteps');
-  const traceBack=$('#traceBack'),traceNext=$('#traceNext'),traceReset=$('#traceReset');
-  let notes=[],noteIndex=0,lastInput='';
-  const setStatus=t=>{info.textContent=t;};
-  function mismatch(){
-    const guessed=detect(traceSource.value),selected=traceLang.value;
-    const warning=$('#traceMismatch');
-    if(warning){
-      warning.replaceChildren();
-      if(guessed&&guessed!==selected){
-        warning.append(el('strong','','Language mismatch: '),document.createTextNode('the source resembles '+LANG[guessed]+' but '+LANG[selected]+' is selected. '));
-        warning.append(btn('Switch to '+LANG[guessed],()=>{traceLang.value=guessed;mismatch();},'button secondary compact'));
-      }
-    }
-  }
-  const noteFor=s=>{
-    if(/\b(if|else|switch|case)\b/.test(s))return 'A branch depends on its condition. This fallback does not evaluate that condition.';
-    if(/\b(for|while)\b/.test(s))return 'A loop may execute this line more than once. This fallback cannot compute iteration values.';
-    if(/\b(return)\b/.test(s))return 'A return statement gives control back to a caller.';
-    if(/^(SELECT|WITH|WHERE|GROUP|ORDER|JOIN|INSERT|UPDATE|DELETE|CREATE)\b/i.test(s))return 'SQL clause or statement. Query results need the actual database engine.';
-    if(/=/.test(s))return 'An assignment or equality expression. Inspect its variables manually.';
-    if(/(?:WriteLine|Console|print|echo)/.test(s))return 'An output or method call. Compare its actual result in the code playground.';
-    return 'Read this statement and consider how the current scope and variables would change.';
-  };
-  function showNotes(){
-    area.replaceChildren();const pane=el('div','trace-list');
-    notes.forEach((n,i)=>pane.append(el('div','trace-line'+(noteIndex===i+1?' active':''),String(n.no).padStart(3,' ')+' │ '+n.text)));
-    area.append(pane,el('p','trace-annotation',noteIndex?notes[noteIndex-1].note:'Source-order annotations only. Use the real visualizer for supported languages.'));
-    setStatus(notes.length?'Annotation '+noteIndex+' / '+notes.length:'No source to annotate');
-    traceBack.disabled=noteIndex===0;traceNext.disabled=noteIndex===notes.length;
-  }
-  function externalURL(code,lang){
-    const source=lang==='java'?code.replace(/\bclass prog\b/,'public class prog'):code;
-    const input=$('#stdinInput')?.value||'';
-    let hash='#code='+encodeURIComponent(source)+'&mode=display&py='+TUTOR[lang]+'&curInstr=0';
-    if(input.trim())hash+='&rawInputLstJSON='+encodeURIComponent(JSON.stringify(input.split(/\r?\n/)));
-    return 'https://pythontutor.com/visualize.html?via=ai'+hash;
-  }
-  function visualize(){
-    mismatch();
-    const code=traceSource.value.trim(),lang=traceLang.value,guessed=detect(code);
-    if(!code){area.replaceChildren(el('p','','Enter code or import it from the playground.'));return;}
-    if(guessed&&guessed!==lang){setStatus('Possible language mismatch · running as '+LANG[lang]);}
-    if(TUTOR[lang]){
-      if(code.length>2000){area.replaceChildren(el('p','','The execution visualizer works best with short snippets (under 2,000 characters). Reduce the example and try again.'));return;}
-      const url=externalURL(code,lang),embed=url.replace('/visualize.html?via=ai','/iframe-embed.html');
-      area.replaceChildren();
-      const toolbar=el('div','trace-result-head');
-      toolbar.append(el('strong','','Live execution · '+LANG[lang]));
-      const link=el('a','button secondary compact','Open full-page trace');link.href=url;link.target='_blank';link.rel='noopener noreferrer';toolbar.append(link);
-      area.append(toolbar,el('p','section-note','Executed by Python Tutor (Philip Guo). Use the Previous and Next controls inside the embedded visualization to see stack frames, heap objects, variables and output.'));
-      const frame=document.createElement('iframe');frame.src=embed;frame.title=LANG[lang]+' execution steps, stack and heap visualizer';frame.loading='eager';frame.referrerPolicy='no-referrer';
-      frame.setAttribute('sandbox','allow-scripts allow-forms allow-same-origin allow-popups');frame.className='execution-frame';area.append(frame);
-      traceBack.hidden=true;traceNext.hidden=true;traceReset.hidden=true;
-      setStatus('Real execution · '+LANG[lang]+' · controls inside viewer');
-    }else{
-      traceBack.hidden=false;traceNext.hidden=false;traceReset.hidden=false;
-      notes=traceSource.value.split(/\r?\n/).map((text,i)=>({no:i+1,text,note:noteFor(text.trim())})).filter(x=>x.text.trim()).slice(0,100);noteIndex=0;showNotes();
-      area.prepend(el('p','trace-limitation','C# and SQL do not have a compatible Python Tutor runtime here. These are guided source annotations, not stack/heap debugging or actual execution. Use Run code to see results.'));
-    }
-  }
-  function setTrace(code,lang){
-    traceSource.value=String(code||'');
-    traceLang.value=LANG[lang]?lang:'cpp';
-    mismatch();area.replaceChildren(el('p','section-note','Code loaded. Select Visualize execution to start.'));setStatus('Ready · '+LANG[traceLang.value]);
-  }
-  window.gearexTraceLesson=setTrace;
-  $('#traceFromEditor').addEventListener('click',()=>{
-    lastInput=$('#stdinInput').value;
-    setTrace($('#codeEditor').value,$('#editorLanguage').value);
-  });
-  $('#traceStart').addEventListener('click',visualize);
-  traceBack.addEventListener('click',()=>{if(noteIndex>0){noteIndex--;showNotes();}});
-  traceNext.addEventListener('click',()=>{if(noteIndex<notes.length){noteIndex++;showNotes();}});
-  traceReset.addEventListener('click',()=>{noteIndex=0;showNotes();});
-  traceLang.addEventListener('change',()=>{
-    mismatch();area.replaceChildren(el('p','section-note','Language changed. Visualize again to see the appropriate execution or annotation.'));
-  });
-  traceSource.addEventListener('input',()=>{
-    mismatch();area.replaceChildren(el('p','section-note','Source changed. Select Visualize execution for the current code.'));setStatus('Edited · trace not current');
-  });
-  setTrace(examples.cpp.hello,'cpp');
-  const direct=btn('Visualize this code',()=>{setTrace($('#codeEditor').value,$('#editorLanguage').value);location.hash='trace';},'button secondary compact');
-  direct.id='sendToVisualizer';
-  $('#runCode').before(direct);
-
   /* Completion and credentials: 70 marks lesson checks + 30 final assessment. */
   const certKey='gearex-certificates-v2',nameKey='gearex-certificate-name-v1';
   const final=read(certKey);

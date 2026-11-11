@@ -1,66 +1,89 @@
-# Development and maintenance
+# Developing GearEx
 
-This is a dependency-free static site intended to be edited directly on GitHub if desired. The repository does not require a framework, bundler, database or backend.
+GearEx is a dependency-free, browser-first learning platform. It is hosted as a static website and relies on third-party compilation only when someone clicks **Run code** in the playground. Its educational trace engine runs completely within the visitor's browser and does not compile arbitrary programs.
 
-## Source files
+## Design architecture
 
-- `index.html`: semantic structure, sections and input controls
-- `assets/style.css`: GearEx styling and responsive themes
-- `assets/unslop.css`: editorial workbench layout overrides, guided by Unslop principles (Damir Sokolovsky, CC BY 4.0)
-- `assets/data.js`: original C/C++ `LESSONS` and `QUESTIONS` arrays
-- `assets/gearex-courses.js`: five additional language tracks, starters and quiz content
-- `assets/challenges.js`: `CHALLENGES` with two language variants per task
-- `assets/projects.js`: `PROJECTS` project briefs
-- `assets/app.js`: rendering, navigation, quizzes, Wandbox language adapter and progress persistence
-- `assets/lesson-assessments.js`: data-derived five-MCQ checks for all lesson IDs (4/5 pass), import/export and legacy migration
-- `assets/gearex-features.js`: theme selector, Python Tutor live-visualization iframe, final assessments, score-weighted printable certificates
+The visual language follows a software lab: information-dense controls, monospace labels for execution state, restrained backgrounds, clear reading rhythm, and color reserved for meaningful status. The home page includes a handcrafted code/stack/heap demonstration. Short animations express real changes—active instruction, new heap value, entering a section—rather than decorating the entire interface.
 
-**DO NOT place untrusted source text into `innerHTML`.** The UI builds elements and uses `textContent` for content and remote compiler results.
+Five appearance palettes are preserved through CSS custom properties. `assets/style.css` maintains existing components and theme definitions; `assets/studio.css` provides the current layout, workbench surfaces and trace presentation; `assets/studio-motion.js` adds scroll reveals and active navigation with an explicit reduced-motion preference. No framework or animation package is needed.
 
-## Content definitions
+## Source map
 
-Each lesson needs a unique string `id`, `lang` (`c`, `cpp`, `py`, `js`, `java`, `cs` or `sql`), `title`, `level`, `description`, `intro`, compilable `code`, `points` (array of educational facts) and `challenge`. New lessons may also provide `walkthrough`, `pitfalls` and `output`.
+| File | Responsibility |
+|---|---|
+| `index.html` | Semantic structure, editors, controls, runtime panels and metadata |
+| `assets/data.js` | Original C/C++ lessons and general quizzes |
+| `assets/gearex-courses.js` | Python, JavaScript, Java, C#, SQL teaching material |
+| `assets/challenges.js` | C/C++ programming challenges |
+| `assets/projects.js` | C/C++ guided projects |
+| `assets/app.js` | Lessons, roadmaps, quiz engine, progress storage, compiler integration |
+| `assets/lesson-assessments.js` | Five-question checks, 4/5 pass rule, best marks and progress migration |
+| `assets/gearex-engine.js` | Pure, browser-local educational expression and statement interpreter |
+| `assets/gearex-trace-ui.js` | Language auto-detection, source stepping, stack/heap visualization, playback |
+| `assets/gearex-features.js` | Appearance selector, final assessments, score-weighted printable certificates |
+| `scripts/check-content.cjs` | Content validation, generated lesson-quiz verification, HTML integrity |
+| `scripts/test-tracer.cjs` | Memory, control-flow, language detection and safety-limit unit tests |
 
-Each quiz question needs unique `id`, `lang`, `question`, `options` (4 strings), zero-based `answer`, and `explanation`.
+## How the trace engine works
 
-Each challenge needs unique `id`, `lang`, `title`, `level`, `topic`, `description`, `hint`, `samples` (at least two `{input, output}` pairs), and a compilable `solution`. The external service is not a full online judge: only the first sample is verified.
+`GearExEngine.detect(source, fallback)` detects common syntax for seven language families. `GearExEngine.run(source, language)` returns:
 
-Each project needs unique `id`, `lang`, `title`, `level`, `description`, `skills`, `steps`, `acceptance`, `starter`, and `tip`.
-
-## Test locally
-
-```bash
-python3 -m http.server 8000
-node --check assets/app.js
-node scripts/check-content.cjs
+```js
+{
+  lang: 'py',
+  mode: 'interpreted-subset', // or 'sql-plan'
+  steps: [
+    {
+      line: 3,
+      note: 'Assign total = 6',
+      frames: [{name: 'Global', vars: {total: '6'}}],
+      heap: [{id: '#1', kind: 'array', items: [{key: '0', value: '6'}]}],
+      output: '6\n'
+    }
+  ],
+  warnings: [],
+  lines: ['...']
+}
 ```
 
-Review the site at common phone, tablet and desktop widths. Verify hashes (`#lesson/c-hello`, `#challenge/c-challenge-01`, `#project/c-calculator`), bookmarks, completion, quiz finish/retry, code highlighting, loading starter programs, and exporting/importing progress.
+The engine uses a small parser and a controlled interpreter. It **does not evaluate arbitrary source code using `eval` or a dynamic function constructor** and never sends trace input over the network. Array and object values receive synthetic heap IDs. Variables hold either scalar values or references to those IDs; repeated references share one heap object. Function calls create distinct stack frames, and snapshots show the state after each modeled statement.
 
-## Compiler limitations
+Support currently targets introductory assignments, arithmetic, comparisons, conditional branches, counting/collection loops, simple functions, arrays, objects, basic printing and C/C++ stack pointers. This is **not a standards-compliant implementation** of C, C++, Python, JavaScript, Java or C#; unsupported classes, third-party libraries, input operations, advanced memory lifetimes and complex syntax stop with a visible coverage note. The SQL trace is a conceptual clause walkthrough and does not run a database.
 
-Wandbox is queried only after a user clicks Run, uses GCC compilers from its advertised list and is subject to connectivity and third-party limits. Never embed a secret key in frontend source code. When service policies change, update the integration and this documentation; do not silently simulate execution.
+Bounded step counts, loop limits and recursion-depth limits prevent deliberately infinite educational snippets from locking up the browser. For accurate behavior of full programs, visitors can use the separately hosted compiler.
 
-## Storage compatibility
+### Adding support for an interpreter feature
 
-The new key `codelab-academy-complete-v2` stores arrays of stable IDs, theme, attempt count and editor drafts. It migrates known values from `codelab-academy-v1` and `codelab-practiced` on first load. Keep IDs stable when editing or progress could become orphaned.
+1. Update the scanner/parser only for syntax that can be modeled correctly.
+2. Implement the runtime operation without using direct source evaluation.
+3. Add a reproducible test to `scripts/test-tracer.cjs`, including expected step count, output and memory state.
+4. Add a learning example or correct a lesson explanation when relevant.
+5. Check behavior on a small screen, keyboard controls and reduced-motion mode.
 
-## Good first contributions
+Avoid false claims about executing syntax that GearEx can only annotate.
 
-Correct mistakes, add original practical tasks, improve compiler error messages, enhance keyboard navigation and add accessibility tests. No scraping or copying proprietary course content.
+## Learning and certification
 
-## Guided tracing & certification
+Every language track consists of lessons with an intro, concept explanation, syntax, executable example and practice task. The `lesson-assessments.js` module derives **five multiple-choice questions from the specific lesson content** and requires 4/5 to verify a lesson. Best scores are stored in `gearex-lesson-checks-v1` and included in imported/exported progress.
 
-The execution explorer embeds Python Tutor (five supported languages: C, C++, Python, Java, JavaScript) to show actual executed steps, stack and heap; trace controls live inside its third-party iframe. C# and SQL only provide guided source-order explanations; do not describe those as executed programs. Certificate assessment results are locally stored in `gearex-certificates-v1` and deliberately do not claim accreditation or identity verification.
+Certificates unlock when all lessons for a language have verified checks and the final assessment reaches 70%. A certificate receives up to 70 marks from lesson checks and 30 from the final assessment, for a combined score out of 100. The recipient enters their name once; the website stores it in browser localStorage and does not provide an editing control afterward.
 
-## Themes
+**Browser-only limitation:** this cannot prevent browser-data resets, manual edits or identity substitution. This is a self-paced, creator-issued record, not secure or accredited verification. Do not market it as tamper-proof.
 
-Five palettes are defined under `body[data-theme]`. To add a theme, update both the `#themeSelect` list and CSS variables. Keep keyboard focus indicators and text contrast accessible.
+## Coding practices
 
-## Assessment scoring
+Never inject untrusted source text through `innerHTML`; use `textContent` and explicit DOM creation for previews, output and variable values. The educational tracer must not make network calls, access local files, or run arbitrary user JavaScript. The compiler feature discloses that entered code is sent to the separate service.
 
-The lesson check generator uses each lesson's own title, description, teaching points, worked code and challenge, with distractors from neighboring lessons. Each of five questions has four distinct answers. Score >=4/5 to mark the lesson complete. Record the best of unlimited attempts in `gearex-lesson-checks-v1` and export/import it with general progress. Reconcile legacy ticked completions: archive IDs separately but require quiz results for verified course completion. Sum best lesson-check scores / (5 * number of lessons) to yield 70 weighted marks; final score / final question count contributes 30 weighted marks. Final requires at least 70%. The name key `gearex-certificate-name-v1` locks in the UI after confirmation but remains client-controlled and must not be represented as a secure verification feature.
+New learning tasks must have meaningful input/output examples. Quiz distractors must be distinct and technically defensible, and each lesson must have enough educational material to produce a valid check.
 
-## External execution integration
+## Test and release
 
-Python Tutor link format and iframe parameters are described at https://pythontutor.com/for-ai-assistants.html. Never render code through innerHTML or attempt to access cross-origin iframe internals. For mismatched source and selected language, prompt the user to switch rather than silently changing code. Users may open the full-page visualizer when a browser blocks an embedded iframe. Avoid tracking scripts, hidden analytics or submitting code automatically without a user action.
+Run these commands before merging:
+
+```bash
+node scripts/check-content.cjs
+node --test scripts/test-tracer.cjs
+```
+
+The `.github/workflows/validate.yml` workflow also checks the syntax of every production JavaScript file. Verify the live GitHub Pages deployment separately before announcing changes; successful lint checks alone do not validate interactive rendering or third-party compilation.
