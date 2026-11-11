@@ -40,7 +40,7 @@ for(const p of PROJECTS){assert.ok(p.steps.length>=3&&p.acceptance.length>=2&&p.
 assert.equal(LESSONS.length,91);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','themeSelect','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
-for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-features.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
+for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
 console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz questions, ${CHALLENGES.length} challenges, ${PROJECTS.length} projects.`);
 
 const languages=['c','cpp','py','js','java','cs','sql'];
@@ -80,12 +80,26 @@ for(const lesson of verified){
   assert.equal(question.options[question.answer],question.explain,lesson.id+': answer mismatch');
  }
 }
-const featureJS=fs.readFileSync(path.join(root,'assets','gearex-features.js'),'utf8');
-for(const lang of ['c','cpp','py','js','java']){
- assert.ok(featureJS.includes(lang+':') || featureJS.includes(lang+': '),'Missing language mapping '+lang);
+
+const engine=fs.readFileSync(path.join(root,'assets','gearex-engine.js'),'utf8');
+const traceUI=fs.readFileSync(path.join(root,'assets','gearex-trace-ui.js'),'utf8');
+for(const lang of ['c','cpp','py','js','java','cs','sql'])
+ assert.ok(engine.includes(lang+':')||engine.includes(lang+': '),'Missing native language support: '+lang);
+assert.ok(engine.includes('function run('),'Native execution engine is missing');
+assert.ok(engine.includes('frames:copy('),'Stack snapshots are missing');
+assert.ok(engine.includes('heap:copy('),'Heap snapshots are missing');
+assert.ok(traceUI.includes('GearExEngine'),'Trace UI must use the local engine');
+assert.ok(html.includes('<title>GearEx | Learn Programming Languages</title>'),'Browser tab title outdated');
+for(const pathName of ['assets/studio.css','assets/studio-motion.js','assets/gearex-engine.js','assets/gearex-trace-ui.js'])
+ assert.ok(fs.existsSync(path.join(root,pathName)),pathName+' missing');
+assert.ok(html.includes('assets/studio.css'),'Missing GearEx studio styles');
+assert.ok(html.includes('value="auto"'),'Missing automatic visualizer language detection');
+for(const id of ['tracePlay','traceSample','traceBack','traceNext','traceReset','traceSteps'])
+ assert.ok(html.includes('id="'+id+'"'),'Trace control missing: '+id);
+const publicFiles=['index.html','README.md','docs/DEVELOPMENT.md','docs/CURRICULUM.md','assets/gearex-features.js','assets/gearex-trace-ui.js','assets/gearex-engine.js','assets/studio.css','assets/studio-motion.js'];
+for(const file of publicFiles){
+ const contents=fs.readFileSync(path.join(root,file),'utf8');
+ assert.ok(!/pythontutor|python tutor|unslop|iframe-embed/i.test(contents),'The external integration or old tool name remains in '+file);
 }
-assert.ok(featureJS.includes('iframe-embed.html'),'Missing actual execution visualizer integration');
-assert.ok(featureJS.includes('lessonMarks+examMarks')||featureJS.includes('lessonMarks+examMarks'),'Missing 100-mark grade calculation');
-assert.ok(html.includes('<title>GearEx | Learn Programming Languages</title>'),'Outdated browser tab title');
-assert.ok(html.includes('assets/unslop.css'),'Missing workbench visual stylesheet');
-console.log('Assessment check OK: 455 valid lesson questions across 91 lessons, real tracer embed and updated tab title.');
+assert.ok(!html.includes('<iframe'),'An embedded third-party visualizer must not be present');
+console.log('GearEx validation OK: 7 language tracks, 455 lesson checks, original trace engine, local controls, and new design.');
