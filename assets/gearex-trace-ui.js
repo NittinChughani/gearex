@@ -32,14 +32,14 @@
       hint.append(create('span','trace-hint','Automatic language recognition · no configuration needed'));
     }
   }
-  function load(codeText,lang='auto'){
+  function load(codeText,lang='auto',navigate=true){
     stop();code.value=String(codeText||'');picker.value='auto';
     sourceHint=E.LABEL[lang]?lang:'py';
     result=null;index=0;updateLanguageInfo();
     target.replaceChildren(create('div','trace-empty','Ready to trace. Select “Build execution trace” to inspect the stack, heap, variables and output.'));
     status.textContent='Editor ready';
     prev.disabled=true;next.disabled=true;
-    location.hash='trace';
+    if(navigate)location.hash='trace';
   }
   window.gearexTraceLesson=load;
   function variableRow(key,value){
@@ -152,5 +152,5 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   const direct=button('Trace my code',()=>load($('#codeEditor').value,$('#editorLanguage').value));
   direct.id='sendToVisualizer';$('#runCode').before(direct);
-  load(demos.py,'py');
+  load(demos.py,'py',false);
 })();
