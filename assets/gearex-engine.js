@@ -170,6 +170,13 @@ function run(code,selected='auto'){
  const MAX_STEPS=550,MAX_LOOPS=160;
  function allocate(kind,value){const id=++alloc;heap[id]={kind,value};return {ref:id};}
  const display=v=>typeof v==='object'&&v&&v.ref?'#'+v.ref+' '+(heap[v.ref]?.kind||'object'):Array.isArray(v)?'['+v.map(display).join(', ')+']':v===null?'null':typeof v==='string'?v:String(v);
+ const printed=(v,seen=new Set())=>{
+   if(v&&v.ref){if(seen.has(v.ref))return '#'+v.ref+' ↺';seen.add(v.ref);const entry=heap[v.ref];if(!entry)return '#'+v.ref;
+     return entry.kind==='array'?'['+entry.value.map(item=>printed(item,new Set(seen))).join(', ')+']':
+       '{'+Object.entries(entry.value).map(([k,item])=>k+': '+printed(item,new Set(seen))).join(', ')+'}';
+   }
+   return v===null?'None':String(v);
+ };
  const repr=v=>typeof v==='object'&&v&&v.ref?display(v):display(v);
  const snapshot=(line,note)=>{
    if(++count>MAX_STEPS)ERROR('Step limit reached. Simplify the example or reduce loop iterations.');
@@ -188,7 +195,25 @@ function run(code,selected='auto'){
  };
  const truth=v=>!!v&&!(typeof v==='object'&&v&&v.ref===0);
  const toNumber=v=>{if(typeof v==='number')return v;return Number(v)||0;};
- const evaluate=(text)=>interpret(parseExpression(text));
+ const evaluate=text=>{
+   text=String(text).trim();
+   if(/^f(['"])([\s\S]*)\1$/.test(text)){
+     const raw=text.slice(2,-1);return raw.replace(/\{([^{}]+)\}/g,(_,key)=>printed(evaluate(key)));
+   }
+   return interpret(parseExpression(text));
+ };
+ const splitArgs=text=>{
+   let parts=[],cur='',depth=0,quote='',escaped=false;
+   for(const ch of String(text)){
+     if(quote){cur+=ch;if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch===quote)quote='';continue;}
+     if(ch==='"'||ch==="'"){quote=ch;cur+=ch;continue;}
+     if('([{'.includes(ch))depth++;
+     if(')]}'.includes(ch))depth--;
+     if(ch===','&&depth===0){parts.push(cur.trim());cur='';continue;}
+     cur+=ch;
+   }
+   if(cur.trim())parts.push(cur.trim());return parts;
+ };
  const argValue=(node)=>interpret(node);
  function invoke(name,args){
    const f=functions[name];if(!f)ERROR('Function "'+name+'" is outside this tracer’s supported example set.');
@@ -245,7 +270,7 @@ function run(code,selected='auto'){
        if(fn==='sum')return (Array.isArray(args[0])?args[0]:heap[args[0]?.ref]?.value||[]).reduce((a,b)=>a+toNumber(b),0);
        if(fn==='print'||fn==='console.log'||fn==='System.out.println'||fn==='System.out.print'||fn==='Console.WriteLine'||fn==='printf'){
          if(fn==='printf'){let format=String(args.shift()||'');let idx=0;output.push(format.replace(/%[disfc]/g,()=>display(args[idx++])));return null;}
-         output.push(args.map(display).join(' ')+(fn==='System.out.print'?'':'\n'));return null;
+         output.push(args.map(a=>printed(a)).join(' ')+(fn==='System.out.print'?'':'\n'));return null;
        }
        return invoke(fn,args);
      }
@@ -270,8 +295,10 @@ function run(code,selected='auto'){
    const printf=/^(?:std::)?printf\s*\((.*)\)$/.exec(raw);
    if(printf){evaluate('printf('+printf[1]+')');snapshot(node.line,'Format and print a value.');return;}
    if(/^(?:console\.log|System\.out\.print(?:ln)?|Console\.WriteLine|print)\s*\(/.test(raw)){
-     const name=raw.slice(0,raw.indexOf('('));const args=raw.slice(raw.indexOf('(')+1,-1);
-     evaluate(name+'('+args+')');snapshot(node.line,'Display an output value.');return;
+     const name=raw.slice(0,raw.indexOf('('));const rawArgs=raw.slice(raw.indexOf('(')+1,-1);
+     const args=splitArgs(rawArgs).map(evaluate);
+     output.push(args.map(v=>printed(v)).join(' ')+(name==='System.out.print'?'':'\n'));
+     snapshot(node.line,'Display an output value.');return;
    }
    if(/^return\s+/.test(raw))return {kind:'return',value:evaluate(raw.slice(7))};
    if(raw==='return')return {kind:'return',value:null};
@@ -347,7 +374,7 @@ function run(code,selected='auto'){
  try{
    snapshot(0,'Program ready. Variables and heap objects appear as they are created.');
    block(parsed.body);
-   if(functions.main)invoke('main',[]);
+   if(['c','cpp','java','cs'].includes(lang)){if(functions.main)invoke('main',[]);else if(functions.Main)invoke('Main',[]);}
    snapshot(0,'Trace finished. This represents the supported educational subset.');
  }catch(e){warnings.push(String(e.message||e));if(steps.length)snapshotSafe();}
  function snapshotSafe(){const last=steps.at(-1);if(last)last.note+=' · Trace stopped: '+warnings.at(-1);}
