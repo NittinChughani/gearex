@@ -23,7 +23,7 @@ const ERROR=message=>{throw new Error(message)};
 const copy=v=>JSON.parse(JSON.stringify(v));
 function lex(s){
   let i=0,t=[];s=String(s||'').trim();
-  const re=/\s*(?:(\d+(?:\.\d+)?)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|([A-Za-z_$][\w$]*(?:::[A-Za-z_]\w*)*)|(===|!==|==|!=|<=|>=|\*\*|&&|\|\||\+\+|--|[+\-*/%<>=!?:.,()[\]{}]))/y;
+  const re=/\s*(?:(\d+(?:\.\d+)?)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|([A-Za-z_$][\w$]*(?:::[A-Za-z_]\w*)*)|(===|!==|==|!=|<=|>=|\*\*|&&|\|\||\+\+|--|[+\-*/%<>=!&?:.,()[\]{}]))/y;
   while(i<s.length){
     re.lastIndex=i;const m=re.exec(s);
     if(!m)ERROR('This expression uses syntax outside the learning tracer: '+s.slice(i,Math.min(i+22,s.length)));
@@ -50,7 +50,7 @@ function parseExpression(source){
         consume(':');props.push([name,expr(0)]);if(peek()!==',')break;consume(',');
       }consume('}');a={k:'object',props};
     }
-    else if(['-','+','!','not'].includes(first.value))a={k:'unary',op:first.value,a:expr(8)};
+    else if(['-','+','!','not','&','*'].includes(first.value))a={k:'unary',op:first.value,a:expr(8)};
     else if(first.type==='id'){
       const values={true:true,false:false,True:true,False:false,None:null,null:null,undefined:null};
       a=Object.prototype.hasOwnProperty.call(values,first.value)?{k:'lit',v:values[first.value]}:{k:'name',name:first.value};
@@ -174,7 +174,7 @@ function run(code,selected='auto'){
  let alloc=0,count=0,loops=0,depth=0;
  const MAX_STEPS=550,MAX_LOOPS=160;
  function allocate(kind,value){const id=++alloc;heap[id]={kind,value};return {ref:id};}
- const display=v=>typeof v==='object'&&v&&v.ref?'#'+v.ref+' '+(heap[v.ref]?.kind||'object'):Array.isArray(v)?'['+v.map(display).join(', ')+']':v===null?'null':typeof v==='string'?v:String(v);
+ const display=v=>typeof v==='object'&&v&&v.ptr?'&'+v.ptr+' (stack)':typeof v==='object'&&v&&v.ref?'#'+v.ref+' '+(heap[v.ref]?.kind||'object'):Array.isArray(v)?'['+v.map(display).join(', ')+']':v===null?'null':typeof v==='string'?v:String(v);
  const printed=(v,seen=new Set())=>{
    if(v&&v.ref){if(seen.has(v.ref))return '#'+v.ref+' ↺';seen.add(v.ref);const entry=heap[v.ref];if(!entry)return '#'+v.ref;
      return entry.kind==='array'?'['+entry.value.map(item=>printed(item,new Set(seen))).join(', ')+']':
@@ -237,7 +237,12 @@ function run(code,selected='auto'){
    if(n.k==='name'){if(n.name==='endl'||n.name==='std::endl')return '\n';return readName(n.name);}
    if(n.k==='array')return allocate('array',n.items.map(interpret));
    if(n.k==='object')return allocate('object',Object.fromEntries(n.props.map(([k,v])=>[k,interpret(v)])));
-   if(n.k==='unary'){const v=interpret(n.a);return n.op==='!'||n.op==='not'?!truth(v):n.op==='-'?-toNumber(v):+toNumber(v);}
+   if(n.k==='unary'){
+     if(n.op==='&'){if(n.a.k!=='name')ERROR('The address operator currently supports named variables.');readName(n.a.name);return {ptr:n.a.name};}
+     const v=interpret(n.a);
+     if(n.op==='*'){if(!v?.ptr)ERROR('Dereferencing requires a pointer to a traced stack variable.');return readName(v.ptr);}
+     return n.op==='!'||n.op==='not'?!truth(v):n.op==='-'?-toNumber(v):+toNumber(v);
+   }
    if(n.k==='binary'){
      const a=interpret(n.a);
      if((n.op==='&&'||n.op==='and')&&!truth(a))return false;
@@ -311,6 +316,15 @@ function run(code,selected='auto'){
    if(prefix){const v=toNumber(readName(prefix[2]))+(prefix[1]==='++'?1:-1);assign(prefix[2],v);snapshot(node.line,prefix[2]+' becomes '+v);return;}
    const change=/^([A-Za-z_]\w*)\s*(\+\+|--)$/.exec(raw);
    if(change){const newVal=toNumber(readName(change[1]))+(change[2]==='++'?1:-1);assign(change[1],newVal);snapshot(node.line,change[1]+' becomes '+newVal);return;}
+   const pointerDecl=/^(?:int|float|double|char|long|short)\s*\*\s*(\w+)\s*=\s*(.+)$/.exec(raw);
+   if(pointerDecl){const value=evaluate(pointerDecl[2]);if(!value?.ptr)ERROR('Pointer declaration needs the address of a named variable.');assign(pointerDecl[1],value,true);snapshot(node.line,'Pointer '+pointerDecl[1]+' points to '+value.ptr+' in the stack.');return;}
+   const pointerAug=/^\*(\w+)\s*(\+=|-=|\*=|\/=|=)\s*(.+)$/.exec(raw);
+   if(pointerAug){
+     const pointer=readName(pointerAug[1]);if(!pointer?.ptr)ERROR('This pointer has no known stack destination.');
+     const old=readName(pointer.ptr),right=evaluate(pointerAug[3]),op=pointerAug[2];
+     const value=op==='='?right:op==='+='?toNumber(old)+toNumber(right):op==='-='?toNumber(old)-toNumber(right):op==='*='?toNumber(old)*toNumber(right):toNumber(old)/toNumber(right);
+     assign(pointer.ptr,value);snapshot(node.line,'Through '+pointerAug[1]+', update '+pointer.ptr+' to '+display(value));return;
+   }
    const aug=/^([A-Za-z_]\w*)\s*(\+=|-=|\*=|\/=)\s*(.+)$/.exec(raw);
    if(aug){const left=readName(aug[1]),right=evaluate(aug[3]);let result;
      if(aug[2]==='+=')result=typeof left==='string'?left+display(right):toNumber(left)+toNumber(right);
