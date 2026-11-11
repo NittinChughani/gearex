@@ -104,11 +104,14 @@ function normalizedLines(code,lang){
 function kindOf(line,lang){
  const s=line.trim().replace(/:\s*$/,'');
  let m;
- if((m=/^else\s+if\s*\((.*)\)$/.exec(s))||(m=/^elif\s+(.+)$/.exec(s)))return {kind:'elseif',condition:m[1]};
- if(/^else\b/.test(s))return {kind:'else'};
- if((m=/^if\s*\((.*)\)$/.exec(s))||(lang==='py'&&(m=/^if\s+(.+)$/.exec(s))))return {kind:'if',condition:m[1]};
- if((m=/^while\s*\((.*)\)$/.exec(s))||(lang==='py'&&(m=/^while\s+(.+)$/.exec(s))))return {kind:'while',condition:m[1]};
- if((m=/^for\s*\(\s*(.*)\s*\)$/.exec(s)))return {kind:'for',spec:m[1]};
+ if((m=/^else\s+if\s*\(([^)]*)\)\s*(.*)$/.exec(s)))return {kind:'elseif',condition:m[1],inline:m[2]};
+ if((m=/^elif\s+(.+)$/.exec(s)))return {kind:'elseif',condition:m[1]};
+ if(/^else\b/.test(s))return {kind:'else',inline:s.replace(/^else\s*/,'')};
+ if((m=/^if\s*\(([^)]*)\)\s*(.*)$/.exec(s)))return {kind:'if',condition:m[1],inline:m[2]};
+ if(lang==='py'&&(m=/^if\s+(.+)$/.exec(s)))return {kind:'if',condition:m[1]};
+ if((m=/^while\s*\(([^)]*)\)\s*(.*)$/.exec(s)))return {kind:'while',condition:m[1],inline:m[2]};
+ if(lang==='py'&&(m=/^while\s+(.+)$/.exec(s)))return {kind:'while',condition:m[1]};
+ if((m=/^for\s*\(\s*([^)]*)\)\s*(.*)$/.exec(s)))return {kind:'for',spec:m[1],inline:m[2]};
  if(lang==='py'&&(m=/^for\s+(\w+)\s+in\s+(.+)$/.exec(s)))return {kind:'forin',variable:m[1],iterable:m[2]};
  if((m=/^for\s*\(\s*(?:let|const|var)\s+(\w+)\s+of\s+(.+)\)$/.exec(s)))return {kind:'forin',variable:m[1],iterable:m[2]};
  if(lang==='py'&&(m=/^def\s+(\w+)\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
@@ -156,8 +159,10 @@ function parse(code,lang){
       if(candidate){const alternate={...data,line:row.line,text:row.value,body:[]};candidate.alternate=alternate;pending=alternate;previous=alternate;}
       continue;
     }
-    const node={...data,line:row.line,text:row.value,body:[]};body.push(node);previous=node;
-    pending=['func','class','if','for','forin','while'].includes(node.kind)?node:null;
+    const node={...data,line:row.line,text:row.value,body:[]};
+    if(node.inline&&['if','while','for','forin'].includes(node.kind))node.body=[{kind:'statement',text:node.inline,line:row.line,body:[]}];
+    body.push(node);previous=node;
+    pending=['func','class','if','for','forin','while'].includes(node.kind)&&!node.inline?node:null;
   }
  }
  return root;
@@ -302,7 +307,9 @@ function run(code,selected='auto'){
    }
    if(/^return\s+/.test(raw))return {kind:'return',value:evaluate(raw.slice(7))};
    if(raw==='return')return {kind:'return',value:null};
-   const change=/^(?:\+\+|--)?\s*([A-Za-z_]\w*)\s*(\+\+|--)$/.exec(raw);
+   const prefix=/^(\+\+|--)([A-Za-z_]\w*)$/.exec(raw);
+   if(prefix){const v=toNumber(readName(prefix[2]))+(prefix[1]==='++'?1:-1);assign(prefix[2],v);snapshot(node.line,prefix[2]+' becomes '+v);return;}
+   const change=/^([A-Za-z_]\w*)\s*(\+\+|--)$/.exec(raw);
    if(change){const newVal=toNumber(readName(change[1]))+(change[2]==='++'?1:-1);assign(change[1],newVal);snapshot(node.line,change[1]+' becomes '+newVal);return;}
    const aug=/^([A-Za-z_]\w*)\s*(\+=|-=|\*=|\/=)\s*(.+)$/.exec(raw);
    if(aug){const left=readName(aug[1]),right=evaluate(aug[3]);let result;
@@ -312,7 +319,12 @@ function run(code,selected='auto'){
      else result=toNumber(left)/toNumber(right);
      assign(aug[1],result);snapshot(node.line,aug[1]+' is now '+display(result));return;
    }
-   const assignment=/^(?:(?:const|let|var|int|float|double|long|short|char|bool|boolean|String|string|auto|decimal|object)\s+)?([A-Za-z_$]\w*(?:\[[^\]]+\]|\.[A-Za-z_]\w*)?)\s*=(?!=)\s*(.+)$/.exec(raw);
+   const multi=/^(?:(?:const|static|unsigned)\s+)?(?:int|float|double|long|char|bool|String|string|auto|let|var)\s+\w+\s*=.+,\s*\w+\s*=/.test(raw);
+   if(multi){const parts=splitArgs(raw),type=parts[0].trim().split(/\s+/)[0];for(const [i,part] of parts.entries())statement({text:i?type+' '+part:part,line:node.line});return;}
+   const arrayDecl=/^(?:(?:const|static)\s+)?(?:int|char|float|double|long|String|bool)\s+(\w+)\s*\[\s*\]\s*=\s*(.+)$/.exec(raw);
+   if(arrayDecl){let init=arrayDecl[2].trim();if(init[0]==='{'&&init.endsWith('}'))init='['+init.slice(1,-1)+']';
+     const value=evaluate(init);assign(arrayDecl[1],value,true);snapshot(node.line,'Allocate array '+arrayDecl[1]+' in memory.');return;}
+   const assignment=/^(?:(?:(?:const|static|unsigned)\s+)?(?:int|float|double|long|short|char|bool|boolean|String|string|auto|decimal|object|std::string)\s+|(?:let|var|const)\s+)?([A-Za-z_$]\w*(?:\[[^\]]+\]|\.[A-Za-z_]\w*)?)\s*=(?!=)\s*(.+)$/.exec(raw);
    if(assignment){
      let value=evaluate(assignment[2]),name=assignment[1];
      if(name.includes('[')){const m=/^(\w+)\[(.+)\]$/.exec(name),ref=readName(m[1]),index=evaluate(m[2]);if(!ref?.ref||!heap[ref.ref])ERROR('Array assignment requires a heap array.');heap[ref.ref].value[index]=value;}
