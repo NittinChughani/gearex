@@ -1,134 +1,154 @@
 <div align="center">
-  <img src="assets/favicon.svg" alt="Original GearEx emblem" width="94" height="94" />
+  <img src="assets/favicon.svg" width="86" alt="GearEx emblem">
   <h1>GearEx</h1>
-  <p><strong>Learn. Code. Trace. Build.</strong></p>
-  <p>An open-source learning studio for seven programming languages, built for curious developers.</p>
+  <p><strong>Don't just run the code. Follow it.</strong></p>
+  <p>A free, open-source programming workbench built around practice, understanding, and visible progress.</p>
   <p>
-    <a href="https://nittinchughani.github.io/gearex/"><img alt="Live website" src="https://img.shields.io/badge/Website-Live-0ABDC6?style=for-the-badge"></a>
-    <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-711C91?style=for-the-badge"></a>
-    <img alt="Static site" src="https://img.shields.io/badge/Deployment-GitHub_Pages-133E7C?style=for-the-badge">
+    <a href="https://nittinchughani.github.io/gearex/"><img src="https://img.shields.io/badge/OPEN_THE_STUDIO-207C7A?style=for-the-badge" alt="Open GearEx"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-394950?style=for-the-badge" alt="MIT license"></a>
   </p>
+  <p><a href="https://nittinchughani.github.io/gearex/">Live website</a> · <a href="docs/CURRICULUM.md">Curriculum</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 </div>
 
 ---
 
-## ⚡ What is GearEx?
+## The idea
 
-**GearEx** is a free, no-signup educational website that combines lessons, a runnable code playground, practice challenges, quizzes, guided tracing and self-paced completion certificates. It is a reimagining of the original CodeLab Academy project, with a new identity and expanded curriculum.
+Reading code is one thing. Understanding what happens inside a program is another. **GearEx** brings lessons, coding exercises, guided execution timelines and skill assessments together in a single place, without requiring an account.
 
-**[Open GearEx](https://nittinchughani.github.io/gearex/)** · **[Report a bug](../../issues/new?template=bug_report.md)** · **[Contribute](CONTRIBUTING.md)**
+The website is a static, responsive project built with HTML, CSS and JavaScript. It is open source, works on GitHub Pages and stores learning progress in the visitor's browser.
 
-The repository is published as **[NittinChughani/gearex](https://github.com/NittinChughani/gearex)**, with its current live deployment on GitHub Pages.
+## What you can learn
 
-## ✨ At a glance
+| Language | Learning lessons | Core topics |
+|:--|--:|:--|
+| C | 25 | Variables, pointers, arrays, functions, memory, data structures |
+| C++ | 26 | OOP, references, STL, templates, algorithms |
+| Python | 8 | Values, loops, functions, collections, objects |
+| JavaScript | 8 | Variables, arrays, functions, objects, asynchronous basics |
+| Java | 8 | Data types, methods, objects, inheritance |
+| C# | 8 | Methods, arrays, properties, LINQ |
+| SQL | 8 | Queries, filtering, grouping, joins, updates |
+| **Total** | **91** | Structured learning paths |
 
-| Learning experience | Included |
-|---|---|
-| Languages | **C, C++, Python, JavaScript, Java, C#, SQL** |
-| Guided lessons | **91** (51 original C/C++ + 40 new lessons) |
-| Mixed/free quiz questions | **113** (73 original + 40 new questions) |
-| Per-lesson knowledge checks | **5 per lesson (455 total)**, generated from that lesson's teaching material; pass with **4/5** |
-| C/C++ coding challenges | **138**, including sample-input testing |
-| C/C++ guided mini-projects | **12** |
-| Code playground | Remote execution through **Wandbox** |
-| Real execution visualization | **Python, C, C++, Java, JavaScript** using [Python Tutor](https://pythontutor.com/for-ai-assistants.html) iframe execution; local C#/SQL guided annotations only |
-| Other demonstrations | Interactive loop, array and pointer exercises |
-| Completion certificates | Five-question checks for every lesson, ≥70% final assessment, **70/30 weighted score out of 100**, one-time local name confirmation |
-| Privacy | Local progress storage; no required account |
+Alongside the lessons, GearEx provides **138 C/C++ coding challenges**, **12 guided C/C++ mini-projects**, and **113 general quiz questions**. Each lesson has an additional five-question knowledge check, for **455 lesson-check questions** altogether.
 
-### 🎨 Five custom themes
+## The execution lab
 
-| Theme | Palette |
-|---|---|
-| **Cyberpunk Neon** | `#091833` · `#133E7C` · `#0ABDC6` · `#EA00D9` · `#711C91` |
-| **Quantum Teal** | `#041F2A` · `#00C2A8` · `#00E5FF` · `#B7C0CC` · `#F4F7FF` |
-| **Synthwave Sunset** | `#260B68` · `#C231C9` · `#FF4900` · `#FFD319` · `#FF6E40` |
-| **Bio-Digital Matrix** | `#0F172A` · `#0C1A2B` · `#D2FF26` · `#2DD4BF` · `#B2D5E9` |
-| **Hologram Haze** | `#1A1033` · `#B45CFF` · `#FF4FD8` · `#E0F7FA` · `#D9A5CD` |
+The GearEx visualizer is an **original, locally implemented educational trace engine**. It doesn't embed another visualizer or send the visualization source to an outside service.
 
-Themes are selectable from the **top-right corner** and persist in this browser.
+Open the **Trace lab** from the navigation, paste a small program, or select **Trace my code** from the playground. GearEx automatically recognizes common language syntax. Step forward or backward through an execution timeline, use autoplay, and inspect:
 
-## 🧠 A complete learning loop
+- The currently highlighted source line and explanation.
+- Active function **call-stack frames** and their local variables.
+- **Heap allocations**, arrays, objects, and shared references.
+- Basic pointer relationships to named stack variables in C/C++.
+- Standard output as it appears through supported output statements.
 
-1. Choose one of seven learning roadmaps. Read the lesson's intro, syntax, sample code and practice task.
-2. Open the example in the playground. Click **Visualize this code** to transfer its exact source and language to the execution explorer.
-3. Complete the **five-question check** after the lesson and score **4/5 or better**. Your best verified score counts toward your certificate.
-4. Finish all the verified lessons in a language, then take its final assessment and score **70% or higher**.
-5. Confirm your certificate recipient name once, review your score breakdown, and print or save the certificate as a PDF.
+**Scope matters:** this is a bounded teaching interpreter, **not a complete compiler or production debugger**. Its supported subset includes simple declarations, expressions, conditions, counting loops, functions, arrays, objects, common printing operations, and basic pointers. Advanced language features, many libraries, file I/O, real system memory addresses and some class semantics are not implemented. The tracer stops and explains when a construct is outside its coverage rather than inventing execution results.
 
-### Real execution explorer
+For SQL, the lab explains the sequence of query clauses but **does not execute a database query**. The normal playground remains the place to run supported programs using the separate online compiler service. The trace lab itself needs no network request.
 
-For **Python, C, C++, Java, and JavaScript**, GearEx embeds the actual [Python Tutor](https://pythontutor.com/) runtime visualization. It can step through executed lines, stack frames, heap allocations, references, variable values and output. This is an external integration, **not a GearEx-developed debugger**. Press **Visualize this code** next to Run code or import directly from the editor; the language is synchronized, and a mismatch warning helps catch pasted code with the wrong selection. Source is sent to Python Tutor only when you click **Visualize execution**.
+## Learning checks and certificates
 
-**Limits:** Python Tutor is optimized for short, single-file examples (conservatively under 2,000 source characters), is online-only, and does not support all libraries, I/O or asynchronous JavaScript. Its embedded UI supplies the step controls; use **Open full-page trace** if embedding is blocked. **C# and SQL remain educational source-order annotations**, not runtime heap/stack tracers. The playground uses the separate Wandbox service for executing code.
+A lesson is **not completed just because it has been opened**.
 
-### Verified lessons and 100-mark certificates
+1. Read the introduction, syntax notes, example and practice activity.
+2. Complete the lesson's **five multiple-choice questions**.
+3. Score **at least 4/5** to verify the lesson; retry as needed. Your best score is retained.
+4. Verify every lesson for the chosen language.
+5. Pass that language's final assessment at **70% or higher**.
 
-Each of the **91 lessons** includes **five lesson-specific multiple-choice questions**, drawn from its actual topic, key points, worked syntax, explanation and exercise. At least **4/5** must be correct for that lesson to count as completed. Retakes are supported; the **best** recorded score counts.
+Certificates have an explicit score calculation:
 
-| Component | Raw marks | Weight |
-|---|---|---|
-| Lesson checks | Best score of each lesson, summed (e.g., C has 125 possible points) | **70 marks** |
-| Final language assessment | Earned / possible on the final quiz; pass threshold 70% | **30 marks** |
-| **Certificate total** | Sum of weighted components, rounded | **100 marks** |
+| Component | Calculation | Certificate marks |
+|:--|:--|--:|
+| Verified lessons | Sum of best lesson-check scores ÷ available lesson-check points | **70** |
+| Final assessment | Correct final answers ÷ total final questions | **30** |
+| **Combined score** | Weighted total, rounded | **100** |
 
-Certificates show learner name, language, both raw and weighted mark breakdowns, secured marks out of 100, overall performance, date and **Certified by creator: Nittin Chughani**. The recipient confirms their name **once for this browser**, and the site no longer offers a name-edit action afterward.
+The printable certificate displays the recipient's name, language, raw and weighted lesson-check marks, final-assessment marks, overall marks, performance, issue date and **Certified by creator: Nittin Chughani**.
 
-**Important:** GearEx uses browser-local storage and has no identity-verification backend. Users can clear or alter their browser data; the name lock and assessment scores are **not tamper-proof** or institution-accredited. Certificates are creator-issued evidence of self-paced completion, not independently verified qualifications. Earlier versions let visitors mark lessons completed without quizzes; the new system preserves those older IDs in an archival browser entry but requires re-verification with the lesson checks before they count toward awards.
+A recipient confirms their name once per browser; the normal interface does not allow editing it afterward. **This is not identity verification.** Because progress is stored locally, a technically knowledgeable user could alter or clear their browser data. These are creator-issued records of self-paced participation, not independently authenticated or accredited credentials.
 
-## 🚀 Get started
+### Returning learners
 
-This project is a static website. You don't need a build tool:
+Earlier versions allowed visitors to mark lessons completed without taking a test. Those legacy completion IDs are kept in an archive on the same device, but lessons must now pass their checks before counting toward certificates. The progress import/export workflow includes assessment records.
 
-1. Clone or download this repository.
-2. Open `index.html` in a modern browser, or serve the folder with a basic local HTTP server.
-3. Follow a roadmap, open the playground, choose your language and press **Run code**.
+## Five user-selectable palettes
 
-Running code sends source and optional standard input to the free third-party **[Wandbox](https://wandbox.org/)** service. Execution needs internet access, depends on that service's available compilers and rate limits, and is **not** run within GitHub Pages. Avoid sending credentials or personal data in source.
+The top-right appearance menu provides:
 
-## 🗂️ Project structure
+| Palette | Main colors |
+|:--|:--|
+| Cyberpunk Neon | `#091833` · `#133E7C` · `#0ABDC6` · `#EA00D9` · `#711C91` |
+| Quantum Teal | `#041F2A` · `#00C2A8` · `#00E5FF` · `#B7C0CC` · `#F4F7FF` |
+| Synthwave Sunset | `#260B68` · `#C231C9` · `#FF4900` · `#FFD319` · `#FF6E40` |
+| Bio-Digital Matrix | `#0F172A` · `#0C1A2B` · `#D2FF26` · `#2DD4BF` · `#B2D5E9` |
+| Hologram Haze | `#1A1033` · `#B45CFF` · `#FF4FD8` · `#E0F7FA` · `#D9A5CD` |
 
-```text
-GearEx/
-├── index.html                  # Main learning interface
-├── assets/
-│   ├── favicon.svg            # Original GearEx symbol
-│   ├── style.css              # Responsive design + 5 themes
-│   ├── unslop.css             # Workbench-inspired UI refinements
-│   ├── data.js                # Original C/C++ lessons + quizzes
-│   ├── challenges.js          # C/C++ coding challenges
-│   ├── projects.js            # C/C++ guided projects
-│   ├── gearex-courses.js      # 5 new language courses
-│   ├── app.js                 # Core progress, quizzes, editor and compiler
-│   ├── lesson-assessments.js  # Five-question lesson completion gate
-│   └── gearex-features.js     # Theme selector, Python Tutor embed, certificates
-├── docs/                       # Curriculum and development notes
-├── scripts/check-content.cjs   # Content integrity test
-└── .github/workflows/          # GitHub Actions validation
+The interface uses an instrument-inspired visual language: a memory diagram on the home page, a two-column execution workspace, consistent surfaces, and short state-change animations. Motion respects the operating system's **Reduce Motion** preference.
+
+## Running GearEx
+
+No framework, build step, paid API key or account is required to browse the lessons.
+
+```bash
+git clone https://github.com/NittinChughani/gearex.git
+cd gearex
+python -m http.server 8000
 ```
 
-## 🔐 Progress & privacy
+Visit `http://localhost:8000`, or visit the **[live website](https://nittinchughani.github.io/gearex/)**.
 
-GearEx stores bookmarks, lessons, quiz history, work-in-progress code, themes and certificate records in **localStorage** on your device. No account or cloud sync is required. Use **Export progress** to keep a backup; clearing browser data can erase local progress.
+The standalone code playground uses **[Wandbox](https://wandbox.org/)** to compile and run supported languages. That service requires an internet connection, has its own limitations, and receives source entered for compilation. **Don't place passwords or private information in compiler submissions.** By contrast, the native educational trace lab processes source within the browser.
 
-The original general progress storage keys remain compatible with earlier GearEx and CodeLab Academy versions. Existing self-ticked lessons are archived as `gearex-legacy-completed-v1` and need quiz verification under the new system. New progress exports also contain lesson-check and final-assessment records. Certificate name confirmation persists separately so resetting lesson progress does not provide a name-edit control.
+## Project map
 
-## 🤝 Contribute
+```text
+gearex/
+├── index.html                   # Website layout and learning interfaces
+├── assets/
+│   ├── favicon.svg             # GearEx symbol
+│   ├── style.css               # Original component layout and theme definitions
+│   ├── studio.css              # Current interface design + trace lab layout
+│   ├── studio-motion.js        # Reveal animation and active navigation states
+│   ├── app.js                  # Lessons, quizzes, editor and compiler
+│   ├── gearex-engine.js        # Browser-local educational interpreter
+│   ├── gearex-trace-ui.js      # Stack, heap, code highlighting and playback
+│   ├── gearex-features.js      # Appearance and certificates
+│   ├── lesson-assessments.js   # Five-question checks and verification
+│   ├── data.js                 # C/C++ curriculum
+│   ├── gearex-courses.js       # Additional language curriculum
+│   ├── challenges.js           # C/C++ coding exercises
+│   └── projects.js             # C/C++ projects
+├── docs/
+│   ├── CURRICULUM.md
+│   └── DEVELOPMENT.md
+└── scripts/
+    ├── check-content.cjs
+    └── test-tracer.cjs
+```
 
-Bug reports, accessibility fixes, corrections to teaching explanations, multilingual course material and new visualizers are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Please only submit code and learning material you have permission to share.
+### Test the learning data and trace interpreter
 
-## Attribution and design direction
+```bash
+node scripts/check-content.cjs
+node scripts/test-tracer.cjs
+```
 
-Execution diagrams are provided by **[Python Tutor](https://pythontutor.com/)**, created by Philip Guo, under that service's own terms and limitations. GearEx does not copy or reimplement Python Tutor's tracing engine.
+GitHub Actions runs both checks when changes are pushed.
 
-The interface refresh follows the [Unslop](https://github.com/heydamir/unslop) design-review principles by Damir Sokolovsky (CC BY 4.0): deliberate spacing, quiet chrome, reduced gradient effects and greater attention to code as the primary visual element. This is a manual application of those principles, not a bundled copy of the Unslop tool.
+## Privacy and contributions
 
-## 👨‍💻 Creator
+Learning data is stored in **localStorage** on each device. It doesn't sync automatically across browsers; use Export Progress to save a backup. Clearing local storage can erase progress.
 
-**Created by Nittin Chughani** — a Computer Science & Engineering student and open-source builder creating helpful tools and accessible programming education.
-
-**[GitHub profile](https://github.com/NittinChughani)**
+Pull requests that improve the curriculum, runtime-trace coverage, accessibility, security, or documentation are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), and include tests for new interpreter features.
 
 ---
 
-<div align="center"><sub>Made for learning, experimenting and building useful things. · MIT License</sub></div>
+<div align="center">
+  <p><strong>Built and maintained by Nittin Chughani</strong></p>
+  <p>A Computer Science &amp; Engineering student building open-source tools that make learning and everyday tasks easier.</p>
+  <small>MIT License · Made for learning through experimentation</small>
+</div>
