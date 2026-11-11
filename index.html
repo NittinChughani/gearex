@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Learn C, C++, Python, JavaScript, Java, C# and SQL with guided lessons, practice, runnable code and illustrated tracing.">
-  <meta name="theme-color" content="#0b1120">
-  <meta property="og:title" content="GearEx — Learn programming, see it run">
+  <meta name="description" content="GearEx is a free programming studio for seven languages, with interactive lessons, local execution traces, quizzes and completion certificates.">
+  <meta name="theme-color" content="#0d171a">
+  <meta property="og:title" content="GearEx — Understand code from the inside">
   <meta property="og:description" content="A free, open-source seven-language learning platform. Lessons, challenges, quizzes and hands-on coding.">
   <title>GearEx | Learn Programming Languages</title>
   <link rel="stylesheet" href="assets/style.css">
-  <link rel="stylesheet" href="assets/unslop.css">
+  <link rel="stylesheet" href="assets/studio.css">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 </head>
 <body>
@@ -17,38 +17,45 @@
 <header class="topbar">
   <a class="brand" href="#home" aria-label="GearEx home"><span class="brand-icon"><img src="assets/favicon.svg" width="37" height="37" alt="" aria-hidden="true"></span><span class="brand-word">GearEx</span></a>
   <nav aria-label="Main navigation">
-    <a href="#home">Home</a><a href="#path">Roadmaps</a><a href="#learn">Lessons</a><a href="#practice">Challenges</a><a href="#playground">Playground</a><a href="#quiz">Quizzes</a><a href="#visualize">Concept models</a><a href="#projects">Projects</a><a href="#dashboard">Dashboard</a><a href="#trace">Execution explorer</a><a href="#certificate">Certificates</a>
+    <a href="#home">Home</a><a href="#path">Roadmaps</a><a href="#learn">Lessons</a><a href="#practice">Challenges</a><a href="#playground">Playground</a><a href="#quiz">Quizzes</a><a href="#visualize">Concept models</a><a href="#projects">Projects</a><a href="#dashboard">Dashboard</a><a href="#trace">Trace lab</a><a href="#certificate">Certificates</a>
   </nav>
   <label class="theme-picker"><span>Appearance</span><select id="themeSelect" aria-label="Select site color theme"><option value="cyberpunk">Cyberpunk Neon</option><option value="quantum">Quantum Teal</option><option value="synthwave">Synthwave Sunset</option><option value="matrix">Bio-Digital Matrix</option><option value="hologram">Hologram Haze</option></select></label><button id="themeToggle" hidden class="icon-button" aria-label="Legacy theme toggle" type="button">☾</button>
 </header>
 <main id="main">
   <section id="home" class="hero">
-    <div class="hero-copy">
-      <span class="eyebrow">THE PROGRAMMING WORKBENCH · FREE AND OPEN SOURCE</span>
-      <h1>Read the code.<br><span class="gradient">See what happens.</span></h1>
-      <p>Learn seven programming languages from the foundations to real projects. Follow guided lessons, practice with real code, solve challenges, and track your progress at your own pace.</p>
-      <div class="actions"><a class="button primary" href="#path">Start learning →</a><a class="button secondary" href="#playground">Open playground</a></div>
-      <div class="stats" aria-label="Platform statistics">
-        <div><strong id="lessonCount">51</strong><span>Lessons</span></div>
-        <div><strong id="challengeCount">138</strong><span>Challenges</span></div>
-        <div><strong id="quizCount">73</strong><span>Quiz questions</span></div>
-        <div><strong id="completedCount">0</strong><span>Completed</span></div>
-      </div>
+  <div class="hero-copy">
+    <div class="hero-index"><span class="hero-index-number">GE / 01</span><span>A WORKSPACE FOR UNDERSTANDING CODE</span></div>
+    <p class="hero-kicker">GEAREX · LEARNING STUDIO</p>
+    <h1>Don't just run<br>the code. <em>Follow it.</em></h1>
+    <p class="hero-intro">See what each statement does, where variables live, and how values change. Start with a lesson, test your understanding, then explore the code step by step.</p>
+    <div class="actions"><a class="button primary" href="#path">Explore the courses <span aria-hidden="true">↗</span></a><a class="button secondary" href="#trace">Try the visualizer <span aria-hidden="true">→</span></a></div>
+    <div class="hero-meta"><span class="hero-meta-symbol" aria-hidden="true">⌘</span><span>Seven languages. One place to learn by doing.</span></div>
+    <div class="stats" aria-label="Platform statistics">
+      <div><strong id="lessonCount">91</strong><span>Guided lessons</span></div>
+      <div><strong id="challengeCount">138</strong><span>C/C++ challenges</span></div>
+      <div><strong id="quizCount">113</strong><span>Core quiz questions</span></div>
+      <div><strong id="completedCount">0</strong><span>Verified lessons</span></div>
     </div>
-    <div class="code-card" aria-label="Example C++ program">
-      <div class="code-top"><span class="dots">● ● ●</span><span>hello.cpp</span><span>C++17</span></div>
-      <pre><code><span class="syntax-purple">#include</span> &lt;iostream&gt;
-
-<span class="syntax-purple">int</span> main() {
-  std::cout &lt;&lt; <span class="syntax-green">"Hello, developer!"</span>
-            &lt;&lt; std::endl;
-  <span class="syntax-purple">return</span> 0;
-}</code></pre>
-      <div class="terminal"><span>▶ Output</span><strong>Hello, developer!</strong></div>
+  </div>
+  <div class="hero-simulator" aria-label="Illustration of how a variable and an array change in memory">
+    <div class="sim-top"><span class="sim-brandmark" aria-hidden="true">GEAREX / LAB</span><span class="sim-session"><span class="sim-status-dot"></span> EXAMPLE TRACE</span></div>
+    <div class="sim-label"><span>TRACE PREVIEW</span><span>03 / 05</span></div>
+    <div class="sim-editor">
+      <div class="sim-editor-heading"><span>example.py</span><span class="sim-file-tag">PYTHON</span></div>
+      <div class="sim-code"><div class="sim-line"><span>01</span><code>values = [2, 4]</code></div><div class="sim-line"><span>02</span><code>other = values</code></div><div class="sim-line sim-exec"><span>03</span><code>other.append(6)</code></div><div class="sim-line"><span>04</span><code>print(values)</code></div></div>
     </div>
-  </section>
-  <section class="benefits-strip" aria-label="Learning features"><span>01 / Guided roadmaps</span><span>02 / Run seven languages</span><span>03 / Step-by-step execution</span><span>04 / Measurable learning</span></section>
-  <section id="path" class="section">
+    <div class="sim-memory"><div class="sim-stack">
+      <div class="sim-pane-title"><span>01</span> CALL STACK <span class="sim-pane-meta">GLOBAL</span></div>
+      <div class="sim-slot"><span>values</span><strong>↘ #1</strong></div><div class="sim-slot"><span>other</span><strong>↘ #1</strong></div>
+    </div><div class="sim-heap">
+      <div class="sim-pane-title"><span>02</span> HEAP MEMORY <span class="sim-pane-meta">ARRAY</span></div>
+      <div class="sim-heap-id">#1 <span>shared reference</span></div><div class="sim-cells"><span>2</span><span>4</span><span class="sim-added">6</span></div>
+    </div></div>
+    <div class="sim-bottom"><span><span class="sim-live-dot"></span> Shared references update together</span><a href="#trace">Open live tracer <span aria-hidden="true">↗</span></a></div>
+  </div>
+</section>
+<section class="benefits-strip" aria-label="Learning features"><span>01 <b>/</b> Learn from examples</span><span>02 <b>/</b> Trace memory and variables</span><span>03 <b>/</b> Practice &amp; prove understanding</span></section>
+<section id="path" class="section">
     <div class="section-heading"><span class="eyebrow">FOLLOW A CLEAR PATH</span><h2>One skill at a time.</h2><p>Choose your language, follow the recommended order, and pick up where you left off.</p></div>
     <div class="roadmap-controls"><div class="tabs" role="group" aria-label="Select roadmap"><button type="button" data-roadmap="c" class="active" aria-pressed="true">C Programming</button><button type="button" data-roadmap="py">Python</button><button type="button" data-roadmap="js">JavaScript</button><button type="button" data-roadmap="java">Java</button><button type="button" data-roadmap="cs">C#</button><button type="button" data-roadmap="sql">SQL</button><button type="button" data-roadmap="cpp" aria-pressed="false">C++ Programming</button></div><span id="roadmapProgress" class="pill">0 of 0 lessons</span></div>
     <div class="roadmap-track"><div id="roadmapBar" class="progress-fill"></div></div>
@@ -82,7 +89,30 @@
   <section id="projects" class="section"><div class="section-heading"><span class="eyebrow">TURN KNOWLEDGE INTO SKILLS</span><h2>Build something real.</h2><p>Guided C/C++ mini-projects with milestones, requirements, starter ideas and checklists.</p></div><div id="projectsGrid" class="lesson-grid"></div></section>
   <section id="projectDetail" class="section detail" hidden><button id="backProjects" type="button" class="back-button">← Back to projects</button><div id="projectContent"></div></section>
   <section id="dashboard" class="section"><div class="section-heading"><span class="eyebrow">YOUR LEARNING DASHBOARD</span><h2>Every step counts.</h2><p>Track lessons, tested challenges and projects. Your progress stays on this device unless you export it.</p></div><div class="dashboard-grid dashboard-grid-full"><article class="dashboard-tile"><strong id="dashboardLessons">0</strong><span>Lessons completed</span></article><article class="dashboard-tile"><strong id="dashboardChallenges">0</strong><span>Challenges tested</span></article><article class="dashboard-tile"><strong id="dashboardBookmarks">0</strong><span>Saved lessons</span></article><article class="dashboard-tile"><strong id="dashboardBest">—</strong><span>Best quiz score</span></article><article class="dashboard-tile"><strong id="dashboardProjects">0</strong><span>Projects completed</span></article><article class="dashboard-tile"><strong id="dashboardQuizRuns">0</strong><span>Quiz attempts</span></article></div><div class="dashboard-progress"><div><div class="between"><strong>Lesson progress</strong><span id="lessonProgressLabel">0%</span></div><div class="progress-track"><div id="lessonProgressBar" class="progress-fill"></div></div></div><div><div class="between"><strong>Challenge progress</strong><span id="challengeProgressLabel">0%</span></div><div class="progress-track"><div id="challengeProgressBar" class="progress-fill"></div></div></div></div><div class="dashboard-actions"><button id="showBookmarks" type="button" class="button secondary">★ See saved lessons</button><button id="exportProgress" type="button" class="button secondary">↓ Export progress</button><button id="importProgress" type="button" class="button secondary">↑ Import progress</button><input id="importFile" type="file" accept="application/json,.json" hidden><button id="resetProgress" type="button" class="button danger-outline">Reset progress</button></div><p id="dashboardMessage" role="status" aria-live="polite"></p><p class="privacy-note">Progress uses browser localStorage, not a server. It won't automatically sync across devices. Export a backup before clearing browser data.</p></section>
-<section id="trace" class="section"><div class="section-heading"><span class="eyebrow">THE EXECUTION EXPLORER</span><h2>Follow what the computer does.</h2><p>For Python, C, C++, Java and JavaScript, visualize real execution using Python Tutor: executed lines, variable changes, call stacks, heap objects and output. C# and SQL currently offer guided annotations only.</p></div><div class="trace-panel"><div class="trace-toolbar"><label class="field-label">Language <select id="traceLanguage"><option value="c">C</option><option value="cpp">C++</option><option value="py">Python</option><option value="js">JavaScript</option><option value="java">Java</option><option value="cs">C#</option><option value="sql">SQL</option></select></label><button id="traceFromEditor" class="button secondary compact" type="button">↳ Import playground code</button><button id="traceStart" class="button primary compact" type="button">Visualize execution</button></div><p id="traceMismatch" class="trace-mismatch" role="status" aria-live="polite"></p><textarea id="traceSource" spellcheck="false" aria-label="Source code for execution visualization" rows="11"></textarea><div class="trace-controls"><button id="traceBack" type="button" class="button secondary compact">← Previous</button><button id="traceNext" type="button" class="button primary compact">Next step →</button><button id="traceReset" type="button" class="button secondary compact">Reset</button><span id="traceProgress" class="pill">No steps prepared</span></div><div id="traceSteps" class="trace-steps" aria-live="polite"></div><p class="privacy-note">Real execution tracing for five languages is provided by <a href="https://pythontutor.com/" target="_blank" rel="noopener noreferrer">Python Tutor</a> (created by Philip Guo). Clicking Visualize execution sends your current code to that third-party service. Do not enter passwords or private information. It supports small single-file examples, not every library or asynchronous JavaScript feature. The C# and SQL fallback does not execute code.</p></div></section>
+<section id="trace" class="section trace-section">
+  <div class="section-heading"><span class="eyebrow">06 / THE VISUAL EXPLAINER</span><h2>Watch variables move. Understand why.</h2>
+  <p>GearEx builds a local execution timeline for foundational statements, loops, functions, arrays and objects. Follow active code lines and watch the call stack, heap and output update. It detects the language as you type.</p></div>
+  <div class="trace-panel">
+    <div class="trace-toolbar">
+      <label class="field-label" for="traceLanguage">Language <select id="traceLanguage" aria-label="Select a language or use auto detection"><option value="auto">Auto detect</option><option value="c">C</option><option value="cpp">C++</option><option value="py">Python</option><option value="js">JavaScript</option><option value="java">Java</option><option value="cs">C#</option><option value="sql">SQL</option></select></label>
+      <button id="traceFromEditor" class="button secondary compact" type="button">Import playground code</button>
+      <button id="traceSample" class="button secondary compact" type="button">Explore an example</button>
+      <button id="traceStart" class="button primary compact" type="button">Build execution trace <span aria-hidden="true">↗</span></button>
+    </div>
+    <p id="traceMismatch" class="trace-detect" role="status" aria-live="polite"></p>
+    <div class="trace-edit-label"><label for="traceSource">SOURCE EDITOR</label><span>Runs locally in your browser</span></div>
+    <textarea id="traceSource" spellcheck="false" aria-label="Source code for GearEx visualization" rows="9"></textarea>
+    <div class="trace-controls" aria-label="Trace playback controls">
+      <button id="traceBack" type="button" class="button secondary compact" disabled>← Previous</button>
+      <button id="traceNext" type="button" class="button secondary compact" disabled>Next step →</button>
+      <button id="tracePlay" type="button" class="button secondary compact" aria-pressed="false">Play trace</button>
+      <button id="traceReset" type="button" class="button secondary compact">Start over</button>
+      <span id="traceProgress" class="pill" role="status">Editor ready</span>
+    </div>
+    <div id="traceSteps" class="trace-steps" aria-live="polite"></div>
+    <p class="privacy-note">The GearEx trace engine is an original, browser-local educational interpreter, not a complete implementation of the seven languages. It accurately models supported fundamental operations, while advanced syntax and libraries may stop with a coverage note. SQL displays a conceptual query plan, not database execution. For actual compilation or complete program results, use the playground.</p>
+  </div>
+</section>
 <section id="certificate" class="section"><div class="section-heading"><span class="eyebrow">LEARN · ASSESS · ACHIEVE</span><h2>Earn a certificate by demonstrating what you learned.</h2><p>Each lesson ends with five questions. Pass with 4/5 to complete it. Finish all lessons and pass the final assessment with at least 70%. Your certificate reports lesson-check marks (70%), final assessment marks (30%), and a combined score out of 100.</p></div><div id="certificateGrid" class="certificate-grid"></div><div id="certificateExam" class="certificate-exam" hidden></div><div id="certificateView" class="certificate-display" hidden></div><p class="privacy-note">Certificates are creator-issued records of self-paced completion, not accredited qualifications. A certificate name is confirmed once and then locked in the interface, but browser storage can be modified or cleared; identity and scores are not independently verified.</p></section>
   <section id="about" class="section about"><div><span class="eyebrow">BUILT FOR CURIOUS MINDS</span><h2>Open learning, for everyone.</h2><p>GearEx is a free, open-source learning workbench for C, C++, Python, JavaScript, Java, C# and SQL. No account is needed to learn. Run a lesson, practice a problem, and keep building.</p><a class="button secondary" target="_blank" rel="noopener noreferrer" href="https://github.com/NittinChughani/gearex">Contribute on GitHub ↗</a></div><div class="feature-grid"><article><span>⌘</span><h3>Learn</h3><p>Concepts, explanations, example programs and guided roadmaps.</p></article><article><span>✓</span><h3>Practice</h3><p>Real programming exercises and optional compiler-powered sample tests.</p></article><article><span>↗</span><h3>Grow</h3><p>Track progress privately, save lessons and export your data.</p></article></div></section>
 </main>
@@ -93,5 +123,8 @@
 <script src="assets/projects.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/lesson-assessments.js"></script>
+<script src="assets/gearex-engine.js"></script>
+<script src="assets/gearex-trace-ui.js"></script>
 <script src="assets/gearex-features.js"></script>
+<script src="assets/studio-motion.js"></script>
 </body></html>
