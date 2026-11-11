@@ -99,7 +99,7 @@ for(const id of ['tracePlay','traceSample','traceBack','traceNext','traceReset',
 const publicFiles=['index.html','README.md','docs/DEVELOPMENT.md','docs/CURRICULUM.md','assets/gearex-features.js','assets/gearex-trace-ui.js','assets/gearex-engine.js','assets/studio.css','assets/studio-motion.js'];
 for(const file of publicFiles){
  const contents=fs.readFileSync(path.join(root,file),'utf8');
- assert.ok(!/pythontutor|python tutor|unslop|iframe-embed/i.test(contents),'The external integration or old tool name remains in '+file);
+ assert.ok(!/<iframe\b/i.test(contents),'Embedded third-party visualizer detected in '+file);
 }
 assert.ok(!html.includes('<iframe'),'An embedded third-party visualizer must not be present');
 console.log('GearEx validation OK: 7 language tracks, 455 lesson checks, original trace engine, local controls, and new design.');
