@@ -16,7 +16,8 @@ const restoreList = (value, allowed) => new Set((Array.isArray(value) ? value : 
 let previousPractice = [];
 try { previousPractice = JSON.parse(localStorage.getItem('codelab-practiced') || '[]'); } catch { previousPractice = []; }
 const state = {
-  theme: ['cyberpunk','quantum','synthwave','matrix','hologram'].includes(stored.theme) ? stored.theme : 'cyberpunk',
+  theme: ['none','cyberpunk','quantum','synthwave','matrix'].includes(stored.theme) ? stored.theme : 'none',
+  mode: stored.mode==='dark'?'dark':'light',
   completed: restoreList(stored.completed || legacy.completed, lessonIds),
   bookmarks: restoreList(stored.bookmarks || legacy.bookmarks, lessonIds),
   practiced: restoreList(stored.practiced || previousPractice, lessonIds),
@@ -30,7 +31,7 @@ const state = {
   currentChallenge: null, visual: 'loops', loopStep: 0, arrayIndex: 0, pointerValue: 12,
   quiz: [], quizIndex: 0, quizScore: 0, quizSelected: null, quizMissed: [], quizRetry: false
 };
-function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify({theme:state.theme,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts})); } catch { /* Browser storage may be disabled. */ } }
+function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify({theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts})); } catch { /* Browser storage may be disabled. */ } }
 const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
 const text = (selector, value) => { const node = $(selector); if (node) node.textContent = String(value); };
 const normal = value => String(value || '').trim().replace(/\s+/g, ' ');
@@ -44,7 +45,23 @@ function updateStats() {
   text('#lessonProgressLabel', `${lp}%`);text('#challengeProgressLabel', `${cp}%`);
   $('#lessonProgressBar').style.width = lp + '%'; $('#challengeProgressBar').style.width = cp + '%';
 }
-function setTheme() { document.body.classList.remove('light'); document.body.dataset.theme=state.theme; const selector=$('#themeSelect'); if(selector)selector.value=state.theme; const toggle=$('#themeToggle'); if(toggle)toggle.textContent='✧'; }
+function setTheme() {
+  const mode=state.mode==='dark'?'dark':'light';
+  document.body.dataset.theme=state.theme;
+  document.body.dataset.mode=mode;
+  document.body.classList.toggle('light',mode==='light');
+  document.documentElement.style.colorScheme=mode;
+  const toggle=$('#modeSwitch');
+  if(toggle){toggle.checked=mode==='dark';toggle.setAttribute('aria-checked',String(toggle.checked));}
+  text('#modeLabel',mode==='dark'?'Dark mode':'Light mode');
+  $('[data-palette]').forEach(button=>{
+    const active=button.dataset.palette===state.theme;
+    button.classList.toggle('is-selected',active);
+    button.setAttribute('aria-pressed',String(active));
+  });
+  const meta=$('meta[name="theme-color"]');
+  if(meta)meta.content=mode==='light'?'#f6f8f7':({none:'#0e151a',cyberpunk:'#0e151b',quantum:'#08191b',synthwave:'#191526',matrix:'#10191c'}[state.theme]||'#0e151a');
+}
 function setActiveButtons(selector, attr, value) { $$(selector).forEach(button => {const active = button.dataset[attr] === value; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));}); }
 function linkButton(label, href, className='button secondary compact') {const a=make('a',className,label);a.href=href;return a;}
 function addList(parent, items, className='') { const ul=make('ul',className); items.forEach(item=>ul.append(make('li','',item))); parent.append(ul); return ul; }
@@ -70,7 +87,7 @@ function renderLessonDetail(id) {
   const root=$('#lessonContent');root.replaceChildren();const article=make('article','lesson-body');article.append(make('span','eyebrow',`${lesson.lang==='c'?'C LANGUAGE':lesson.lang==='cpp'?'C++':GEAREX_LANGUAGES[lesson.lang]} • ${lesson.level}`),make('h2','',lesson.title),make('p','lede',lesson.intro));
   const goals=make('div','lesson-info');goals.append(make('h3','','What you will learn'));addList(goals,lesson.points);article.append(goals);
   article.append(make('h3','','Syntax essentials'),make('p','',lesson.syntax||lesson.points[0]));article.append(make('h3','','Example source code'),plainCodeBlock(lesson.code));
-  const actions=make('div','lesson-actions');const copy=make('button','button secondary compact','Copy example');copy.type='button';copy.dataset.original='Copy example';copy.addEventListener('click',()=>copyContent(lesson.code,copy));const tryIt=make('button','button primary compact','▶ Try in playground');tryIt.type='button';tryIt.addEventListener('click',()=>{loadIntoEditor(lesson.code,lesson.lang,`Lesson: ${lesson.title}`,null);location.hash='playground';});const trace=make('button','button secondary compact','◎ Visualize step by step');trace.type='button';trace.addEventListener('click',()=>{window.gearexTraceLesson(lesson.code,lesson.lang);location.hash='trace';});actions.append(copy,tryIt,trace);article.append(actions);
+  const actions=make('div','lesson-actions');const copy=make('button','button secondary compact','Copy example');copy.type='button';copy.dataset.original='Copy example';copy.addEventListener('click',()=>copyContent(lesson.code,copy));const tryIt=make('button','button primary compact','▶ Try in compiler');tryIt.type='button';tryIt.addEventListener('click',()=>{loadIntoEditor(lesson.code,lesson.lang,`Lesson: ${lesson.title}`,null);location.hash='playground';});const trace=make('button','button secondary compact','◎ Visualize step by step');trace.type='button';trace.addEventListener('click',()=>{window.gearexTraceLesson(lesson.code,lesson.lang);location.hash='trace';});actions.append(copy,tryIt,trace);article.append(actions);
   if(lesson.output){const out=make('div','example-output');out.append(make('strong','','Example output'));if(typeof INPUT_EXAMPLES!=='undefined'&&INPUT_EXAMPLES[id])out.append(make('p','muted-small','Example input: '+INPUT_EXAMPLES[id]));out.append(make('pre','',lesson.output));article.append(out);}
   const walkthrough=make('div','lesson-info');walkthrough.append(make('h3','','Walkthrough'),make('p','',lesson.walkthrough||'Read the code from top to bottom, tracing how each value changes.'));article.append(walkthrough);
   const mistake=make('div','tips');mistake.append(make('strong','','⚠ Common mistake'),make('p','',lesson.pitfalls||'Watch for types and boundary conditions.'));article.append(mistake);
@@ -89,13 +106,13 @@ function starterFor(c){const note=`// ${c.title}: ${c.description}\n// TODO: rea
 function renderChallengeDetail(id){const c=CHALLENGES.find(x=>x.id===id);if(!c)return false;
  const root=$('#challengeContent');root.replaceChildren();const article=make('article','lesson-body');article.append(make('span','eyebrow',`${c.lang==='c'?'C':'C++'} • ${c.level} • ${c.topic}`),make('h2','',c.title),make('p','lede',c.description),make('p','',c.inputGuide));
  const samples=make('div','samples');samples.append(make('h3','','Sample input and output'));for(const [i,s] of c.samples.entries()){const panel=make('div','sample-card');panel.append(make('strong','',`Sample ${i+1}`));const pair=make('div','sample-grid');for(const [name,val] of [['Input',s.input],['Expected output',s.output]]){const col=make('div');col.append(make('span','',name),make('pre','',val));pair.append(col)}panel.append(pair);samples.append(panel);}article.append(samples);
- const actions=make('div','lesson-actions');const start=make('button','button primary','▶ Solve in playground');start.type='button';start.addEventListener('click',()=>{const key='challenge:'+id;const draft=typeof state.drafts[key]==='string'?state.drafts[key]:starterFor(c);loadIntoEditor(draft,c.lang,`Challenge: ${c.title}`,id);$('#stdinInput').value=c.samples[0].input;location.hash='playground';});actions.append(start);const passed=make('span','status-inline',state.passed.has(id)?'✓ First sample passed previously':'Not sample-tested yet');actions.append(passed);article.append(actions);
+ const actions=make('div','lesson-actions');const start=make('button','button primary','▶ Solve in compiler');start.type='button';start.addEventListener('click',()=>{const key='challenge:'+id;const draft=typeof state.drafts[key]==='string'?state.drafts[key]:starterFor(c);loadIntoEditor(draft,c.lang,`Challenge: ${c.title}`,id);$('#stdinInput').value=c.samples[0].input;location.hash='playground';});actions.append(start);const passed=make('span','status-inline',state.passed.has(id)?'✓ First sample passed previously':'Not sample-tested yet');actions.append(passed);article.append(actions);
  const hint=make('details','reveal');hint.append(make('summary','','Show a hint'),make('p','',c.hint));article.append(hint);
  const solution=make('details','reveal');solution.append(make('summary','','Reveal reference solution'),make('p','muted-small','Try your own approach first. This is one correct solution, not the only solution.'),plainCodeBlock(c.solution));const solutionCopy=make('button','button secondary compact','Copy reference');solutionCopy.dataset.original='Copy reference';solutionCopy.addEventListener('click',()=>copyContent(c.solution,solutionCopy));solution.append(solutionCopy);article.append(solution);
  const next=CHALLENGES.find(x=>x.lang===c.lang&&x.id!==id&&Number(x.id.split('-').at(-1))===Number(id.split('-').at(-1))+1);if(next)article.append(linkButton('Next challenge →','#challenge/'+next.id));root.append(article);return true;
 }
 function renderProjects(){const root=$('#projectsGrid');root.replaceChildren();for(const p of PROJECTS){const card=make('article','lesson-card');const top=make('div','card-top');top.append(make('span',`tag ${p.lang}`,p.lang==='c'?'C':'C++'),make('span','check',state.projects.has(p.id)?'✓ Completed':p.level));card.append(top,make('h3','',p.title),make('p','',p.description),make('small','topic-label',p.skills.join(' · ')),linkButton('View project brief →','#project/'+p.id,'card-link'));root.append(card);}}
-function renderProjectDetail(id){const p=PROJECTS.find(p=>p.id===id);if(!p)return false;const root=$('#projectContent');root.replaceChildren();const body=make('article','lesson-body');body.append(make('span','eyebrow',`${p.lang==='c'?'C':'C++'} • ${p.level} PROJECT`),make('h2','',p.title),make('p','lede',p.description),make('h3','','What you will practice'));addList(body,p.skills);body.append(make('h3','','Build milestones'));const ol=make('ol','milestone-list');p.steps.forEach(s=>ol.append(make('li','',s)));body.append(ol);body.append(make('h3','','Definition of done'));addList(body,p.acceptance);body.append(make('h3','','Starter code'),plainCodeBlock(p.starter));const tip=make('details','reveal');tip.append(make('summary','','Show build tip'),make('p','',p.tip));body.append(tip);const actions=make('div','lesson-actions');const load=make('button','button primary','Start in playground');load.addEventListener('click',()=>{loadIntoEditor(p.starter,p.lang,`Project: ${p.title}`,null);location.hash='playground';});const done=make('button','button secondary',state.projects.has(id)?'✓ Completed — undo':'I completed this project');done.addEventListener('click',()=>{state.projects.has(id)?state.projects.delete(id):state.projects.add(id);persist();updateStats();renderProjects();renderProjectDetail(id);});actions.append(load,done);body.append(actions);root.append(body);return true;}
+function renderProjectDetail(id){const p=PROJECTS.find(p=>p.id===id);if(!p)return false;const root=$('#projectContent');root.replaceChildren();const body=make('article','lesson-body');body.append(make('span','eyebrow',`${p.lang==='c'?'C':'C++'} • ${p.level} PROJECT`),make('h2','',p.title),make('p','lede',p.description),make('h3','','What you will practice'));addList(body,p.skills);body.append(make('h3','','Build milestones'));const ol=make('ol','milestone-list');p.steps.forEach(s=>ol.append(make('li','',s)));body.append(ol);body.append(make('h3','','Definition of done'));addList(body,p.acceptance);body.append(make('h3','','Starter code'),plainCodeBlock(p.starter));const tip=make('details','reveal');tip.append(make('summary','','Show build tip'),make('p','',p.tip));body.append(tip);const actions=make('div','lesson-actions');const load=make('button','button primary','Start in compiler');load.addEventListener('click',()=>{loadIntoEditor(p.starter,p.lang,`Project: ${p.title}`,null);location.hash='playground';});const done=make('button','button secondary',state.projects.has(id)?'✓ Completed — undo':'I completed this project');done.addEventListener('click',()=>{state.projects.has(id)?state.projects.delete(id):state.projects.add(id);persist();updateStats();renderProjects();renderProjectDetail(id);});actions.append(load,done);body.append(actions);root.append(body);return true;}
 function shuffle(items){const out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;}
 function newQuiz(){const lang=$('#quizLanguage').value;const size=$('#quizLength').value;const all=shuffle(QUESTIONS.filter(q=>lang==='all'||q.lang===lang));state.quiz=size==='all'?all:all.slice(0,Number(size));state.quizIndex=0;state.quizScore=0;state.quizSelected=null;state.quizMissed=[];state.quizRetry=false;renderQuiz();}
 function renderQuiz(){const root=$('#quizContent');root.replaceChildren();const total=state.quiz.length;const idx=state.quizIndex;text('#quizProgress',idx>=total?'Finished':`Question ${idx+1} of ${total}`);$('#quizBar').style.width=`${total?idx/total*100:0}%`;
@@ -152,14 +169,45 @@ function visualTabs(){setActiveButtons('[data-visual]','visual',state.visual);co
   const card=make('div','pointer-model');const name=make('div','pointer-block');name.append(make('small','','Variable: score'),make('strong','',state.pointerValue));const pointer=make('div','pointer-arrow','ptr → &score');const value=make('div','pointer-block');value.append(make('small','','Dereference: *ptr'),make('strong','',state.pointerValue));card.append(name,pointer,value);root.append(card);const info=make('p','visual-explanation','ptr refers to score. Writing through *ptr changes the original score too.');root.append(info);const inc=make('button','button primary compact','*ptr += 1');inc.addEventListener('click',()=>{state.pointerValue++;visualTabs()});const reset=make('button','button secondary compact','Reset');reset.addEventListener('click',()=>{state.pointerValue=12;visualTabs()});const actions=make('div','lesson-actions');actions.append(inc,reset);root.append(actions,plainCodeBlock('int score = 12;\nint *ptr = &score;\n*ptr += 1; // updates score'));}
 }
 function dashboardStatus(message){text('#dashboardMessage',message);}
-function exportProgress(){const payload={app:'GearEx',version:2,exportedAt:new Date().toISOString(),progress:{theme:state.theme,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts}};payload.certificates=window.gearexExportCertificates?window.gearexExportCertificates():{};payload.lessonChecks=window.gearexExportLessonChecks?window.gearexExportLessonChecks():{};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=make('a');a.href=url;a.download='gearex-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);dashboardStatus('Your progress file was prepared for download.');}
-async function importProgress(file){if(!file)return;if(file.size>1024*1024){dashboardStatus('Import rejected: file is too large.');return;}try{const data=JSON.parse(await file.text());if(!['CodeLab Academy','GearEx'].includes(data.app)||!data.progress||typeof data.progress!=='object')throw new Error('Not a GearEx progress export.');const p=data.progress;state.completed=restoreList(p.completed,lessonIds);if(window.gearexImportLessonChecks)window.gearexImportLessonChecks(data.lessonChecks||{});state.completed=new Set([...state.completed].filter(id=>window.gearexLessonPassed?.(id)));state.bookmarks=restoreList(p.bookmarks,lessonIds);state.practiced=restoreList(p.practiced,lessonIds);state.passed=restoreList(p.passed,challengeIds);state.tried=restoreList(p.tried,challengeIds);state.projects=restoreList(p.projects,projectIds);state.quizAttempts=Math.floor(clamp(p.quizAttempts||0,0,1000000));state.best=p.best&&Number.isFinite(Number(p.best.percent))&&Number(p.best.percent)>=0&&Number(p.best.percent)<=100?{percent:Number(p.best.percent),lang:String(p.best.lang||'Quiz').slice(0,60)}:null;state.theme=['cyberpunk','quantum','synthwave','matrix','hologram'].includes(p.theme)?p.theme:'cyberpunk';persist();if(window.gearexImportCertificates)window.gearexImportCertificates(data.certificates);setTheme();updateStats();renderLessons();renderRoadmap();renderChallenges();renderProjects();dashboardStatus('Progress imported successfully.');}catch(err){dashboardStatus('Import failed: '+err.message);}finally{$('#importFile').value='';}}
-function route(){const hash=decodeURIComponent(location.hash.slice(1));$('#lessonDetail').hidden=true;$('#challengeDetail').hidden=true;$('#projectDetail').hidden=true;let target=null;
- if(hash.startsWith('lesson/')){if(renderLessonDetail(hash.slice(7))){$('#lessonDetail').hidden=false;target=$('#lessonDetail');}}
- else if(hash.startsWith('challenge/')){if(renderChallengeDetail(hash.slice(10))){$('#challengeDetail').hidden=false;target=$('#challengeDetail');}}
- else if(hash.startsWith('project/')){if(renderProjectDetail(hash.slice(8))){$('#projectDetail').hidden=false;target=$('#projectDetail');}}
- else if(['home','path','learn','practice','playground','quiz','visualize','trace','certificate','projects','dashboard','about'].includes(hash))target=document.getElementById(hash);
- if(target)requestAnimationFrame(()=>target.scrollIntoView({block:'start',behavior:'instant'}));
+function exportProgress(){const payload={app:'GearEx',version:2,exportedAt:new Date().toISOString(),progress:{theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts}};payload.certificates=window.gearexExportCertificates?window.gearexExportCertificates():{};payload.lessonChecks=window.gearexExportLessonChecks?window.gearexExportLessonChecks():{};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=make('a');a.href=url;a.download='gearex-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);dashboardStatus('Your progress file was prepared for download.');}
+async function importProgress(file){if(!file)return;if(file.size>1024*1024){dashboardStatus('Import rejected: file is too large.');return;}try{const data=JSON.parse(await file.text());if(!['CodeLab Academy','GearEx'].includes(data.app)||!data.progress||typeof data.progress!=='object')throw new Error('Not a GearEx progress export.');const p=data.progress;state.completed=restoreList(p.completed,lessonIds);if(window.gearexImportLessonChecks)window.gearexImportLessonChecks(data.lessonChecks||{});state.completed=new Set([...state.completed].filter(id=>window.gearexLessonPassed?.(id)));state.bookmarks=restoreList(p.bookmarks,lessonIds);state.practiced=restoreList(p.practiced,lessonIds);state.passed=restoreList(p.passed,challengeIds);state.tried=restoreList(p.tried,challengeIds);state.projects=restoreList(p.projects,projectIds);state.quizAttempts=Math.floor(clamp(p.quizAttempts||0,0,1000000));state.best=p.best&&Number.isFinite(Number(p.best.percent))&&Number(p.best.percent)>=0&&Number(p.best.percent)<=100?{percent:Number(p.best.percent),lang:String(p.best.lang||'Quiz').slice(0,60)}:null;state.theme=['none','cyberpunk','quantum','synthwave','matrix'].includes(p.theme)?p.theme:'none';state.mode=p.mode==='dark'?'dark':'light';persist();if(window.gearexImportCertificates)window.gearexImportCertificates(data.certificates);setTheme();updateStats();renderLessons();renderRoadmap();renderChallenges();renderProjects();dashboardStatus('Progress imported successfully.');}catch(err){dashboardStatus('Import failed: '+err.message);}finally{$('#importFile').value='';}}
+const GEAR_VIEWS=new Set(['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about']);
+function closeThemeMenu(refocus=false){
+  const menu=$('#themeMenu'),launcher=$('#themeLauncher');
+  if(!menu||!launcher)return;
+  menu.hidden=true;launcher.setAttribute('aria-expanded','false');
+  if(refocus)launcher.focus();
+}
+function route(){
+  let hash='home';
+  try{hash=decodeURIComponent(location.hash.slice(1))||'home';}catch{hash='home';}
+  let target=null;
+  if(hash.startsWith('lesson/')){
+    if(renderLessonDetail(hash.slice(7)))target=$('#lessonDetail');
+  }else if(hash.startsWith('challenge/')){
+    if(renderChallengeDetail(hash.slice(10)))target=$('#challengeDetail');
+  }else if(hash.startsWith('project/')){
+    if(renderProjectDetail(hash.slice(8)))target=$('#projectDetail');
+  }else if(GEAR_VIEWS.has(hash)){
+    target=document.getElementById(hash);
+  }
+  if(!target)target=$('#home');
+  const current=target.id;
+  $$('main > [data-view]').forEach(panel=>{
+    const visible=panel===target||(current==='home'&&panel.dataset.view==='home');
+    panel.hidden=!visible;
+    if(visible)panel.setAttribute('data-active','true');
+    else panel.removeAttribute('data-active');
+  });
+  const navId=current==='lessonDetail'?'learn':current==='challengeDetail'?'practice':current==='projectDetail'?'projects':current;
+  $$('.topbar nav a[href^="#"]').forEach(link=>{
+    const active=link.getAttribute('href')==='#'+navId;
+    link.classList.toggle('is-current',active);
+    if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
+  });
+  closeThemeMenu();
+  window.scrollTo(0,0);
+  window.dispatchEvent(new CustomEvent('gearex:viewchange',{detail:{view:current}}));
 }
 function init(){text('#year',new Date().getFullYear());setTheme();updateStats();renderLessons();renderRoadmap();renderChallenges();renderProjects();newQuiz();visualTabs();
  const scratch=state.drafts['scratch:cpp'];loadIntoEditor(typeof scratch==='string'?scratch:examples.cpp.hello,'cpp','Scratchpad',null);
@@ -171,7 +219,22 @@ function init(){text('#year',new Date().getFullYear());setTheme();updateStats();
  $('#challengeSearch').addEventListener('input',e=>{state.challengeSearch=e.target.value.trim().toLowerCase();state.challengeLimit=12;renderChallenges();});
  $('#loadMoreChallenges').addEventListener('click',()=>{state.challengeLimit+=12;renderChallenges();});
  $('#quizLanguage').addEventListener('change',newQuiz);$('#quizLength').addEventListener('change',newQuiz);$('#restartQuiz').addEventListener('click',newQuiz);
- $('#themeToggle').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';setTheme();persist();});
+ $('#modeSwitch').addEventListener('change',event=>{
+    state.mode=event.target.checked?'dark':'light';setTheme();persist();
+  });
+  $('#themeLauncher').addEventListener('click',()=>{
+    const menu=$('#themeMenu'),open=menu.hidden;
+    menu.hidden=!open;$('#themeLauncher').setAttribute('aria-expanded',String(open));
+  });
+  $('[data-palette]').forEach(button=>button.addEventListener('click',()=>{
+    state.theme=button.dataset.palette;setTheme();persist();closeThemeMenu(true);
+  }));
+  document.addEventListener('pointerdown',event=>{
+    if(!event.target.closest('.palette-launcher'))closeThemeMenu();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!$('#themeMenu').hidden)closeThemeMenu(true);
+  });
  $('#backLessons').addEventListener('click',()=>{location.hash='learn';});$('#backChallenges').addEventListener('click',()=>{location.hash='practice';});$('#backProjects').addEventListener('click',()=>{location.hash='projects';});
  $('#showBookmarks').addEventListener('click',()=>{state.lessonFilter='bookmarks';state.lessonSearch='';$('#search').value='';setActiveButtons('[data-filter]','filter',state.lessonFilter);renderLessons();location.hash='learn';});
  $('#exportProgress').addEventListener('click',exportProgress);$('#importProgress').addEventListener('click',()=>$('#importFile').click());$('#importFile').addEventListener('change',e=>importProgress(e.target.files[0]));
@@ -183,6 +246,6 @@ function init(){text('#year',new Date().getFullYear());setTheme();updateStats();
  $('#resetEditor').addEventListener('click',()=>{const lang=$('#editorLanguage').value;loadIntoEditor(examples[lang][$('#starterExample').value],lang,'Scratchpad',null);saveEditorSoon();});
  $('#copyEditor').addEventListener('click',()=>{const btn=$('#copyEditor');btn.dataset.original='Copy code';copyContent($('#codeEditor').value,btn);});
  $('#clearOutput').addEventListener('click',()=>{text('#compilerOutput','Output cleared.');$('#runResult').replaceChildren();});
- $('#runCode').addEventListener('click',runEditor);window.addEventListener('hashchange',route);if(location.hash)requestAnimationFrame(route);
+ $('#runCode').addEventListener('click',runEditor);window.addEventListener('hashchange',route);route();
 }
 init();
