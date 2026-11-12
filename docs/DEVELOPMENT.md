@@ -17,7 +17,8 @@ Five appearance palettes are preserved through CSS custom properties. `assets/st
 | `assets/gearex-courses.js` | Python, JavaScript, Java, C#, SQL teaching material |
 | `assets/challenges.js` | C/C++ programming challenges |
 | `assets/projects.js` | C/C++ guided projects |
-| `assets/app.js` | Hash-routed views, appearance preferences, lessons, compiler and progress storage |
+| `assets/app.js` | Hash-routed views, appearance preferences, lessons, compiler UI and progress storage |
+| `assets/compiler-service.js` | API submission/polling, status normalization and automatic remote-service failover |
 | `assets/lesson-assessments.js` | Five-question checks, 4/5 pass rule, best marks and progress migration |
 | `assets/gearex-engine.js` | Pure, browser-local educational expression and statement interpreter |
 | `assets/gearex-trace-ui.js` | Language auto-detection, source stepping, stack/heap visualization, playback |
@@ -102,3 +103,17 @@ node --test scripts/test-tracer.cjs
 ```
 
 The `.github/workflows/validate.yml` workflow also checks the syntax of every production JavaScript file. Verify the live GitHub Pages deployment separately before announcing changes; successful lint checks alone do not validate interactive rendering or third-party compilation.
+
+## Online Compiler reliability
+
+The **Compiler** submits source and stdin to remote sandboxed services. The standalone `assets/compiler-service.js` first tries Judge0 CE (using a known language ID and asynchronous submission-token polling), then uses Wandbox as backup when the request fails, times out, the queue is unreachable, or a container runtime error is returned (including `OCI runtime error: crun: clone: Resource temporarily unavailable`). The backup uses a cached compiler catalog and prefers stable releases over HEAD builds.
+
+`assets/app.js` detects recognizable source syntax through `GearExEngine.detect`, updates the language selector on a confident mismatch, and submits the chosen language to `GearExCompiler.compile`. The output shows which backend completed the run and how long the run took. Genuine code errors return unsuccessful results and **must not trigger a second execution**. A successful sample test still compares raw stdout against the sample's expected output, and is only counted for the correct challenge language.
+
+Both remote services are independent of GitHub Pages and may rate-limit requests, be unavailable, or have a backlog. Never imply local compilation or guarantee runtime success when both are offline; errors should explain that the external service did not execute the code. A JavaScript browser sandbox is not a safe substitute for real multi-language program execution. The Code Visualizer remains a separate educational interpreter with deliberately limited syntax coverage.
+
+Test local service behavior without making real network calls:
+
+```
+node --test scripts/test-compiler.cjs
+```
