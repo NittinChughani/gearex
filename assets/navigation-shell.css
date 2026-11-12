@@ -136,3 +136,11 @@ body[data-mode="light"] .lesson-grid .lesson-card:focus-within{border-color:var(
  }
  .mode-knob,.mode-track{transition:none!important}
 }
+
+@media(max-width:420px){
+  .topbar .appearance-tools{gap:7px}
+  .topbar .mode-label{display:none}
+  .topbar .mode-control{gap:0}
+  .palette-menu{right:-3px}
+  .topbar nav{padding-top:10px}
+}
