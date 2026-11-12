@@ -114,4 +114,6 @@ test('new visitors get light + neutral and old removed palettes have no options'
   assert.match(source,/includes\(stored\.theme\) \? stored\.theme : 'none'/);
   assert.ok(!/Hologram Haze|data-palette="hologram"/.test(html));
   assert.equal([...html.matchAll(/data-palette="([^"]+)"/g)].length,5);
+  assert.equal((source.match(/\$\$\('\[data-palette\]'\)/g)||[]).length,2,'Appearance must update and bind every palette button');
+  assert.ok(!source.includes("$('[data-palette]').forEach"),'Single-element selector cannot power the multi-option menu');
 });
