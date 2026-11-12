@@ -18,6 +18,7 @@ jobs:
           node --check assets/challenges.js
           node --check assets/projects.js
           node --check assets/app.js
+          node --check assets/compiler-service.js
           node --check assets/lesson-assessments.js
           node --check assets/gearex-engine.js
           node --check assets/gearex-trace-ui.js
@@ -29,3 +30,5 @@ jobs:
         run: node --test scripts/test-tracer.cjs
       - name: Navigation and appearance tests
         run: node --test scripts/test-shell.cjs
+      - name: Compiler recovery and language tests
+        run: node --test scripts/test-compiler.cjs
