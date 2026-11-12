@@ -27,3 +27,5 @@ jobs:
         run: node scripts/check-content.cjs
       - name: Trace engine unit tests
         run: node --test scripts/test-tracer.cjs
+      - name: Navigation and appearance tests
+        run: node --test scripts/test-shell.cjs

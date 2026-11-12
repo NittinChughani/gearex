@@ -1,12 +1,12 @@
 # Developing GearEx
 
-GearEx is a dependency-free, browser-first learning platform. It is hosted as a static website and relies on third-party compilation only when someone clicks **Run code** in the playground. Its educational trace engine runs completely within the visitor's browser and does not compile arbitrary programs.
+GearEx is a dependency-free, browser-first learning platform. It is hosted as a static website and relies on third-party compilation only when someone clicks **Run code** in the Compiler. Its educational trace engine runs completely within the visitor's browser and does not compile arbitrary programs.
 
 ## Design architecture
 
 The visual language follows a software lab: information-dense controls, monospace labels for execution state, restrained backgrounds, clear reading rhythm, and color reserved for meaningful status. The home page includes a handcrafted code/stack/heap demonstration. Short animations express real changes—active instruction, new heap value, entering a section—rather than decorating the entire interface.
 
-Five appearance palettes are preserved through CSS custom properties. `assets/style.css` maintains existing components and theme definitions; `assets/studio.css` provides the current layout, workbench surfaces and trace presentation; `assets/studio-motion.js` adds scroll reveals and active navigation with an explicit reduced-motion preference. No framework or animation package is needed.
+Five appearance palettes are preserved through CSS custom properties. `assets/style.css` maintains existing components and theme definitions; `assets/studio.css` provides the core workbench layout; `assets/navigation-shell.css` adds the default light appearance, dark mode, palette launcher, and view transitions; `assets/studio-motion.js` adds route-change animations and card sequencing while respecting reduced-motion preferences. No framework or animation package is needed.
 
 ## Source map
 
@@ -17,7 +17,7 @@ Five appearance palettes are preserved through CSS custom properties. `assets/st
 | `assets/gearex-courses.js` | Python, JavaScript, Java, C#, SQL teaching material |
 | `assets/challenges.js` | C/C++ programming challenges |
 | `assets/projects.js` | C/C++ guided projects |
-| `assets/app.js` | Lessons, roadmaps, quiz engine, progress storage, compiler integration |
+| `assets/app.js` | Hash-routed views, appearance preferences, lessons, compiler and progress storage |
 | `assets/lesson-assessments.js` | Five-question checks, 4/5 pass rule, best marks and progress migration |
 | `assets/gearex-engine.js` | Pure, browser-local educational expression and statement interpreter |
 | `assets/gearex-trace-ui.js` | Language auto-detection, source stepping, stack/heap visualization, playback |
@@ -62,6 +62,21 @@ Bounded step counts, loop limits and recursion-depth limits prevent deliberately
 5. Check behavior on a small screen, keyboard controls and reduced-motion mode.
 
 Avoid false claims about executing syntax that GearEx can only annotate.
+
+
+## Navigation: one view at a time
+
+The website is a hash-routed single-page application. All top-level panels use `data-view="section-id"` on direct children of `<main>`. A route such as `#learn`, `#playground` (displayed to users as **Compiler**), or `#trace` (displayed as **Code Visualizer**) shows its matching panel and hides the others with the `hidden` attribute. The Home screen includes the hero and introductory benefits strip. Deep links `#lesson/{id}`, `#challenge/{id}` and `#project/{id}` show the existing detail panels and highlight their parent navigation item. The browser's Back and Forward navigation works through `hashchange`.
+
+**When adding a new view:** give the section a unique ID and `data-view`, keep the markup initially `hidden`, and add its route ID to `GEAR_VIEWS` in `assets/app.js`. Do not add a long scrolling duplicate of that section. The active section receives `data-active` to trigger a brief animation; visitors using Reduce Motion see instant navigation.
+
+## Color mode and palettes
+
+A keyboard-accessible switch (`#modeSwitch`) controls Light or Dark mode. A button with a nine-square icon (`#themeLauncher`) opens `#themeMenu`; it contains `data-palette` buttons for **No theme**, Cyberpunk Neon, Quantum Teal, Synthwave Sunset and Bio-Digital Matrix. The removed fifth theme must not appear in the menu, stylesheet, or storage validation. Light mode and No theme are the defaults for visitors without saved preferences.
+
+The chosen `mode` and `theme` are stored independently in the existing versioned progress object in localStorage. `setTheme()` updates `document.body.dataset.mode`, `dataset.theme`, switch state, selected palette and the browser theme-color meta tag. User selections are remembered after reload and may be backed up with progress export/import. Existing saved palettes are retained unless the palette is no longer supported, in which case the neutral choice is used.
+
+Theme CSS is split between `assets/studio.css` (dark palette definitions) and `assets/navigation-shell.css` (light-mode adaptation, neutral palette, switch and menu). Only new, relevant transitions should animate; prioritize focus visibility, accessible contrast, no hover-only controls and clear labels.
 
 ## Learning and certification
 

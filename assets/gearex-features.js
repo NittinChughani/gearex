@@ -1,4 +1,4 @@
-/* GearEx achievement records and appearance settings. */
+/* GearEx achievement records, weighted final assessments and certificates. */
 'use strict';
 (() => {
   const LANG={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
@@ -6,8 +6,6 @@
   const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=String(txt);return n;};
   const btn=(text,fn,cls='button secondary compact')=>{const b=el('button',cls,text);b.type='button';b.addEventListener('click',fn);return b;};
   const read=key=>{try{const d=JSON.parse(localStorage.getItem(key)||'{}');return d&&typeof d==='object'&&!Array.isArray(d)?d:{};}catch{return {};}};
-  $('#themeSelect').value=state.theme;
-  $('#themeSelect').addEventListener('change',e=>{state.theme=e.target.value;setTheme();persist();});
   /* Completion and credentials: 70 marks lesson checks + 30 final assessment. */
   const certKey='gearex-certificates-v2',nameKey='gearex-certificate-name-v1';
   const final=read(certKey);

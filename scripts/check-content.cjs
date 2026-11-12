@@ -39,7 +39,7 @@ for (const c of CHALLENGES) {
 for(const p of PROJECTS){assert.ok(p.steps.length>=3&&p.acceptance.length>=2&&p.starter.length>30,`${p.id}: missing project guidance`);}
 assert.equal(LESSONS.length,91);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','themeSelect','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
+for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','modeSwitch','themeLauncher','themeMenu','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
 for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
 console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz questions, ${CHALLENGES.length} challenges, ${PROJECTS.length} projects.`);
 
@@ -52,14 +52,16 @@ for(const lang of languages){
 for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-features.js']){
  new vm.Script(fs.readFileSync(path.join(root,'assets',file),'utf8'),{filename:file});
 }
-for(const theme of ['cyberpunk','quantum','synthwave','matrix','hologram']) {
- assert.ok(html.includes('value="'+theme+'"'),'Theme option missing: '+theme);
- assert.ok(fs.readFileSync(path.join(root,'assets','style.css'),'utf8').includes('data-theme="'+theme+'"'),'Theme CSS missing: '+theme);
+for(const theme of ['none','cyberpunk','quantum','synthwave','matrix']) {
+ assert.ok(html.includes('data-palette="'+theme+'"'),'Theme button missing: '+theme);
+}
+for(const theme of ['cyberpunk','quantum','synthwave','matrix']) {
+ assert.ok(fs.readFileSync(path.join(root,'assets','studio.css'),'utf8').includes('data-theme="'+theme+'"'),'Dark-mode palette missing: '+theme);
 }
 const app=fs.readFileSync(path.join(root,'assets','app.js'),'utf8');
 assert.ok(!app.includes("'-std=c++17 -Wall -Wextra'"),'Do not reintroduce the combined compiler flag error');
 assert.ok(app.includes('Object.assign(examples,GEAREX_STARTERS)'),'Extra language starter templates missing');
-console.log('GearEx validation OK: seven courses, five themes, editor, tracer and certificate views present.');
+console.log('GearEx validation OK: seven courses, four palettes + neutral, light/dark, compiler, visualizer and certificates present.');
 
 const checks=fs.readFileSync(path.join(root,'assets','lesson-assessments.js'),'utf8');
 const sandbox={
@@ -90,7 +92,7 @@ assert.ok(engine.includes('frames:copy('),'Stack snapshots are missing');
 assert.ok(engine.includes('heap:copy('),'Heap snapshots are missing');
 assert.ok(traceUI.includes('GearExEngine'),'Trace UI must use the local engine');
 assert.ok(html.includes('<title>GearEx | Learn Programming Languages</title>'),'Browser tab title outdated');
-for(const pathName of ['assets/studio.css','assets/studio-motion.js','assets/gearex-engine.js','assets/gearex-trace-ui.js'])
+for(const pathName of ['assets/studio.css','assets/navigation-shell.css','assets/studio-motion.js','assets/gearex-engine.js','assets/gearex-trace-ui.js'])
  assert.ok(fs.existsSync(path.join(root,pathName)),pathName+' missing');
 assert.ok(html.includes('assets/studio.css'),'Missing GearEx studio styles');
 assert.ok(html.includes('value="auto"'),'Missing automatic visualizer language detection');
@@ -103,3 +105,36 @@ for(const file of publicFiles){
 }
 assert.ok(!html.includes('<iframe'),'An embedded third-party visualizer must not be present');
 console.log('GearEx validation OK: 7 language tracks, 455 lesson checks, original trace engine, local controls, and new design.');
+
+const css=fs.readFileSync(path.join(root,'assets','navigation-shell.css'),'utf8');
+const studio=fs.readFileSync(path.join(root,'assets','studio.css'),'utf8');
+const motion=fs.readFileSync(path.join(root,'assets','studio-motion.js'),'utf8');
+const readme=fs.readFileSync(path.join(root,'README.md'),'utf8');
+assert.ok(html.includes('assets/navigation-shell.css'),'Appearance shell stylesheet not linked');
+assert.ok(!html.includes('id="themeSelect"'),'Retired theme select still present');
+assert.ok(html.includes('value="auto"'),'Code Visualizer must retain automatic language detection');
+assert.ok(html.includes('href="#playground">Compiler</a>'),'Compiler nav text missing');
+assert.ok(html.includes('href="#trace">Code Visualizer</a>'),'Code Visualizer nav text missing');
+assert.ok(html.includes('id="modeSwitch"')&&html.includes('role="switch"'),'Accessible light/dark switch missing');
+assert.ok(html.includes('id="themeLauncher"')&&html.includes('aria-expanded="false"'),'Waffle launcher needs menu accessibility');
+assert.ok(html.includes('id="themeMenu"')&&html.includes('hidden>'),'Theme menu must start closed');
+assert.ok(css.includes('body[data-mode="light"]')&&css.includes('body[data-mode="dark"]'),'Missing light/dark scheme CSS');
+assert.ok(css.includes('main > [data-view][hidden]'),'Non-active views must remain hidden');
+assert.ok(app.includes("mode:state.mode")&&app.includes("theme:state.theme"),'Appearance preferences must persist in saved progress');
+assert.ok(app.includes("document.body.dataset.mode=mode"),'Appearance mode not applied to body');
+assert.ok(app.includes("if(!target)target=$('#home');"),'Invalid routes must fall back to Home');
+assert.ok(app.includes("window.addEventListener('hashchange',route);route();"),'Hash route must run at initial load and navigation');
+assert.ok(!motion.includes('scroll reveals'),'Scroll-only navigation animations are obsolete');
+assert.ok(!/Hologram Haze|data-theme="hologram"|data-palette="hologram"/i.test([html,css,studio,readme].join('\n')),'Retired theme still included');
+const expectedViews=['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about'];
+for(const id of expectedViews){
+ const re=new RegExp('<section\\s+id="'+id+'"[^>]*data-view="'+id+'"[^>]*>');
+ assert.ok(re.test(html),'A single-view section is missing: '+id);
+}
+assert.ok(html.includes('class="benefits-strip" data-view="home"'),'The home feature strip must be part of the Home view');
+for(const pathName of ['assets/readme/visualizer-preview.svg','assets/readme/learning-journey.svg']){
+ assert.ok(fs.existsSync(path.join(root,pathName)),'Missing README graphics: '+pathName);
+ assert.ok(readme.includes(pathName),'README must display original graphic: '+pathName);
+}
+assert.ok(readme.includes('built-in **Code Visualizer**'),'README must explain GearEx visualizer');
+console.log('Shell and README checks OK: independent theme/mode persistence, accessible waffle launcher and route panels.');
