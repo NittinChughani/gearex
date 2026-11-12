@@ -54,7 +54,7 @@ function setTheme() {
   const toggle=$('#modeSwitch');
   if(toggle){toggle.checked=mode==='dark';toggle.setAttribute('aria-checked',String(toggle.checked));}
   text('#modeLabel',mode==='dark'?'Dark mode':'Light mode');
-  $('[data-palette]').forEach(button=>{
+  $$('[data-palette]').forEach(button=>{
     const active=button.dataset.palette===state.theme;
     button.classList.toggle('is-selected',active);
     button.setAttribute('aria-pressed',String(active));
