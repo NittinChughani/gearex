@@ -226,7 +226,7 @@ function init(){text('#year',new Date().getFullYear());setTheme();updateStats();
     const menu=$('#themeMenu'),open=menu.hidden;
     menu.hidden=!open;$('#themeLauncher').setAttribute('aria-expanded',String(open));
   });
-  $('[data-palette]').forEach(button=>button.addEventListener('click',()=>{
+  $$('[data-palette]').forEach(button=>button.addEventListener('click',()=>{
     state.theme=button.dataset.palette;setTheme();persist();closeThemeMenu(true);
   }));
   document.addEventListener('pointerdown',event=>{
