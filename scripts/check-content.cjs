@@ -40,7 +40,7 @@ for(const p of PROJECTS){assert.ok(p.steps.length>=3&&p.acceptance.length>=2&&p.
 assert.equal(LESSONS.length,91);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','modeSwitch','themeLauncher','themeMenu','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
-for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
+for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','compiler-service.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
 console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz questions, ${CHALLENGES.length} challenges, ${PROJECTS.length} projects.`);
 
 const languages=['c','cpp','py','js','java','cs','sql'];
@@ -49,7 +49,7 @@ for(const lang of languages){
  assert.ok(course.length>=8,lang+': course needs at least eight lessons');
  assert.ok(bank.length>=8,lang+': assessment requires at least eight questions');
 }
-for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','lesson-assessments.js','gearex-features.js']){
+for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','compiler-service.js','lesson-assessments.js','gearex-features.js']){
  new vm.Script(fs.readFileSync(path.join(root,'assets',file),'utf8'),{filename:file});
 }
 for(const theme of ['none','cyberpunk','quantum','synthwave','matrix']) {
@@ -138,3 +138,10 @@ for(const pathName of ['assets/readme/visualizer-preview.svg','assets/readme/lea
 }
 assert.ok(readme.includes('built-in **Code Visualizer**'),'README must explain GearEx visualizer');
 console.log('Shell and README checks OK: independent theme/mode persistence, accessible waffle launcher and route panels.');
+
+const compilerModule=fs.readFileSync(path.join(root,'assets/compiler-service.js'),'utf8');
+assert.ok(html.includes('assets/compiler-service.js'),'Dual compiler service is not loaded');
+assert.ok(compilerModule.includes('ce.judge0.com')&&compilerModule.includes('wandbox.org'),'Compiler needs primary and backup runtimes');
+assert.ok(compilerModule.includes('Resource temporarily unavailable'),'OCI error detector is missing');
+assert.ok(fs.existsSync(path.join(root,'scripts','test-compiler.cjs')),'Compiler unit tests missing');
+console.log('Compiler checks OK: two execution services, source-language detection and transient-error recovery.');

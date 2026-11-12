@@ -114,7 +114,9 @@ Subtle transitions, animated code-step feedback and responsive layouts make navi
 
 The GearEx **Compiler** lets you edit programs and request execution in C, C++, Python, JavaScript, Java, C# and SQL, subject to the available runtime.
 
-Actual code execution uses the external [Wandbox](https://wandbox.org/) service. Internet access is required, and available language runtimes or quotas can change. **Don't include passwords or personal information in submitted code.**
+Actual code execution uses **[Judge0 CE](https://ce.judge0.com/)** with automatic recovery through **[Wandbox](https://wandbox.org/)** when the first remote service is unavailable. The compiler recognizes familiar language syntax from the source before submission and adjusts the selected language when there is a confident match. It displays genuine program output or compiler diagnostics, including which service completed the run and the elapsed time. The second service can handle transient infrastructure errors such as a sandbox failing to start; normal syntax errors are shown directly rather than rerun unnecessarily.
+
+Execution requires internet access and availability of at least one remote service. GearEx does **not** guarantee uptime or instantaneous results when those shared services are at capacity. **Don't include passwords or personal information in submitted code.**
 
 The Code Visualizer is separate from the Compiler and works locally in the browser for its supported teaching subset.
 
@@ -141,7 +143,8 @@ gearex/
 │   ├── studio.css                # Programming-studio UI
 │   ├── navigation-shell.css      # Light/dark switch, palettes, view transitions
 │   ├── studio-motion.js          # View animation and staggered cards
-│   ├── app.js                    # Hash routing, lessons, compiler, progress
+│   ├── app.js                    # Hash routing, lessons, compiler UI, progress
+│   ├── compiler-service.js       # Dual-service runner and OCI-error recovery
 │   ├── gearex-engine.js          # Built-in teaching interpreter
 │   ├── gearex-trace-ui.js        # Code Visualizer stack/heap interface
 │   ├── gearex-features.js        # Assessments and certificates
@@ -161,6 +164,7 @@ gearex/
 ```bash
 node scripts/check-content.cjs
 node --test scripts/test-tracer.cjs
+node --test scripts/test-compiler.cjs
 ```
 
 GitHub Actions checks JavaScript syntax, curriculum integrity and visualizer behavior. GearEx remains a static website that can be deployed directly to GitHub Pages.

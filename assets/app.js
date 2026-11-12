@@ -131,34 +131,62 @@ const examples={
  cpp:{hello:'#include <iostream>\n\nint main() {\n    std::cout << "Hello, GearEx!\\n";\n    return 0;\n}\n',input:'#include <iostream>\n\nint main() {\n    int a, b;\n    if (std::cin >> a >> b) {\n        std::cout << "Sum = " << a + b << "\\n";\n    }\n    return 0;\n}\n',loop:'#include <iostream>\n\nint main() {\n    for (int i = 1; i <= 5; ++i) {\n        std::cout << i << " ";\n    }\n    std::cout << "\\n";\n}\n'}
 };
 Object.assign(examples,GEAREX_STARTERS);
-let editorSaveTimer=null;let compilerCatalog=null;
+let editorSaveTimer=null;
 function loadIntoEditor(code,lang,label,challengeId=null){const select=$('#editorLanguage');select.value=lang;$('#codeEditor').value=code;$('#stdinInput').value='';state.currentChallenge=challengeId;text('#editorStatus',label);$('#runResult').replaceChildren();text('#compilerOutput','Your program output appears here after you press Run code.');updateEditorView();}
 function updateEditorView(){const source=$('#codeEditor').value,code=$('#editorHighlight code');code.replaceChildren();const tokens=/\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^\s*#\s*\w+|\b(?:alignas|auto|bool|break|case|catch|char|class|const|constexpr|continue|default|delete|do|double|else|enum|explicit|extern|false|float|for|friend|if|inline|int|long|namespace|new|nullptr|operator|override|private|protected|public|return|short|signed|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|unsigned|using|virtual|void|volatile|while)\b|\b\d+(?:\.\d+)?\b/gm;let position=0,match;while((match=tokens.exec(source))){if(match.index>position)code.append(document.createTextNode(source.slice(position,match.index)));let style='token-keyword';if(match[0].startsWith('//')||match[0].startsWith('/*'))style='token-comment';else if(match[0].includes('#')&&match[0].trimStart().startsWith('#'))style='token-directive';else if(match[0][0]==='"'||match[0][0]==="'")style='token-string';else if(/^\d/.test(match[0]))style='token-number';code.append(make('span',style,match[0]));position=tokens.lastIndex;}code.append(document.createTextNode(source.slice(position)));if(source.endsWith('\n'))code.append(document.createTextNode(' '));const lineCount=Math.min(1200,source.split('\n').length);$('#editorLines').textContent=Array.from({length:lineCount},(_,i)=>i+1).join('\n');}
 function saveEditorSoon(){if(editorSaveTimer)clearTimeout(editorSaveTimer);editorSaveTimer=setTimeout(()=>{const key=state.currentChallenge?'challenge:'+state.currentChallenge:'scratch:'+$('#editorLanguage').value;state.drafts[key]=$('#codeEditor').value.slice(0,24000);persist();},500);}
 function editorSync(){const e=$('#codeEditor');$('#editorHighlight').scrollTop=e.scrollTop;$('#editorHighlight').scrollLeft=e.scrollLeft;$('#editorLines').scrollTop=e.scrollTop;}
-function pickCompiler(catalog,lang){
- const names={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
- const preferred={c:/^gcc/i,cpp:/^gcc/i,py:/^(cpython|python)-?3/i,js:/^(nodejs|node)-?/i,java:/^(openjdk|java|jdk)/i,cs:/^(dotnet|mono|csharp)/i,sql:/^sqlite3?/i};
- const list=catalog.filter(item=>item.language===names[lang]);
- if(!list.length)return null;
- const matched=list.filter(item=>preferred[lang].test(item.name||''));
- const candidates=matched.length?matched:list;
- candidates.sort((a,b)=>{const score=x=>/head/i.test(x.name)?-1:(Number(String(x.version||'').match(/\d+/)?.[0])||0);return score(b)-score(a);});
- return candidates[0];
-}
-async function compileRemote(code,lang,stdin){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),35000);try{
- if(!compilerCatalog){const response=await fetch('https://wandbox.org/api/list.json',{signal:controller.signal});if(!response.ok)throw new Error('Cannot reach the remote compiler list (HTTP '+response.status+').');const catalog=await response.json();if(!Array.isArray(catalog))throw new Error('Unexpected compiler list.');compilerCatalog=catalog;}
- const compiler=pickCompiler(compilerCatalog,lang);if(!compiler)throw new Error('No '+(lang==='c'?'C':lang==='cpp'?'C++':GEAREX_LANGUAGES[lang])+' compiler is currently available from Wandbox.');const payload={compiler:compiler.name,code,stdin,save:false};// Use the compiler's default flags; avoid passing unsupported combined options.
- const response=await fetch('https://wandbox.org/api/compile.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});if(!response.ok)throw new Error('Compiler service responded with HTTP '+response.status+'.');const data=await response.json();const compilation=String(data.compiler_message||'');const run=String(data.program_message||'');const stdout=String(data.program_stdout||'');const stderr=String(data.program_stderr||'');const compilerError=String(data.compiler_error||'');const status=(data.status==null?0:Number(data.status));const success=!compilerError&&status===0&&!data.signal;
- const output=[compilation,run].filter(Boolean).join('\n').trim() || stdout || stderr || '(Program finished without printing output.)';return {success,output,stdout,stderr,status,compiler:compiler.name};
- } catch(error){if(error.name==='AbortError')throw new Error('The compiler request timed out. Check your connection and try again.');throw error;}finally{clearTimeout(timer);}}
-async function runEditor(){const runBtn=$('#runCode'),source=$('#codeEditor').value,lang=$('#editorLanguage').value,stdin=$('#stdinInput').value;
+async function runEditor(){
+ const button=$('#runCode'),source=$('#codeEditor').value,stdin=$('#stdinInput').value;
+ let lang=$('#editorLanguage').value;
  if(!source.trim()){text('#compilerOutput','Write some code before running it.');return;}
  if(source.length>24000||stdin.length>4000){text('#compilerOutput','Please keep code below 24,000 characters and input below 4,000 characters.');return;}
- runBtn.disabled=true;runBtn.textContent='Compiling…';text('#compilerOutput','Connecting to Wandbox and compiling your code…');const resultBox=$('#runResult');resultBox.replaceChildren();try{const result=await compileRemote(source,lang,stdin);text('#compilerOutput',result.output.slice(0,20000));const status=make('p',result.success?'run-success':'run-error',result.success?'✓ Program finished successfully.':'Compiler or runtime reported an error.');resultBox.append(status);
- if(state.currentChallenge){const c=CHALLENGES.find(x=>x.id===state.currentChallenge);if(c){state.tried.add(c.id);const sample=c.samples[0];if(normal(sample.input)===normal(stdin)){if(result.success&&normal(result.stdout)===normal(sample.output)){state.passed.add(c.id);resultBox.append(make('p','run-success','✓ First sample passed! This is not a complete correctness guarantee.'));}else if(result.success){resultBox.append(make('p','run-error',`Sample mismatch. Expected: ${normal(sample.output)} · Got: ${normal(result.stdout)||'(empty)'}`));}}else{resultBox.append(make('p','section-note','Your input differs from the first sample; this run was not counted as a sample test.'));}persist();updateStats();renderChallenges();}}
- }catch(error){text('#compilerOutput',`Remote compilation unavailable. ${error.message}\n\nYou can still edit and copy your code, or run it using a local language runtime or Wandbox directly.`);const link=make('a','compiler-link','Open Wandbox in a new tab ↗');link.href='https://wandbox.org/';link.target='_blank';link.rel='noopener noreferrer';resultBox.append(link);
- }finally{runBtn.disabled=false;runBtn.textContent='▶ Run code';}}
+ const inferred=window.GearExEngine?.detect(source,lang)||lang;
+ const names={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
+ if(Object.hasOwn(names,inferred)&&inferred!==lang){
+   lang=inferred;
+   $('#editorLanguage').value=lang;
+   text('#editorStatus','Detected '+names[lang]+' from your code');
+ }
+ button.disabled=true;button.textContent='▶ Running…';
+ const resultBox=$('#runResult');resultBox.replaceChildren();
+ const info=make('p','section-note','Detected '+names[lang]+' · Preparing execution…');
+ resultBox.append(info);
+ text('#compilerOutput','Starting '+names[lang]+' runtime…');
+ const startTime=performance.now();
+ try{
+   const result=await window.GearExCompiler.compile(source,lang,stdin,message=>{
+     text('#compilerOutput',message);
+     info.textContent='Detected '+names[lang]+' · '+message;
+   });
+   text('#compilerOutput',result.output.slice(0,20000));
+   const seconds=((performance.now()-startTime)/1000).toFixed(1);
+   info.textContent=names[lang]+' · '+result.backend+' · '+seconds+'s';
+   resultBox.append(make('p',result.success?'run-success':'run-error',
+     result.success?'✓ Program finished successfully.':'The compiler reported a program error. Check the output above.'));
+   if(state.currentChallenge){
+     const c=CHALLENGES.find(item=>item.id===state.currentChallenge);
+     if(c&&c.lang===lang){
+       state.tried.add(c.id);
+       const sample=c.samples[0];
+       if(normal(sample.input)===normal(stdin)){
+         if(result.success&&normal(result.stdout)===normal(sample.output)){
+           state.passed.add(c.id);
+           resultBox.append(make('p','run-success','✓ First sample passed! This is not a full correctness guarantee.'));
+         }else if(result.success){
+           resultBox.append(make('p','run-error',
+             'Sample mismatch. Expected: '+normal(sample.output)+' · Got: '+(normal(result.stdout)||'(empty)')));
+         }
+       }else resultBox.append(make('p','section-note','This input differs from the first sample; the attempt was not counted as a sample test.'));
+       persist();updateStats();renderChallenges();
+     }else if(c)resultBox.append(make('p','section-note','The detected language differs from the challenge language, so this run was not graded.'));
+   }
+ }catch(error){
+   text('#compilerOutput','Execution service unavailable.\n'+(error?.message||'Please try again later.')+'\n\nThe code has not been executed. Try again when a compiler service is available.');
+   info.textContent='Remote compiler services are temporarily unavailable.';
+   resultBox.append(make('p','run-error','The error comes from the remote execution service, not necessarily from your code.'));
+ }finally{button.disabled=false;button.textContent='▶ Run code';}
+}
 function visualTabs(){setActiveButtons('[data-visual]','visual',state.visual);const root=$('#visualContent');root.replaceChildren();
  if(state.visual==='loops'){
   const config=make('div','visual-top');const label=make('label','field-label','Loop count ');const input=make('input');input.type='number';input.min='1';input.max='12';input.value=$('#visualCount')?.value||'5';input.id='visualCount';label.append(input);config.append(label);root.append(config);const wrap=make('div','visual-loop');root.append(wrap);const explanation=make('p','visual-explanation');root.append(explanation);

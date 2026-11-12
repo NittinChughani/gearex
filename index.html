@@ -113,7 +113,7 @@ try {
       <div class="editor-shell"><div id="editorLines" class="editor-lines" aria-hidden="true">1</div><div class="editor-layer"><pre id="editorHighlight" aria-hidden="true"><code></code></pre><label class="sr-only" for="codeEditor">Editable programming source code</label><textarea id="codeEditor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Programming code editor" aria-describedby="compilerPrivacy"></textarea></div></div>
       <div class="editor-bottom"><div class="editor-hint">Tab inserts spaces · Ctrl / Cmd + Enter runs</div><div class="editor-actions"><button id="copyEditor" type="button" class="button secondary compact">Copy code</button><button id="resetEditor" type="button" class="button secondary compact">Reset example</button><button id="runCode" type="button" class="button primary compact">▶ Run code</button></div></div>
       <div class="console-grid"><div class="console-pane"><label for="stdinInput">Standard input (optional)</label><textarea id="stdinInput" spellcheck="false" rows="6" placeholder="Example: 7 3" aria-label="Program input"></textarea></div><div class="console-pane"><div class="console-head"><strong>Compiler output</strong><button id="clearOutput" type="button" class="text-button">Clear</button></div><pre id="compilerOutput" role="status" aria-live="polite">Your program output appears here after you press Run code.</pre></div></div>
-      <p id="compilerPrivacy" class="privacy-note">Running code sends your current source and standard input to <a href="https://wandbox.org/" target="_blank" rel="noopener noreferrer">Wandbox</a>, a third-party remote compilation service. Internet required. Do not paste secrets or personal data. The compiler runs on an external service, not within GitHub Pages.</p>
+      <p id="compilerPrivacy" class="privacy-note">Running code sends your source and optional standard input to a third-party execution service. GearEx tries <a href="https://ce.judge0.com/" target="_blank" rel="noopener noreferrer">Judge0 CE</a> first, then <a href="https://wandbox.org/" target="_blank" rel="noopener noreferrer">Wandbox</a> if the first service is unavailable. Internet access is required. Do not paste passwords or personal information. Source-language detection happens locally before submission.</p>
       <div id="runResult" class="run-result" aria-live="polite"></div>
     </div>
   </section>
@@ -154,6 +154,7 @@ try {
 <script src="assets/gearex-courses.js"></script>
 <script src="assets/challenges.js"></script>
 <script src="assets/projects.js"></script>
+<script src="assets/compiler-service.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/lesson-assessments.js"></script>
 <script src="assets/gearex-engine.js"></script>
