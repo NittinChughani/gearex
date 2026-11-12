@@ -1,42 +1,34 @@
-/* GearEx Studio motion: navigation awareness and accessible content reveals. */
+/* GearEx focused-view animation and navigation enhancements. */
 'use strict';
 (() => {
-  const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const sectionLinks=[...document.querySelectorAll('.topbar nav a[href^="#"]')];
-  const sections=sectionLinks.map(link=>document.querySelector(link.getAttribute('href'))).filter(Boolean);
-  if(!reduce&&'IntersectionObserver' in window){
-    const reveal=[...document.querySelectorAll('.section > .section-heading,.lesson-card,.hero-simulator,.dashboard-tile,.benefits-strip')];
-    for(const item of reveal)item.classList.add('reveal-on-scroll');
-    document.body.classList.add('motion-ready');
-    const observer=new IntersectionObserver(entries=>{
-      for(const entry of entries){
-        if(!entry.isIntersecting)continue;
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
-      }
-    },{threshold:0.07,rootMargin:'0px 0px 48px 0px'});
-    for(const item of reveal)observer.observe(item);
-  }
-  if('IntersectionObserver' in window){
-    const navObserver=new IntersectionObserver(entries=>{
-      for(const entry of entries){
-        if(!entry.isIntersecting)continue;
-        const active='#'+entry.target.id;
-        sectionLinks.forEach(link=>{
-          const isCurrent=link.getAttribute('href')===active;
-          link.classList.toggle('is-current',isCurrent);
-          if(isCurrent)link.setAttribute('aria-current','location');
-          else link.removeAttribute('aria-current');
-        });
-      }
-    },{rootMargin:'-15% 0px -75% 0px'});
-    for(const section of sections)navObserver.observe(section);
-  }
-  const setThemeMeta=()=>{
-    const map={cyberpunk:'#0e151b',quantum:'#08191b',synthwave:'#191526',matrix:'#10191c',hologram:'#1a1424'};
-    const meta=document.querySelector('meta[name="theme-color"]');
-    if(meta)meta.content=map[document.body.dataset.theme]||map.cyberpunk;
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const setCardSequence=()=>{
+    document.querySelectorAll('main > [data-active] .lesson-grid > .lesson-card').forEach((card,i)=>{
+      card.style.setProperty('--card-idx',String(Math.min(i,7)));
+    });
   };
-  setThemeMeta();
-  document.querySelector('#themeSelect')?.addEventListener('change',setThemeMeta);
+  const sync=()=>{
+    setCardSequence();
+    const heading=document.querySelector('main > [data-active] .section-heading h2');
+    if(heading && !reduced?.matches) {
+      // A short accent flourish only when switching views; never on each keystroke.
+      heading.classList.remove('heading-enter');
+      void heading.offsetWidth;
+      heading.classList.add('heading-enter');
+    }
+  };
+  window.addEventListener('gearex:viewchange',sync);
+  requestAnimationFrame(sync);
+  const grids=[...document.querySelectorAll('.lesson-grid')];
+  if('MutationObserver' in window){
+    const observer=new MutationObserver(()=>setCardSequence());
+    grids.forEach(grid=>observer.observe(grid,{childList:true}));
+  }
+  // Keep Escape available to close the palette even after navigating with the keyboard.
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Home'&&event.altKey){
+      const link=document.querySelector('.topbar nav a[href="#home"]');
+      if(link){event.preventDefault();link.click();}
+    }
+  });
 })();
