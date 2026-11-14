@@ -250,6 +250,64 @@ test('Visualizer checks code before building and lets users inspect diagnostic l
  assert.ok(ui.includes('E.validate(text,language)'),'Validation must happen before starting the trace');
  assert.ok(ui.includes('if(!check.ok){showDiagnostics'),'Do not start tracing on a failed syntax check');
  assert.ok(ui.includes('traceErrors(candidate,language)'),'Dynamic errors must be shown before tracing');
- assert.ok(ui.includes('setSelectionRange(start,end)'),'Diagnostic line buttons must select the source line');
- assert.ok(ui.includes('trace-preflight-status'),'Users need a validation result');
+ assert.ok(ui.includes('setSelectionRange(start,start+rows[index].length)'),'Diagnostic line buttons must select the source line');
+ assert.ok(ui.includes('trace-check-feedback')&&ui.includes('Code is Ready for Tracing'),'Users need an exact green ready message');
+});
+
+test('Missing semicolons on ordinary C statements are reported on the exact source line',()=>{
+ const examples=[
+  ['#include <stdio.h>\nint main(){\n int a=2;\n a=a+3\n printf("%d",a);\n return 0;\n}',4],
+  ['#include <stdio.h>\nint main(){\n int a=2;\n a=a+3;\n printf("%d",a)\n return 0;\n}',5],
+  ['int main(){\n int a=2;\n return a\n}',3],
+  ['int main(){int a=2 }',1],
+  ['int main(){\n int a=2;\n ++a\n return a;\n}',3],
+  ['#include <stdio.h>\nint main(){\n int a,b;\n scanf("%d %d",&a,&b)\n return 0;\n}',4]
+ ];
+ for(const [code,line] of examples){
+   const checked=engine.validate(code,'c');
+   assert.equal(checked.ok,false,'Should reject missing semicolon: '+code);
+   assert.ok(checked.issues.some(issue=>issue.line===line&&issue.message.includes('Missing ";"')),
+    'Wrong source line or diagnostic: '+JSON.stringify(checked.issues));
+ }
+});
+test('C++ cout and C# or Java output calls also require semicolons',()=>{
+ const cases=[
+  ['cpp','#include <iostream>\nint main(){\n int a=4;\n std::cout << a << std::endl\n return 0;\n}',4],
+  ['java','public class Main {\n public static void main(String[] args) {\n int n=3;\n System.out.println(n)\n }\n}',4],
+  ['cs','using System;\nclass Program {\n static void Main(){\n int n=3;\n Console.WriteLine(n)\n }\n}',5]
+ ];
+ for(const [lang,code,line] of cases){
+   const issues=engine.validate(code,lang).issues;
+   assert.ok(issues.some(x=>x.line===line&&x.message.includes('Missing ";"')),lang+': '+JSON.stringify(issues));
+ }
+});
+test('A valid control-flow program is not rejected for omitted semicolons in for headers',()=>{
+ const c='#include <stdio.h>\nint main(){\n int total=0;\n for(int i=0;i<4;i++){\n   total += i;\n }\n printf("%d\\n", total);\n return 0;\n}';
+ assert.equal(engine.validate(c,'c').ok,true,JSON.stringify(engine.validate(c,'c').issues));
+ const cpp='#include <iostream>\nint main(){\n int x=0;\n for(int i=0;i<3;i++){\n   x+=i;\n }\n std::cout<<x<<std::endl;\n return 0;\n}';
+ assert.equal(engine.validate(cpp,'cpp').ok,true,JSON.stringify(engine.validate(cpp,'cpp').issues));
+});
+test('Comments after semicolons and multiline output statements do not create false errors',()=>{
+ const code='#include <iostream>\nint main()\n{\n int n=2; // this is complete\n /* comment */\n std::cout <<\n n << std::endl;\n return 0;\n}';
+ assert.deepEqual(engine.validate(code,'cpp').issues,[]);
+ const url='#include <stdio.h>\nint main(){\n printf("http://example.com"); // good\n return 0;\n}';
+ assert.deepEqual(engine.validate(url,'c').issues,[]);
+});
+test('Semicolons are optional in JavaScript and unnecessary in Python',()=>{
+ assert.equal(engine.validate('let value=2\nconsole.log(value)\n','js').ok,true);
+ assert.equal(engine.validate('value = 2\nprint(value)\n','py').ok,true);
+});
+test('Source editor visually highlights affected lines red and valid code green',()=>{
+ const html=read('index.html'),ui=read('assets/gearex-trace-ui.js'),
+       css=read('assets/navigation-shell.css');
+ for(const id of ['traceMirrorLines','traceSource','traceCheckFeedback']){
+   assert.ok(html.includes('id="'+id+'"'),'Missing visual source editor element '+id);
+ }
+ assert.ok(html.includes('wrap="off"'),'Code editor lines should remain aligned with visual mirror');
+ assert.ok(ui.includes("trace-source-mirror-line")&&ui.includes('has-error'),'Error line highlighting missing');
+ assert.ok(ui.includes("trace-check-feedback has-errors")&&ui.includes('trace-check-message'),'Missing red inline error detail');
+ assert.ok(ui.includes('Code is Ready for Tracing'),'Success must show exact green message');
+ assert.ok(!ui.includes('Basic supported-syntax checks passed.'),'Do not show generic validation notes');
+ assert.ok(css.includes('.trace-source-mirror-line.has-error'),'Error line style missing');
+ assert.ok(css.includes('.trace-check-feedback.is-ready'),'Green ready style missing');
 });
