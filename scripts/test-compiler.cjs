@@ -110,7 +110,7 @@ test('Guided stdin planner recognizes common input APIs across six languages',()
    const prompts=Array.from(c.findInputRequests(source,lang),item=>item.prompt);
    assert.deepEqual(prompts,expected,lang+' input prompts mismatch');
  }
- assert.deepEqual(c.findInputRequests('SELECT 2;','sql'),[]);
+ assert.equal(c.findInputRequests('SELECT 2;','sql').length,0);
 });
 test('JavaScript prompt gets a Node stdin bridge without changing non-prompt programs',()=>{
  const c=mockRunner(async()=>{throw Error('No network');});
