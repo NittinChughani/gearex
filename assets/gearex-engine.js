@@ -419,7 +419,7 @@ function run(code,selected='auto',options={}){
      else assign(name,value);
      snapshot(node.line,'Assign '+name+' = '+display(value));return;
    }
-   const declare=/^(?:int|float|double|long|short|char|bool|boolean|String|string|auto|decimal|object|let|var)\s+([A-Za-z_]\w*)$/.exec(raw);
+   const declare=/^(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|let|var)\s+([A-Za-z_]\w*)$/.exec(raw);
    if(declare){assign(declare[1],null,true);types[declare[1]]=/^(?:int|float|double|long|short|decimal)\b/.test(raw)?'number':'text';snapshot(node.line,'Declare '+declare[1]+' without a value.');return;}
    if(/^\w+(?:\.\w+)?\s*\(.*\)$/.test(raw)){
      evaluate(raw);snapshot(node.line,'Call a function or update a collection.');return;
