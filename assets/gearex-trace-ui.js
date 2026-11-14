@@ -7,6 +7,7 @@
   const code=$('#traceSource'),picker=$('#traceLanguage'),target=$('#traceSteps'),
     status=$('#traceProgress'),prev=$('#traceBack'),next=$('#traceNext'),reset=$('#traceReset'),go=$('#traceStart');
   const play=$('#tracePlay'),sample=$('#traceSample'),hint=$('#traceMismatch'),chooser=$('#traceModeChooser'),manual=$('#traceManualMode'),automatic=$('#traceAutoMode');
+  const mirror=$('#traceMirrorLines'),feedback=$('#traceCheckFeedback');
   let result=null,index=0,clock=null,sourceHint='py',inputs=[],mode='manual';
   const demos={
     py:"numbers = [2, 4, 6]\nshared = numbers\nshared.append(8)\nfor n in numbers:\n    print(n)",
@@ -17,6 +18,55 @@
     cs:"using System;\nclass Program {\n  static void Main() {\n    int score = 8;\n    score += 4;\n    Console.WriteLine(score);\n  }\n}",
     sql:"SELECT name, score\nFROM learners\nWHERE score >= 80\nORDER BY score DESC;"
   };
+  function syncEditorMirror(){
+    mirror.style.transform='translate('+(-code.scrollLeft)+'px,'+(-code.scrollTop)+'px)';
+  }
+  function renderEditorLines(errors=[]){
+    const highlighted=new Set(errors.map(e=>Number(e.line)));
+    mirror.replaceChildren();
+    code.value.split(/\r?\n/).forEach((line,index)=>{
+      const row=create('div','trace-source-mirror-line'+(highlighted.has(index+1)?' has-error':''),line||' ');
+      row.dataset.line=String(index+1);
+      mirror.append(row);
+    });
+    syncEditorMirror();
+  }
+  function focusSourceLine(line){
+    const rows=code.value.split(/\r?\n/),index=Math.min(rows.length,Math.max(1,Number(line)||1))-1;
+    const start=rows.slice(0,index).reduce((n,item)=>n+item.length+1,0);
+    code.focus();
+    code.setSelectionRange(start,start+rows[index].length);
+    const height=Number.parseFloat(getComputedStyle(code).lineHeight)||23;
+    code.scrollTop=Math.max(0,(index-2)*height);
+    syncEditorMirror();
+  }
+  function showCheckFeedback(issues=[],ready=false,language=''){
+    if(issues.length){
+      feedback.hidden=false;
+      feedback.className='trace-check-feedback has-errors';
+      feedback.replaceChildren();
+      for(const issue of issues){
+        const row=create('div','trace-check-error');
+        const jump=create('button','trace-check-line','Line '+issue.line);
+        jump.type='button';jump.addEventListener('click',()=>focusSourceLine(issue.line));
+        row.append(jump,create('span','trace-check-message',issue.message));
+        feedback.append(row);
+      }
+      renderEditorLines(issues);
+      return;
+    }
+    renderEditorLines();
+    if(ready){
+      feedback.hidden=false;
+      feedback.className='trace-check-feedback is-ready';
+      feedback.replaceChildren(create('span','trace-check-ready-icon','✓'),
+        create('strong','',language==='sql'?'SQL outline ready (query not executed)':'Code is Ready for Tracing'));
+    }else{
+      feedback.hidden=true;
+      feedback.replaceChildren();
+      feedback.className='trace-check-feedback';
+    }
+  }
   function stop(){
     if(clock)clearInterval(clock);
     clock=null;
@@ -56,9 +106,11 @@
   }
   function load(codeText,lang='auto',navigate=true){
     stop();closeChooser();inputs=[];mode='manual';code.value=String(codeText||'');picker.value='auto';
+    showCheckFeedback();
     sourceHint=E.LABEL[lang]?lang:'py';
     result=null;index=0;updateLanguageInfo();
     target.replaceChildren(create('div','trace-empty','Ready to trace. Select “Build execution trace” to inspect the stack, heap, variables and output.'));
+    status.classList.remove('trace-status-error');
     status.textContent='Editor ready';
     prev.disabled=true;next.disabled=true;
     if(navigate)location.hash='trace';
@@ -83,10 +135,6 @@
     status.textContent='Step '+index+' / '+last+' · '+E.LABEL[result.lang];
     prev.disabled=index===0;next.disabled=index===last;
     target.replaceChildren();
-    const preflight=create('p','trace-preflight-status',
-      result.mode==='sql-plan'?'SQL query outline only — not database syntax validation.':
-      'Basic supported-syntax checks passed. This is an educational trace, not full language compilation.');
-    target.append(preflight);
     const head=create('div','trace-live-heading');
     head.append(create('span','trace-live-badge',result.mode==='sql-plan'?'Query outline':'Native execution · teaching subset'),
       create('span','trace-live-counter','Step '+String(index).padStart(2,'0')+' / '+String(last).padStart(2,'0')));
@@ -191,38 +239,11 @@
     stop();closeChooser();result=null;
     prev.disabled=true;next.disabled=true;
     target.replaceChildren();
-    const box=create('section','trace-diagnostics');
-    box.setAttribute('role','alert');
-    const types=new Set(issues.map(x=>x.kind));
-    const unsupported=types.has('unsupported')&&!types.has('syntax');
-    box.append(create('span','trace-diagnostics-kicker',unsupported?'TRACE SUPPORT CHECK':'CODE VALIDATION'));
-    box.append(create('h3','',unsupported?'This code needs an unsupported feature':'Fix the highlighted code before tracing'));
-    box.append(create('p','trace-diagnostics-intro',
-      'GearEx found '+issues.length+' issue'+(issues.length===1?'':'s')+' in '+E.LABEL[language]+'. Select a line to locate it in the source editor.'));
-    const list=create('div','trace-diagnostics-list');
-    const rows=code.value.split(/\r?\n/);
-    for(const issue of issues.slice(0,20)){
-      const item=create('div','trace-diagnostic-item');
-      const line=Number(issue.line)||1;
-      const jump=create('button','trace-diagnostic-line','Line '+line);
-      jump.type='button';
-      jump.addEventListener('click',()=>{
-        const start=rows.slice(0,Math.max(0,line-1)).reduce((n,row)=>n+row.length+1,0);
-        const end=start+(rows[line-1]||'').length;
-        code.focus();
-        code.setSelectionRange(start,end);
-        const editorLine=code.value.slice(0,start).split('\n').length-1;
-        const height=Number.parseFloat(getComputedStyle(code).lineHeight)||21;
-        code.scrollTop=Math.max(0,(editorLine-2)*height);
-      });
-      item.append(jump,create('p','',issue.message));
-      if(rows[line-1])item.append(create('code','trace-diagnostic-source',rows[line-1].trim().slice(0,180)));
-      list.append(item);
-    }
-    box.append(list);
-    box.append(create('p','trace-diagnostics-note','These checks cover the visualizer’s supported teaching syntax, not complete language compilation. Use the Compiler for full compiler diagnostics.'));
-    target.append(box);
-    status.textContent=unsupported?'Code outside visualizer coverage':'Code check found '+issues.length+' issue'+(issues.length===1?'':'s');
+    showCheckFeedback(issues);
+    const first=issues[0];
+    status.textContent=first?'Line '+first.line+': '+first.message:'Code could not be traced';
+    status.classList.add('trace-status-error');
+    if(first)focusSourceLine(first.line);
   }
   function traceErrors(candidate,language){
     if(!candidate.warnings?.length)return false;
@@ -232,9 +253,11 @@
   }
   function prepare(){
     stop();closeChooser();inputs=[];mode='manual';
+    status.classList.remove('trace-status-error');
+    showCheckFeedback();
     const text=code.value;
-    if(!text.trim()){target.replaceChildren(create('p','trace-coverage-note','Enter code to visualize.'));return;}
-    if(text.length>9000){target.replaceChildren(create('p','trace-coverage-note','Use an example under 9,000 characters for this educational trace.'));return;}
+    if(!text.trim()){showDiagnostics([{line:1,message:'Enter code to visualize.',kind:'syntax'}],actualLanguage());return;}
+    if(text.length>9000){showDiagnostics([{line:1,message:'Use an example under 9,000 characters for this educational trace.',kind:'syntax'}],actualLanguage());return;}
     const language=actualLanguage();
     try{
       status.textContent='Checking code before trace…';
@@ -244,7 +267,9 @@
       if(traceErrors(candidate,language))return;
       if(!candidate.steps.length)throw Error('No traceable statements were found.');
       result=candidate;index=0;
-      updateLanguageInfo();render();
+      updateLanguageInfo();
+      showCheckFeedback([],true,language);
+      render();
     }catch(e){
       showDiagnostics([{line:1,kind:'unsupported',message:String(e.message||e)}],language);
     }
@@ -276,8 +301,9 @@
   const order=['py','js','c','cpp','java','cs','sql'];let n=0;
   sample.addEventListener('click',()=>{const lang=order[(n++)%order.length];load(demos[lang],lang);prepare();});
   $('#traceFromEditor').addEventListener('click',()=>load($('#codeEditor').value,$('#editorLanguage').value));
-  picker.addEventListener('change',()=>{sourceHint=picker.value==='auto'?sourceHint:picker.value;updateLanguageInfo();stop();closeChooser();inputs=[];mode='manual';result=null;target.replaceChildren(create('p','trace-empty','Language updated. Build the trace for this source.'));});
-  code.addEventListener('input',()=>{stop();closeChooser();inputs=[];mode='manual';result=null;updateLanguageInfo();status.textContent='Source modified';target.replaceChildren(create('p','trace-empty','Code changed. Build a new execution trace to inspect the latest version.'));});
+  picker.addEventListener('change',()=>{sourceHint=picker.value==='auto'?sourceHint:picker.value;updateLanguageInfo();stop();closeChooser();inputs=[];mode='manual';result=null;showCheckFeedback();status.classList.remove('trace-status-error');status.textContent='Language changed · check code again';prev.disabled=true;next.disabled=true;target.replaceChildren(create('p','trace-empty','Language updated. Check the source before tracing.'));});
+  code.addEventListener('input',()=>{stop();closeChooser();inputs=[];mode='manual';result=null;updateLanguageInfo();showCheckFeedback();status.classList.remove('trace-status-error');status.textContent='Source modified · check again';prev.disabled=true;next.disabled=true;target.replaceChildren(create('p','trace-empty','Code changed. Check the source again to rebuild the trace.'));});
+  code.addEventListener('scroll',syncEditorMirror);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   const direct=button('Trace my code',()=>load($('#codeEditor').value,$('#editorLanguage').value));
   direct.id='sendToVisualizer';$('#runCode').before(direct);
