@@ -117,3 +117,13 @@ Test local service behavior without making real network calls:
 ```
 node --test scripts/test-compiler.cjs
 ```
+
+## Interactive input and trace playback
+
+**Compiler:** `GearExCompiler.findInputRequests(source, language)` scans common input APIs for Python, JavaScript, C, C++, Java and C#, producing ordered prompts. If the standard-input box has no content, `runEditor()` opens `#compilerInputWizard` and collects answers one at a time, with an additional-lines field for loops or repeated reads. Those values are combined into stdin **before** submitting to the remote compiler. If visitors already entered stdin, the wizard is bypassed. JavaScript's `prompt()` is adapted into stdin reads for Node-based remote execution. The hosted services are **not interactive terminals**: do not imply the backend pauses mid-execution or request users to type after submitting.
+
+**Code Visualizer:** `GearExEngine.run(source,lang,{inputs:[]})` runs the supported learning subset until an input request is reached. It returns `pendingInput` with the source line, prompt, type and index, alongside the accumulated trace steps (not a generic execution error). The UI shows the prompt at the corresponding step. When an answer is entered, it replays the interpreter deterministically with the supplied inputs, then continues with the updated trace and memory snapshots. Common input calls include Python `input()`, C `scanf()/getchar()`, C++ `cin/getline()`, JavaScript `prompt()`, Java Scanner and C# `Console.ReadLine()`. Invalid numeric input can be corrected without abandoning the trace.
+
+**Playback modes:** Build Trace is initially **manual**. When visitors click `Play trace`, display `#traceModeChooser` with Manual and Auto choices. Manual uses the existing Next/Previous buttons; Auto advances on a readable interval and can be paused. Either mode stops at required input; manual remains manual afterward, while auto can resume once that input is supplied. Reset returns to the first step without changing the source. Mode and code are not uploaded or sent to a third-party trace service.
+
+**Limits:** the interpreter supports an educational subset, not full language semantics. Some library input APIs (such as event-driven asynchronous prompts) remain unsupported; show a coverage note instead of inventing data. Inputs in loops are requested on each supported iteration. Test with `node --test scripts/test-tracer.cjs` and `node --test scripts/test-compiler.cjs`.
