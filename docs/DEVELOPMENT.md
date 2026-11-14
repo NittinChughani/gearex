@@ -118,6 +118,14 @@ Test local service behavior without making real network calls:
 node --test scripts/test-compiler.cjs
 ```
 
+## Preflight syntax checking and diagnostic lines
+
+`GearExEngine.validate(source, language)` performs a **local best-effort preflight** before `GearExEngine.run()` builds a visible trace. It reports `{ok,lang,scope,issues:[{line,message,kind}]}`. Supported checks include balanced brackets, unclosed strings, missing semicolons on common typed declarations, malformed initializers and typical Python block indentation/colon problems. After preflight succeeds, the UI runs the educational interpreter once as a preview; its `errors` array carries original source line numbers for runtime and unsupported-subset failures. The UI blocks playback until detected issues are addressed and renders clickable diagnostics that select the affected source line.
+
+The teaching interpreter now supports **comma-separated typed variables** with or without per-variable initializers (e.g. `int a,b;`, `int a=2,b=3;`, `int a,b=5;`), keeping each variable visible in the active stack frame. This works in the supported introductory examples for C/C++, Java and C#.
+
+**Important distinction:** these checks are not a real language compiler or parser for every feature in seven languages. Some valid advanced syntax is outside the teaching subset, and issues that depend on runtime input can appear when that input is supplied. Use the remote Compiler for real compile/run diagnostics; do not label the local supported-subset check as proof that a program is entirely error-free. SQL remains a conceptual query-plan view and is not checked against a database.
+
 ## Interactive input and trace playback
 
 **Compiler:** `GearExCompiler.findInputRequests(source, language)` scans common input APIs for Python, JavaScript, C, C++, Java and C#, producing ordered prompts. If the standard-input box has no content, `runEditor()` opens `#compilerInputWizard` and collects answers one at a time, with an additional-lines field for loops or repeated reads. Those values are combined into stdin **before** submitting to the remote compiler. If visitors already entered stdin, the wizard is bypassed. JavaScript's `prompt()` is adapted into stdin reads for Node-based remote execution. The hosted services are **not interactive terminals**: do not imply the backend pauses mid-execution or request users to type after submitting.
