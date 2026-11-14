@@ -58,11 +58,15 @@ GearEx has a **built-in Code Visualizer** to help learners understand how code w
 
 Use a short example from a lesson, write your own source, or click **Trace my code** from the **Compiler**. GearEx recognizes familiar syntax and provides:
 
+- **Manual or Auto playback:** click **Play trace** and choose **Manual — Next step** (recommended for learning) or **Auto run**. Manual moves one instruction at a time; Auto uses timed steps and can be paused.
 - **Line-by-line stepping** with highlighted source and explanations.
 - **Call-stack views** showing function frames and variables.
 - **Heap diagrams** for arrays, objects and shared references.
 - **Output tracking** and Previous, Next, Play and Reset controls.
+- **Input-aware tracing** that pauses at supported input requests, asks for the value, then resumes execution and updates variables, stack frames and output. Multiple inputs inside loops are requested as execution reaches them.
 - **Automatic language detection** across the seven course languages.
+
+**Input support:** the native Code Visualizer can pause for Python `input()`, JavaScript `prompt()`, C `scanf()` and `getchar()`, C++ `cin` and `getline()`, Java `Scanner.nextInt()/nextLine()/next()`, and C# `Console.ReadLine()` in supported basic examples. Input prompts are local to your browser; your answers are used to rebuild the educational trace rather than submitted to an online debugging website.
 
 **Accuracy and scope:** the visualizer is a browser-based *educational interpreter* for supported foundational features, **not a full debugger or complete language runtime**. Advanced operations and unsupported library calls can stop with a coverage note. For SQL, the visualizer explains query stages; use the Compiler to run SQL queries and see actual results.
 
@@ -113,6 +117,13 @@ Subtle transitions, animated code-step feedback and responsive layouts make navi
 ## Write and run code in the Compiler
 
 The GearEx **Compiler** lets you edit programs and request execution in C, C++, Python, JavaScript, Java, C# and SQL, subject to the available runtime.
+
+### Interactive input in the Compiler
+
+When code uses a recognized input command and the standard-input box is empty, GearEx displays a **guided input prompt** before running the program. You can enter the requested values in order, add extra input lines for loops, then run. The **Standard input** field also remains available if you prefer to paste all inputs yourself. For JavaScript programs using `prompt()`, the remote Node runtime receives a small standard-input adapter so the program can use the provided answers.
+
+**Technical limitation:** the hosted compiler services take standard input **before** execution; they do not provide a live interactive terminal session. GearEx collects values in advance and passes them to the compiler as stdin, then shows the real program output. Programs with input requirements that cannot be determined statically may need additional lines entered manually. The Code Visualizer is different: it can actually pause and ask during its supported execution trace.
+
 
 Actual code execution uses **[Judge0 CE](https://ce.judge0.com/)** with automatic recovery through **[Wandbox](https://wandbox.org/)** when the first remote service is unavailable. The compiler recognizes familiar language syntax from the source before submission and adjusts the selected language when there is a confident match. It displays genuine program output or compiler diagnostics, including which service completed the run and the elapsed time. The second service can handle transient infrastructure errors such as a sandbox failing to start; normal syntax errors are shown directly rather than rerun unnecessarily.
 

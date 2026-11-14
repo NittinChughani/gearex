@@ -132,12 +132,46 @@ const examples={
 };
 Object.assign(examples,GEAREX_STARTERS);
 let editorSaveTimer=null;
-function loadIntoEditor(code,lang,label,challengeId=null){const select=$('#editorLanguage');select.value=lang;$('#codeEditor').value=code;$('#stdinInput').value='';state.currentChallenge=challengeId;text('#editorStatus',label);$('#runResult').replaceChildren();text('#compilerOutput','Your program output appears here after you press Run code.');updateEditorView();}
+function loadIntoEditor(code,lang,label,challengeId=null){if($('#compilerInputWizard'))closeCompilerInputWizard();const select=$('#editorLanguage');select.value=lang;$('#codeEditor').value=code;$('#stdinInput').value='';state.currentChallenge=challengeId;text('#editorStatus',label);$('#runResult').replaceChildren();text('#compilerOutput','Your program output appears here after you press Run code.');updateEditorView();}
 function updateEditorView(){const source=$('#codeEditor').value,code=$('#editorHighlight code');code.replaceChildren();const tokens=/\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^\s*#\s*\w+|\b(?:alignas|auto|bool|break|case|catch|char|class|const|constexpr|continue|default|delete|do|double|else|enum|explicit|extern|false|float|for|friend|if|inline|int|long|namespace|new|nullptr|operator|override|private|protected|public|return|short|signed|sizeof|static|struct|switch|template|this|throw|true|try|typedef|typename|unsigned|using|virtual|void|volatile|while)\b|\b\d+(?:\.\d+)?\b/gm;let position=0,match;while((match=tokens.exec(source))){if(match.index>position)code.append(document.createTextNode(source.slice(position,match.index)));let style='token-keyword';if(match[0].startsWith('//')||match[0].startsWith('/*'))style='token-comment';else if(match[0].includes('#')&&match[0].trimStart().startsWith('#'))style='token-directive';else if(match[0][0]==='"'||match[0][0]==="'")style='token-string';else if(/^\d/.test(match[0]))style='token-number';code.append(make('span',style,match[0]));position=tokens.lastIndex;}code.append(document.createTextNode(source.slice(position)));if(source.endsWith('\n'))code.append(document.createTextNode(' '));const lineCount=Math.min(1200,source.split('\n').length);$('#editorLines').textContent=Array.from({length:lineCount},(_,i)=>i+1).join('\n');}
 function saveEditorSoon(){if(editorSaveTimer)clearTimeout(editorSaveTimer);editorSaveTimer=setTimeout(()=>{const key=state.currentChallenge?'challenge:'+state.currentChallenge:'scratch:'+$('#editorLanguage').value;state.drafts[key]=$('#codeEditor').value.slice(0,24000);persist();},500);}
 function editorSync(){const e=$('#codeEditor');$('#editorHighlight').scrollTop=e.scrollTop;$('#editorHighlight').scrollLeft=e.scrollLeft;$('#editorLines').scrollTop=e.scrollTop;}
-async function runEditor(){
- const button=$('#runCode'),source=$('#codeEditor').value,stdin=$('#stdinInput').value;
+let inputPlan=[],inputValues=[],inputPosition=0;
+function closeCompilerInputWizard(){
+ const form=$('#compilerInputWizard');
+ form.hidden=true;
+ inputPlan=[];inputValues=[];inputPosition=0;
+}
+function showCompilerInputWizard(plan){
+ inputPlan=plan.slice(0,30);inputValues=[];inputPosition=0;
+ $('#compilerExtraInputs').value='';
+ $('#compilerInputWizard').hidden=false;
+ updateCompilerInputPrompt();
+}
+function updateCompilerInputPrompt(){
+ const request=inputPlan[inputPosition];
+ if(!request)return;
+ text('#compilerInputPrompt',request.prompt||'Enter input value');
+ text('#compilerInputStep','Input '+(inputPosition+1)+' of '+inputPlan.length);
+ text('#compilerInputSubmit',inputPosition===inputPlan.length-1?'Run with these inputs':'Next input');
+ $('#compilerInputValue').value='';
+ $('#compilerInputValue').focus();
+}
+function submitCompilerInput(event){
+ event.preventDefault();
+ if(!inputPlan.length)return;
+ inputValues.push($('#compilerInputValue').value);
+ inputPosition++;
+ if(inputPosition<inputPlan.length){updateCompilerInputPrompt();return;}
+ const extra=$('#compilerExtraInputs').value;
+ const lines=extra?extra.replace(/\r\n?/g,'\n').split('\n'):[];
+ $('#stdinInput').value=[...inputValues,...lines].join('\n')+'\n';
+ closeCompilerInputWizard();
+ runEditor(true);
+}
+async function runEditor(inputsConfirmed=false){
+ const button=$('#runCode'),source=$('#codeEditor').value;
+ let stdin=$('#stdinInput').value;
  let lang=$('#editorLanguage').value;
  if(!source.trim()){text('#compilerOutput','Write some code before running it.');return;}
  if(source.length>24000||stdin.length>4000){text('#compilerOutput','Please keep code below 24,000 characters and input below 4,000 characters.');return;}
@@ -147,6 +181,14 @@ async function runEditor(){
    lang=inferred;
    $('#editorLanguage').value=lang;
    text('#editorStatus','Detected '+names[lang]+' from your code');
+ }
+ if(!inputsConfirmed&&!stdin.trim()){
+   const questions=window.GearExCompiler?.findInputRequests(source,lang)||[];
+   if(questions.length){
+     showCompilerInputWizard(questions);
+     text('#compilerOutput','Program input needed. Answer the questions below, then the remote compiler will run.');
+     return;
+   }
  }
  button.disabled=true;button.textContent='▶ Running…';
  const resultBox=$('#runResult');resultBox.replaceChildren();
@@ -274,6 +316,8 @@ function init(){text('#year',new Date().getFullYear());setTheme();updateStats();
  $('#resetEditor').addEventListener('click',()=>{const lang=$('#editorLanguage').value;loadIntoEditor(examples[lang][$('#starterExample').value],lang,'Scratchpad',null);saveEditorSoon();});
  $('#copyEditor').addEventListener('click',()=>{const btn=$('#copyEditor');btn.dataset.original='Copy code';copyContent($('#codeEditor').value,btn);});
  $('#clearOutput').addEventListener('click',()=>{text('#compilerOutput','Output cleared.');$('#runResult').replaceChildren();});
- $('#runCode').addEventListener('click',runEditor);window.addEventListener('hashchange',route);route();
+ $('#compilerInputWizard').addEventListener('submit',submitCompilerInput);
+  $('#compilerInputCancel').addEventListener('click',()=>{closeCompilerInputWizard();text('#compilerOutput','Input collection cancelled; program was not run.');});
+  $('#runCode').addEventListener('click',()=>runEditor());window.addEventListener('hashchange',route);route();
 }
 init();

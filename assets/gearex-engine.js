@@ -11,12 +11,12 @@ const LABEL={py:'Python',js:'JavaScript',c:'C',cpp:'C++',java:'Java',cs:'C#',sql
 function detect(code,fallback='py'){
   const s=String(code||'');
   if(/^\s*(?:SELECT|WITH|CREATE\s+TABLE|INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM|DROP\s+TABLE)\b/im.test(s))return 'sql';
-  if(/\b(Console\.WriteLine|using\s+System\s*;|namespace\s+\w+|static\s+void\s+Main)\b/.test(s))return 'cs';
-  if(/\b(System\.out\.(?:print|println)|public\s+class\s+\w+|@Override|System\.in)\b/.test(s))return 'java';
-  if(/#include\s*<(?:iostream|vector|bits\/stdc\+\+|string)>|\b(?:std::|cout\s*<<|cin\s*>>)\b/.test(s))return 'cpp';
-  if(/#include\s*<\w+\.h>|\b(?:printf|scanf)\s*\(/.test(s))return 'c';
-  if(/\b(?:console\.log\s*\(|\b(?:const|let)\s+[A-Za-z_$]|=>|function\s+\w+\s*\(|document\.)/.test(s))return 'js';
-  if(/^\s*(?:def\s+\w+|class\s+\w+\s*:|from\s+\w+\s+import|import\s+\w+|print\s*\(|for\s+\w+\s+in\s+|if\s+.+:|while\s+.+:)/m.test(s))return 'py';
+  if(/\b(?:Console\.(?:WriteLine|ReadLine|Read)|using\s+System\s*;|namespace\s+\w+|static\s+void\s+Main)\b/.test(s))return 'cs';
+  if(/\b(?:System\.out\.(?:print|println)|public\s+class\s+\w+|@Override|System\.in|new\s+Scanner\s*\(|\w+\.nextInt\s*\()\b/.test(s))return 'java';
+  if(/#include\s*<(?:iostream|vector|bits\/stdc\+\+|string)>|\b(?:std::|cout\s*<<|cin\s*>>|getline\s*\()/.test(s))return 'cpp';
+  if(/#include\s*<\w+\.h>|\b(?:printf|scanf|getchar)\s*\(/.test(s))return 'c';
+  if(/\b(?:console\.log\s*\(|prompt\s*\(|(?:const|let)\s+[A-Za-z_$]|function\s+\w+\s*\(|document\.)|=>/.test(s))return 'js';
+  if(/\binput\s*\(/.test(s)||/^\s*(?:def\s+\w+|class\s+\w+\s*:|from\s+\w+\s+import|import\s+\w+|print\s*\(|for\s+\w+\s+in\s+|if\s+.+:|while\s+.+:)/m.test(s))return 'py';
   return LABEL[fallback]?fallback:'py';
 }
 const ERROR=message=>{throw new Error(message)};
@@ -117,7 +117,7 @@ function kindOf(line,lang){
  if(lang==='py'&&(m=/^def\s+(\w+)\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
  if((m=/^(?:(?:export|async)\s+)*function\s+(\w+)\s*\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
  if((m=/^(?:(?:public|private|protected|static|final|virtual|override|inline|const|async)\s+)*(?:(?:int|void|double|float|long|short|char|bool|boolean|string|String|auto|decimal|object|var|Task)\s+)?([A-Za-z_]\w*)\s*\(([^)]*)\)$/.exec(s))&&
-    !/^(print|printf|println|while|for|if|switch)$/.test(m[1]))return {kind:'func',name:m[1],params:m[2]};
+    !/^(print|printf|scanf|getline|getchar|input|prompt|println|while|for|if|switch)$/.test(m[1]))return {kind:'func',name:m[1],params:m[2]};
  if(/^(?:(?:public|private|protected|static)\s+)*(?:class|struct|namespace|interface)\s+\w+/.test(s))return {kind:'class'};
  if(/^return(?:\s|$)/.test(s))return {kind:'return',expression:s.replace(/^return\s*/,'')};
  if(/^break\s*$/.test(s))return {kind:'break'};
@@ -167,10 +167,30 @@ function parse(code,lang){
  }
  return root;
 }
-function run(code,selected='auto'){
+function run(code,selected='auto',options={}){
  const lang=selected==='auto'?detect(code):LABEL[selected]?selected:detect(code);
  if(lang==='sql')return sqlWalkthrough(code);
  const warnings=[],steps=[],frames=[{name:'Global',vars:{}}],heap={},functions={},output=[];
+ const supplied=Array.isArray(options?.inputs)?options.inputs.slice(0,80).map(v=>String(v)):[];
+ let consumed=0,currentLine=0,pendingInput=null;
+ class InputPause extends Error{constructor(detail){super('Input required');this.detail=detail;}}
+ const types={};
+ function readInput(prompt='Enter input',type='text'){
+   const detail={prompt:String(prompt||'Enter input').slice(0,160),type,line:currentLine,index:consumed};
+   if(consumed>=supplied.length){
+     pendingInput=detail;
+     snapshot(currentLine,'Waiting for input: '+detail.prompt);
+     throw new InputPause(detail);
+   }
+   const raw=supplied[consumed++];
+   if(type==='number'){
+     if(!raw.trim()||!Number.isFinite(Number(raw)))ERROR('A numeric value is required for '+detail.prompt);
+     snapshot(currentLine,'Input '+consumed+' received: '+raw);
+     return Number(raw);
+   }
+   snapshot(currentLine,'Input '+consumed+' received: '+raw);
+   return raw;
+ }
  let alloc=0,count=0,loops=0,depth=0;
  const MAX_STEPS=550,MAX_LOOPS=160;
  function allocate(kind,value){const id=++alloc;heap[id]={kind,value};return {ref:id};}
@@ -271,12 +291,37 @@ function run(code,selected='auto'){
      ERROR('Cannot access property '+key+' on a non-object value.');
    }
    if(n.k==='call'){
+     const qualified=n.callee.k==='get'&&n.callee.a.k==='name'?n.callee.a.name+'.'+n.callee.key.v:null;
+     if(qualified==='Console.ReadLine')return readInput('C# Console.ReadLine()','text');
+     if(qualified==='Convert.ToInt32'||qualified==='int.Parse'){
+       const value=n.args.map(argValue)[0];
+       if(!Number.isFinite(Number(value)))ERROR('Expected an integer from input.');
+       return Math.trunc(Number(value));
+     }
+     if(qualified==='Convert.ToDouble'||qualified==='double.Parse')return Number(n.args.map(argValue)[0]);
+     if(qualified&&/\.(nextInt|nextDouble|nextFloat|nextLine|next)$/.test(qualified)){
+       const owner=n.callee.a.name;
+       if(readName(owner)?.scanner===true){
+         return readInput('Java '+qualified+'()',/\.(nextInt|nextDouble|nextFloat)$/.test(qualified)?'number':'text');
+       }
+     }
      const args=n.args.map(argValue);
      if(n.callee.k==='name'){
        const fn=n.callee.name;
        if(fn==='range'){const a=args.length===1?0:toNumber(args[0]),b=args.length===1?toNumber(args[0]):toNumber(args[1]),step=args[2]===undefined?1:toNumber(args[2]);if(!step)ERROR('range step cannot be zero');const v=[];for(let i=a;(step>0?i<b:i>b)&&v.length<MAX_LOOPS;i+=step)v.push(i);return v;}
        if(fn==='len')return args[0]?.ref?heap[args[0].ref]?.value?.length||Object.keys(heap[args[0].ref].value).length:String(args[0]||'').length;
-       if(fn==='int')return Math.trunc(toNumber(args[0]));if(fn==='str'||fn==='String')return display(args[0]);
+       if(fn==='input')return readInput(args[0]===undefined?'Python input()':String(args[0]),'text');
+       if(fn==='getchar')return readInput('C getchar()','text').slice(0,1);
+       if(fn==='prompt')return readInput(args[0]===undefined?'JavaScript prompt()':String(args[0]),'text');
+       if(['int','parseInt','Convert.ToInt32'].includes(fn)){
+         if(args[0]===undefined||String(args[0]).trim()===''||!Number.isFinite(Number(args[0])))ERROR('Expected a valid integer, got '+String(args[0]));
+         return Math.trunc(Number(args[0]));
+       }
+       if(['float','parseFloat','Number','Convert.ToDouble'].includes(fn)){
+         if(args[0]===undefined||String(args[0]).trim()===''||!Number.isFinite(Number(args[0])))ERROR('Expected a valid number, got '+String(args[0]));
+         return Number(args[0]);
+       }
+       if(fn==='str'||fn==='String')return display(args[0]);
        if(fn==='sum')return (Array.isArray(args[0])?args[0]:heap[args[0]?.ref]?.value||[]).reduce((a,b)=>a+toNumber(b),0);
        if(fn==='print'||fn==='console.log'||fn==='System.out.println'||fn==='System.out.print'||fn==='Console.WriteLine'||fn==='printf'){
          if(fn==='printf'){let format=String(args.shift()||'');let idx=0;output.push(format.replace(/%[disfc]/g,()=>display(args[idx++])));return null;}
@@ -295,8 +340,34 @@ function run(code,selected='auto'){
    ERROR('Expression type '+n.k+' is not supported.');
  }
  function statement(node){
+   currentLine=node.line;
    let raw=node.text.trim().replace(/;\s*$/,'');
    if(!raw||raw==='pass'||raw==='{'||raw==='}'||raw==='using System'||raw.startsWith('//'))return;
+   const getline=/^(?:std::)?getline\s*\(\s*(?:std::)?cin\s*,\s*(\w+)\s*\)$/.exec(raw);
+   if(getline){assign(getline[1],readInput('Enter '+getline[1]+' (getline)','text'));snapshot(node.line,'Read full input line into '+getline[1]+'.');return;}
+   const scanf=/^(?:std::)?scanf\s*\((.*)\)$/.exec(raw);
+   if(scanf){
+     const args=splitArgs(scanf[1]),spec=String(args.shift()||'').slice(1,-1);
+     const vars=args.map(part=>part.trim().replace(/^&/,'')).filter(x=>/^[A-Za-z_]\w*$/.test(x));
+     for(let i=0;i<vars.length;i++){
+       const formats=[...spec.matchAll(/%(?:\d+)?(?:l|h)?([diufsc])/g)];
+       const format=formats[i]?.[1]||'s';
+       const number=/^[diuf]$/.test(format);
+       const value=readInput('Enter '+vars[i]+' (scanf)',number?'number':'text');
+       assign(vars[i],value);
+       types[vars[i]]=number?'number':'text';
+       snapshot(node.line,'Read '+vars[i]+' from standard input.');
+     }return;
+   }
+   if(/^(?:std::)?cin\s*>>/.test(raw)){
+     const vars=raw.replace(/^(?:std::)?cin\s*>>/,'').split(/\s*>>\s*/).map(x=>x.trim()).filter(x=>/^[A-Za-z_]\w*$/.test(x));
+     for(const name of vars){
+       const val=readInput('Enter '+name+' (cin)',types[name]==='number'?'number':'text');
+       assign(name,val);snapshot(node.line,'Read '+name+' from standard input.');
+     }return;
+   }
+   const scanner=/^Scanner\s+(\w+)\s*=\s*new\s+Scanner\s*\(\s*System\.in\s*\)$/.exec(raw);
+   if(scanner){assign(scanner[1],{scanner:true},true);snapshot(node.line,'Create input scanner '+scanner[1]+'.');return;}
    if(/^(?:std::cout|cout)\s*<</.test(raw)){
      const parts=raw.replace(/^(?:std::cout|cout)\s*<</,'').split(/\s*<<\s*/);
      output.push(parts.map(p=>/^(?:std::)?endl$/.test(p)?'\n':display(evaluate(p))).join(''));
@@ -341,13 +412,15 @@ function run(code,selected='auto'){
    const assignment=/^(?:(?:(?:const|static|unsigned)\s+)?(?:int|float|double|long|short|char|bool|boolean|String|string|auto|decimal|object|std::string)\s+|(?:let|var|const)\s+)?([A-Za-z_$]\w*(?:\[[^\]]+\]|\.[A-Za-z_]\w*)?)\s*=(?!=)\s*(.+)$/.exec(raw);
    if(assignment){
      let value=evaluate(assignment[2]),name=assignment[1];
+     const declared=raw.match(/^(?:const|static|unsigned|let|var)?\s*(int|float|double|long|short|char|bool|boolean|String|string|std::string|decimal|object|auto)\s+/);
+     if(declared)types[name]=/^(int|float|double|long|short|decimal)$/.test(declared[1])?'number':'text';
      if(name.includes('[')){const m=/^(\w+)\[(.+)\]$/.exec(name),ref=readName(m[1]),index=evaluate(m[2]);if(!ref?.ref||!heap[ref.ref])ERROR('Array assignment requires a heap array.');heap[ref.ref].value[index]=value;}
      else if(name.includes('.')){const [object,field]=name.split('.'),ref=readName(object);if(!ref?.ref||!heap[ref.ref])ERROR('Object assignment requires a heap object.');heap[ref.ref].value[field]=value;}
      else assign(name,value);
      snapshot(node.line,'Assign '+name+' = '+display(value));return;
    }
-   const declare=/^(?:int|float|double|long|short|char|bool|boolean|String|string|auto|decimal|object|let|var)\s+([A-Za-z_]\w*)$/.exec(raw);
-   if(declare){assign(declare[1],null,true);snapshot(node.line,'Declare '+declare[1]+' without a value.');return;}
+   const declare=/^(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|let|var)\s+([A-Za-z_]\w*)$/.exec(raw);
+   if(declare){assign(declare[1],null,true);types[declare[1]]=/^(?:int|float|double|long|short|decimal)\b/.test(raw)?'number':'text';snapshot(node.line,'Declare '+declare[1]+' without a value.');return;}
    if(/^\w+(?:\.\w+)?\s*\(.*\)$/.test(raw)){
      evaluate(raw);snapshot(node.line,'Call a function or update a collection.');return;
    }
@@ -357,6 +430,7 @@ function run(code,selected='auto'){
  }
  function block(nodes){
    for(const node of nodes){
+     currentLine=node.line;
      if(count>=MAX_STEPS)ERROR('Step limit reached. Simplify your code.');
      if(node.kind==='class'){const r=block(node.body);if(r?.kind==='return')return r;continue;}
      if(node.kind==='func'){functions[node.name]={...node,params:node.params.split(',').map(x=>x.trim().split(/\s+/).at(-1).replace(/[\[\]*]/g,'')).filter(Boolean)};snapshot(node.line,'Define '+node.name+'().');continue;}
@@ -402,9 +476,9 @@ function run(code,selected='auto'){
    block(parsed.body);
    if(['c','cpp','java','cs'].includes(lang)){if(functions.main)invoke('main',[]);else if(functions.Main)invoke('Main',[]);}
    snapshot(0,'Trace finished. This represents the supported educational subset.');
- }catch(e){warnings.push(String(e.message||e));if(steps.length)snapshotSafe();}
+ }catch(e){if(e instanceof InputPause){pendingInput=e.detail;}else{warnings.push(String(e.message||e));if(steps.length)snapshotSafe();}}
  function snapshotSafe(){const last=steps.at(-1);if(last)last.note+=' · Trace stopped: '+warnings.at(-1);}
- return {lang,mode:'interpreted-subset',steps,warnings,lines:String(code).split(/\r?\n/)};
+ return {lang,mode:'interpreted-subset',steps,warnings,pendingInput,consumedInputs:consumed,lines:String(code).split(/\r?\n/)};
 }
 function sqlWalkthrough(code){
  const lines=String(code).split(/\r?\n/),steps=[],parts=lines.map((text,i)=>({text:text.trim(),line:i+1})).filter(x=>x.text&&!x.text.startsWith('--'));

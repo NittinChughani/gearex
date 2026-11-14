@@ -18,6 +18,41 @@ const delay=ms=>new Promise(done=>setTimeout(done,ms));
 class CompilerServiceError extends Error {
  constructor(message){super(message);this.name='CompilerServiceError';this.transient=true;}
 }
+function findInputRequests(code,lang){
+ const src=String(code||''),found=[];
+ const push=(index,prompt)=>{
+   found.push({index,prompt:String(prompt||'Enter input value').slice(0,100)});
+ };
+ const scan=(regex,handler)=>{let m;while((m=regex.exec(src))!==null){handler(m);if(found.length>=40)break;}};
+ if(lang==='py')scan(/\binput\s*\(\s*(?:"([^"]*)"|'([^']*)')?\s*\)/g,m=>push(m.index,m[1]||m[2]||'Python input()'));
+ if(lang==='js')scan(/\bprompt\s*\(\s*(?:"([^"]*)"|'([^']*)')?/g,m=>push(m.index,m[1]||m[2]||'JavaScript prompt()'));
+ if(lang==='cs')scan(/\bConsole\.ReadLine\s*\(\s*\)/g,m=>push(m.index,'C# Console.ReadLine()'));
+ if(lang==='java')scan(/\b(\w+)\.(nextInt|nextDouble|nextFloat|nextLine|next)\s*\(\s*\)/g,m=>push(m.index,'Java '+m[1]+'.'+m[2]+'()'));
+ if(lang==='cpp')scan(/\b(?:std::)?getline\s*\(\s*(?:std::)?cin\s*,\s*(\w+)\s*\)/g,m=>push(m.index,'C++ getline: '+m[1]));
+ if(lang==='cpp')scan(/\b(?:std::)?cin\s*>>\s*(\w+(?:\s*>>\s*\w+)*)/g,m=>{
+   const names=m[1].split(/\s*>>\s*/);
+   names.forEach((name,i)=>push(m.index+i/100,'C++ cin: '+name));
+ });
+ if(lang==='c')scan(/\bgetchar\s*\(\s*\)/g,m=>push(m.index,'C getchar()'));
+ if(lang==='c')scan(/\bscanf\s*\(\s*["']([^"']*)["']\s*,\s*([^)]*)\)/g,m=>{
+   const names=m[2].split(',').map(s=>s.trim().replace(/^&/,'')).filter(Boolean);
+   names.forEach((name,i)=>push(m.index+i/100,'C scanf: '+name));
+ });
+ return found.sort((a,b)=>a.index-b.index).slice(0,30).map(({prompt})=>({prompt}));
+}
+function prepareSource(source,lang){
+ const code=String(source||'');
+ if(lang!=='js'||!/(\bprompt\s*\()/.test(code))return code;
+ // Node-based JavaScript sandboxes have no browser prompt(). Supply a tiny stdin bridge.
+ const bridge=String.raw`const __gearexInputLines = require('fs').readFileSync(0,'utf8').split(/\r?\n/);
+let __gearexInputIndex = 0;
+globalThis.prompt = function(question) {
+  if (question != null && String(question)) process.stdout.write(String(question));
+  return __gearexInputLines[__gearexInputIndex++] ?? '';
+};
+`;
+ return bridge+'\n'+code;
+}
 function assertLanguage(lang){
   if(!Object.hasOwn(JUDGE_LANG,lang))throw new Error('Unsupported compiler language.');
 }
@@ -124,7 +159,7 @@ async function wandbox(source,lang,stdin,onStatus){
 }
 async function compile(source,lang,stdin='',onStatus){
  assertLanguage(lang);
- const code=String(source||'');
+ const code=prepareSource(source,lang);
  if(!code.trim())throw new Error('Enter source code before running it.');
  const errors=[];
  for(const backend of [judge0,wandbox]){
@@ -137,5 +172,5 @@ async function compile(source,lang,stdin='',onStatus){
  }
  throw new CompilerServiceError('Both compiler services are currently unavailable. '+errors.join(' '));
 }
-return {compile,judgeResult,chooseWandboxCompilers,systemError,JUDGE_LANG,CompilerServiceError};
+return {compile,judgeResult,chooseWandboxCompilers,systemError,findInputRequests,prepareSource,JUDGE_LANG,CompilerServiceError};
 });
