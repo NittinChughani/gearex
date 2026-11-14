@@ -261,6 +261,95 @@ function validate(code,selected='auto'){
      add(i+1,'Missing expression after "=".');
    }
  }
+ // C, C++, Java, and C# require a semicolon after ordinary statements.
+ // Check each source line (including statements after { or before }) rather than
+ // only typed declarations. JavaScript and Python do not have this requirement.
+ if(['c','cpp','java','cs'].includes(lang)){
+   let insideComment=false,parenDepth=0,squareDepth=0,continuing=false;
+   const stripComments=line=>{
+     let cleaned='',quote='',escaped=false;
+     for(let i=0;i<line.length;i++){
+       const ch=line[i],next=line[i+1];
+       if(insideComment){if(ch==='*'&&next==='/'){insideComment=false;i++;}continue;}
+       if(quote){cleaned+=ch;if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch===quote)quote='';continue;}
+       if(ch==='"'||ch==="'"){quote=ch;cleaned+=ch;continue;}
+       if(ch==='/'&&next==='*'){insideComment=true;i++;continue;}
+       if(ch==='/'&&next==='/')break;
+       cleaned+=ch;
+     }
+     return cleaned.trim();
+   };
+   const needsEnd=text=>{
+     let value=text.trim();
+     if(!value||value.startsWith('#')||value.startsWith('@')||/^(?:public|private|protected):$/.test(value))return false;
+     if(/^(?:else|try|finally|do)\s*$/.test(value))return false;
+     if(/^(?:(?:public|private|protected|static|abstract|final)\s+)*(?:class|interface|namespace|struct|enum|record)\b/.test(value))return false;
+     if(/^(?:if|for|while|switch|catch|else\s+if)\s*\(/.test(value)){
+       // A standalone control header is not a statement.
+       const close=value.lastIndexOf(')');
+       if(close<0)return false;
+       const tail=value.slice(close+1).trim();
+       return tail?needsEnd(tail):false;
+     }
+     if(/^(?:(?:public|private|protected|static|virtual|override|inline|extern|async|final)\s+)*(?:(?:void|int|char|bool|float|double|long|short|string|String|Task|auto|decimal)\s+|[A-Za-z_]\w*(?:::\w+)*\s+)[A-Za-z_]\w*\s*\([^;]*\)\s*$/.test(value))return false;
+     if(/^(?:return|throw|break|continue|goto)\b/.test(value))return true;
+     if(/^(?:std::)?(?:cout|cin|cerr|clog)\s*(?:<<|>>)/.test(value))return true;
+     if(/^\w+(?:\.\w+|->\w+)*(?:\([^;]*\)|\s*(?:=|\+=|-=|\*=|\/=|%=|\+\+|--|<<|>>))/.test(value))return true;
+     if(/^(?:\+\+|--)\s*[A-Za-z_]\w*$/.test(value))return true;
+     if(/^(?:(?:const|static|unsigned|signed|volatile|register)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|var|let)\s+/.test(value))return true;
+     if(/^System\.out\.print(?:ln)?\s*\(|^Console\.(?:Write|WriteLine|ReadLine)\s*\(/.test(value))return true;
+     if(/^(?:printf|scanf|puts|putchar|getchar|malloc|free|delete|new)\s*\(/.test(value))return true;
+     return false;
+   };
+   const removeLeadingBlocks=line=>{
+     // Remove opening/closing statement blocks but keep braces in initializers.
+     // e.g. "int main() { int a=3" must check "int a=3".
+     let result='',segment='',quote='',escaped=false,initDepth=0;
+     for(const ch of line){
+       if(quote){segment+=ch;if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch===quote)quote='';continue;}
+       if(ch==='"'||ch==="'"){quote=ch;segment+=ch;continue;}
+       if(ch==='{'){
+         if(initDepth||/=\s*$/.test(segment)){initDepth++;segment+=ch;continue;}
+         segment='';continue;
+       }
+       if(ch==='}'){
+         if(initDepth){initDepth--;segment+=ch;continue;}
+         if(segment.trim())result=segment;
+         segment='';continue;
+       }
+       segment+=ch;
+     }
+     return segment.trim()||result.trim();
+   };
+   for(let i=0;i<rows.length;i++){
+     let line=stripComments(rows[i]);
+     if(!line||line.startsWith('#'))continue;
+     // A parenthesized expression or stream continued on the next line
+     // is not a complete statement yet.
+     let quote='',escaped=false;
+     for(const ch of line){
+       if(quote){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch===quote)quote='';continue;}
+       if(ch==='"'||ch==="'"){quote=ch;continue;}
+       if(ch==='(')parenDepth++;
+       else if(ch===')')parenDepth=Math.max(0,parenDepth-1);
+       else if(ch==='[')squareDepth++;
+       else if(ch===']')squareDepth=Math.max(0,squareDepth-1);
+     }
+     if(parenDepth||squareDepth||/[,+*/=<>?:&|-]\s*$/.test(line)){continuing=true;continue;}
+     if(continuing){continuing=false;continue;} // A multi-line statement is handled by the runtime/subset checker.
+     if(/;\s*$/.test(line))continue;
+     if(/^\s*(?:using\s+namespace|using\s+[A-Za-z_.]+|import\s+|package\s+)/.test(line)){
+       if(/^using\s+/.test(line))add(i+1,'Missing ";" at the end of the using statement.');
+       continue;
+     }
+     const value=removeLeadingBlocks(line);
+     if(!value||/[{;]\s*$/.test(value))continue;
+     if(/}\s*$/.test(value)&&!/=\s*\{/.test(value))continue;
+     if(needsEnd(value)&&!issues.some(x=>x.line===i+1&&x.message.includes('Missing ";"'))){
+       add(i+1,'Missing ";" at the end of this statement.');
+     }
+   }
+ }
  try{parse(source,lang);}catch(e){
    const found=String(e.message||e).match(/\bline\s+(\d+)/i);
    add(found?Number(found[1]):1,String(e.message||e),'syntax');
