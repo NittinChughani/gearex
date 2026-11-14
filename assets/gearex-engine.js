@@ -11,12 +11,12 @@ const LABEL={py:'Python',js:'JavaScript',c:'C',cpp:'C++',java:'Java',cs:'C#',sql
 function detect(code,fallback='py'){
   const s=String(code||'');
   if(/^\s*(?:SELECT|WITH|CREATE\s+TABLE|INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM|DROP\s+TABLE)\b/im.test(s))return 'sql';
-  if(/\b(Console\.WriteLine|using\s+System\s*;|namespace\s+\w+|static\s+void\s+Main)\b/.test(s))return 'cs';
-  if(/\b(System\.out\.(?:print|println)|public\s+class\s+\w+|@Override|System\.in)\b/.test(s))return 'java';
-  if(/#include\s*<(?:iostream|vector|bits\/stdc\+\+|string)>|\b(?:std::|cout\s*<<|cin\s*>>)\b/.test(s))return 'cpp';
-  if(/#include\s*<\w+\.h>|\b(?:printf|scanf)\s*\(/.test(s))return 'c';
-  if(/\b(?:console\.log\s*\(|\b(?:const|let)\s+[A-Za-z_$]|=>|function\s+\w+\s*\(|document\.)/.test(s))return 'js';
-  if(/^\s*(?:def\s+\w+|class\s+\w+\s*:|from\s+\w+\s+import|import\s+\w+|print\s*\(|for\s+\w+\s+in\s+|if\s+.+:|while\s+.+:)/m.test(s))return 'py';
+  if(/\b(?:Console\.(?:WriteLine|ReadLine|Read)|using\s+System\s*;|namespace\s+\w+|static\s+void\s+Main)\b/.test(s))return 'cs';
+  if(/\b(?:System\.out\.(?:print|println)|public\s+class\s+\w+|@Override|System\.in|new\s+Scanner\s*\(|\w+\.nextInt\s*\()\b/.test(s))return 'java';
+  if(/#include\s*<(?:iostream|vector|bits\/stdc\+\+|string)>|\b(?:std::|cout\s*<<|cin\s*>>|getline\s*\()/.test(s))return 'cpp';
+  if(/#include\s*<\w+\.h>|\b(?:printf|scanf|getchar)\s*\(/.test(s))return 'c';
+  if(/\b(?:console\.log\s*\(|prompt\s*\(|(?:const|let)\s+[A-Za-z_$]|function\s+\w+\s*\(|document\.)|=>/.test(s))return 'js';
+  if(/\binput\s*\(/.test(s)||/^\s*(?:def\s+\w+|class\s+\w+\s*:|from\s+\w+\s+import|import\s+\w+|print\s*\(|for\s+\w+\s+in\s+|if\s+.+:|while\s+.+:)/m.test(s))return 'py';
   return LABEL[fallback]?fallback:'py';
 }
 const ERROR=message=>{throw new Error(message)};
@@ -117,7 +117,7 @@ function kindOf(line,lang){
  if(lang==='py'&&(m=/^def\s+(\w+)\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
  if((m=/^(?:(?:export|async)\s+)*function\s+(\w+)\s*\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
  if((m=/^(?:(?:public|private|protected|static|final|virtual|override|inline|const|async)\s+)*(?:(?:int|void|double|float|long|short|char|bool|boolean|string|String|auto|decimal|object|var|Task)\s+)?([A-Za-z_]\w*)\s*\(([^)]*)\)$/.exec(s))&&
-    !/^(print|printf|scanf|input|prompt|println|while|for|if|switch)$/.test(m[1]))return {kind:'func',name:m[1],params:m[2]};
+    !/^(print|printf|scanf|getline|getchar|input|prompt|println|while|for|if|switch)$/.test(m[1]))return {kind:'func',name:m[1],params:m[2]};
  if(/^(?:(?:public|private|protected|static)\s+)*(?:class|struct|namespace|interface)\s+\w+/.test(s))return {kind:'class'};
  if(/^return(?:\s|$)/.test(s))return {kind:'return',expression:s.replace(/^return\s*/,'')};
  if(/^break\s*$/.test(s))return {kind:'break'};
@@ -311,6 +311,7 @@ function run(code,selected='auto',options={}){
        if(fn==='range'){const a=args.length===1?0:toNumber(args[0]),b=args.length===1?toNumber(args[0]):toNumber(args[1]),step=args[2]===undefined?1:toNumber(args[2]);if(!step)ERROR('range step cannot be zero');const v=[];for(let i=a;(step>0?i<b:i>b)&&v.length<MAX_LOOPS;i+=step)v.push(i);return v;}
        if(fn==='len')return args[0]?.ref?heap[args[0].ref]?.value?.length||Object.keys(heap[args[0].ref].value).length:String(args[0]||'').length;
        if(fn==='input')return readInput(args[0]===undefined?'Python input()':String(args[0]),'text');
+       if(fn==='getchar')return readInput('C getchar()','text').slice(0,1);
        if(fn==='prompt')return readInput(args[0]===undefined?'JavaScript prompt()':String(args[0]),'text');
        if(['int','parseInt','Convert.ToInt32'].includes(fn)){
          if(args[0]===undefined||String(args[0]).trim()===''||!Number.isFinite(Number(args[0])))ERROR('Expected a valid integer, got '+String(args[0]));
@@ -342,6 +343,8 @@ function run(code,selected='auto',options={}){
    currentLine=node.line;
    let raw=node.text.trim().replace(/;\s*$/,'');
    if(!raw||raw==='pass'||raw==='{'||raw==='}'||raw==='using System'||raw.startsWith('//'))return;
+   const getline=/^(?:std::)?getline\s*\(\s*(?:std::)?cin\s*,\s*(\w+)\s*\)$/.exec(raw);
+   if(getline){assign(getline[1],readInput('Enter '+getline[1]+' (getline)','text'));snapshot(node.line,'Read full input line into '+getline[1]+'.');return;}
    const scanf=/^(?:std::)?scanf\s*\((.*)\)$/.exec(raw);
    if(scanf){
      const args=splitArgs(scanf[1]),spec=String(args.shift()||'').slice(1,-1);
