@@ -312,8 +312,14 @@ function run(code,selected='auto',options={}){
        if(fn==='len')return args[0]?.ref?heap[args[0].ref]?.value?.length||Object.keys(heap[args[0].ref].value).length:String(args[0]||'').length;
        if(fn==='input')return readInput(args[0]===undefined?'Python input()':String(args[0]),'text');
        if(fn==='prompt')return readInput(args[0]===undefined?'JavaScript prompt()':String(args[0]),'text');
-       if(['int','parseInt','Convert.ToInt32'].includes(fn))return Math.trunc(toNumber(args[0]));
-       if(['float','parseFloat','Number','Convert.ToDouble'].includes(fn))return toNumber(args[0]);
+       if(['int','parseInt','Convert.ToInt32'].includes(fn)){
+         if(args[0]===undefined||String(args[0]).trim()===''||!Number.isFinite(Number(args[0])))ERROR('Expected a valid integer, got '+String(args[0]));
+         return Math.trunc(Number(args[0]));
+       }
+       if(['float','parseFloat','Number','Convert.ToDouble'].includes(fn)){
+         if(args[0]===undefined||String(args[0]).trim()===''||!Number.isFinite(Number(args[0])))ERROR('Expected a valid number, got '+String(args[0]));
+         return Number(args[0]);
+       }
        if(fn==='str'||fn==='String')return display(args[0]);
        if(fn==='sum')return (Array.isArray(args[0])?args[0]:heap[args[0]?.ref]?.value||[]).reduce((a,b)=>a+toNumber(b),0);
        if(fn==='print'||fn==='console.log'||fn==='System.out.println'||fn==='System.out.print'||fn==='Console.WriteLine'||fn==='printf'){
