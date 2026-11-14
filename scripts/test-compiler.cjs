@@ -95,3 +95,39 @@ test('GearEx UI actually calls dual executor after language detection',()=>{
  assert.match(app,/Detected /);
  assert.ok(!app.includes("https://wandbox.org/api/compile.json"));
 });
+
+test('Guided stdin planner recognizes common input APIs across six languages',()=>{
+ const c=mockRunner(async()=>{throw Error('No network');});
+ const examples=[
+   ['py',"name=input('Name? ')\nage=int(input('Age? '))",['Name? ','Age? ']],
+   ['js',"let name=prompt('Name?');",['Name?']],
+   ['c','scanf("%d %d", &x, &y);',['C scanf: x','C scanf: y']],
+   ['cpp','std::cin >> x >> y;',['C++ cin: x','C++ cin: y']],
+   ['java','int x=sc.nextInt(); String name=sc.nextLine();',['Java sc.nextInt()','Java sc.nextLine()']],
+   ['cs','var name=Console.ReadLine();',['C# Console.ReadLine()']]
+ ];
+ for(const [lang,source,expected] of examples){
+   const prompts=c.findInputRequests(source,lang).map(item=>item.prompt);
+   assert.deepEqual(prompts,expected,lang+' input prompts mismatch');
+ }
+ assert.deepEqual(c.findInputRequests('SELECT 2;','sql'),[]);
+});
+test('JavaScript prompt gets a Node stdin bridge without changing non-prompt programs',()=>{
+ const c=mockRunner(async()=>{throw Error('No network');});
+ const original="const name = prompt('Name?');\nconsole.log(name);";
+ const adapted=c.prepareSource(original,'js');
+ assert.ok(adapted.includes("readFileSync(0,'utf8')"));
+ assert.ok(adapted.includes('globalThis.prompt'));
+ assert.ok(adapted.endsWith(original));
+ assert.equal(c.prepareSource('console.log(3);','js'),'console.log(3);');
+ assert.equal(c.prepareSource(original,'py'),original);
+});
+test('Compiler source shows the on-demand input wizard and preserves manual stdin',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ for(const id of ['compilerInputWizard','compilerInputValue','compilerExtraInputs','compilerInputSubmit','compilerInputCancel']){
+   assert.ok(html.includes('id="'+id+'"'),id+' is missing');
+ }
+ assert.ok(app.includes('showCompilerInputWizard(questions)'),'Input wizard must open when input is needed');
+ assert.ok(app.includes("if(!inputsConfirmed&&!stdin.trim())"),'Existing stdin must not be overwritten');
+ assert.ok(app.includes("runEditor(true)"),'After collecting inputs, compile exactly once');
+});
