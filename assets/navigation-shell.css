@@ -144,3 +144,56 @@ body[data-mode="light"] .lesson-grid .lesson-card:focus-within{border-color:var(
   .palette-menu{right:-3px}
   .topbar nav{padding-top:10px}
 }
+
+
+/* Input-aware execution panels and deliberate playback selection. */
+.execution-input-panel[hidden],.trace-mode-chooser[hidden]{display:none!important}
+.execution-input-panel,.trace-mode-chooser{
+ border:1px solid var(--gx-rule);border-radius:9px;
+ background:var(--gx-paper);padding:21px;margin:18px 0;animation:gearInputOpen 300ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes gearInputOpen{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.execution-input-head{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--gx-hit)}
+.execution-input-head strong{font:700 11px ui-monospace,Consolas,monospace}
+.execution-input-panel h3,.trace-interactive-input h3{font-size:19px;letter-spacing:-.025em;margin:12px 0 8px;color:var(--gx-ink)}
+.execution-input-description{font-size:13px;color:var(--gx-muted);max-width:680px;line-height:1.55}
+.execution-input-panel label,.trace-interactive-input label{display:block;color:var(--gx-ink);font-size:13px;font-weight:730;margin:15px 0 9px}
+.execution-input-panel input,.trace-interactive-input input,.execution-input-panel textarea{
+ width:100%;background:var(--gx-code)!important;color:var(--gx-ink)!important;border:1px solid var(--gx-rule)!important;
+ border-radius:6px;padding:12px 14px;line-height:1.5;font:14px ui-monospace,Consolas,monospace;
+}
+.execution-input-panel input:focus,.trace-interactive-input input:focus,.execution-input-panel textarea:focus{
+ border-color:var(--gx-hit)!important;outline:2px solid color-mix(in srgb,var(--gx-hit) 20%,transparent)!important;
+}
+.execution-input-panel .execution-extra-label{font-size:12px;color:var(--gx-muted);font-weight:570;margin-top:16px}
+.execution-input-panel textarea{min-height:68px;resize:vertical}
+.execution-input-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}
+.trace-mode-chooser{padding:19px;background:var(--gx-paper2)}
+.trace-mode-title{display:flex;flex-direction:column;gap:5px;margin-bottom:15px}
+.trace-mode-title strong{font-size:15px;color:var(--gx-ink);letter-spacing:-.02em}
+.trace-mode-title span{font-size:12px;color:var(--gx-muted)}
+.trace-mode-options{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.trace-mode-option{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:9px;
+ min-height:103px;padding:16px;border:1px solid var(--gx-rule);border-radius:7px;
+ background:var(--gx-paper);color:var(--gx-ink);cursor:pointer;transition:border-color .18s,transform .18s,background .18s;
+}
+.trace-mode-option:hover,.trace-mode-option:focus-visible{border-color:var(--gx-hit);background:color-mix(in srgb,var(--gx-hit) 6%,var(--gx-paper));transform:translateY(-2px)}
+.trace-mode-option strong{font-size:14px;line-height:1.4}
+.trace-mode-option strong span{color:var(--gx-hit)}
+.trace-mode-option small{font-size:12px;line-height:1.5;color:var(--gx-muted)}
+.trace-interactive-input{padding:18px 20px;margin-top:14px;border:1px solid var(--gx-hit);
+ border-left:4px solid var(--gx-hit);background:var(--gx-paper);border-radius:7px;animation:gearInputOpen .3s ease-out both;
+}
+.trace-interactive-input input{max-width:430px;display:block;margin:10px 0 14px}
+.trace-input-help{font-size:12px;color:var(--gx-muted);margin-top:10px}
+@media(max-width:620px){
+ .execution-input-panel,.trace-mode-chooser{padding:15px}
+ .trace-mode-options{grid-template-columns:1fr}
+ .trace-mode-option{min-height:87px}
+ .execution-input-actions{flex-direction:column}
+ .execution-input-actions button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+ .execution-input-panel,.trace-mode-chooser,.trace-interactive-input{animation:none!important}
+ .trace-mode-option{transition:none!important;transform:none!important}
+}
