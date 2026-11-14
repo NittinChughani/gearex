@@ -117,7 +117,7 @@ function kindOf(line,lang){
  if(lang==='py'&&(m=/^def\s+(\w+)\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
  if((m=/^(?:(?:export|async)\s+)*function\s+(\w+)\s*\(([^)]*)\)$/.exec(s)))return {kind:'func',name:m[1],params:m[2]};
  if((m=/^(?:(?:public|private|protected|static|final|virtual|override|inline|const|async)\s+)*(?:(?:int|void|double|float|long|short|char|bool|boolean|string|String|auto|decimal|object|var|Task)\s+)?([A-Za-z_]\w*)\s*\(([^)]*)\)$/.exec(s))&&
-    !/^(print|printf|println|while|for|if|switch)$/.test(m[1]))return {kind:'func',name:m[1],params:m[2]};
+    !/^(print|printf|scanf|input|prompt|println|while|for|if|switch)$/.test(m[1]))return {kind:'func',name:m[1],params:m[2]};
  if(/^(?:(?:public|private|protected|static)\s+)*(?:class|struct|namespace|interface)\s+\w+/.test(s))return {kind:'class'};
  if(/^return(?:\s|$)/.test(s))return {kind:'return',expression:s.replace(/^return\s*/,'')};
  if(/^break\s*$/.test(s))return {kind:'break'};
