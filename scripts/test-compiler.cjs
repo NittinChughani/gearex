@@ -107,7 +107,7 @@ test('Guided stdin planner recognizes common input APIs across six languages',()
    ['cs','var name=Console.ReadLine();',['C# Console.ReadLine()']]
  ];
  for(const [lang,source,expected] of examples){
-   const prompts=c.findInputRequests(source,lang).map(item=>item.prompt);
+   const prompts=Array.from(c.findInputRequests(source,lang),item=>item.prompt);
    assert.deepEqual(prompts,expected,lang+' input prompts mismatch');
  }
  assert.deepEqual(c.findInputRequests('SELECT 2;','sql'),[]);
