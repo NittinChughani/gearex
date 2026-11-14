@@ -28,10 +28,12 @@ function findInputRequests(code,lang){
  if(lang==='js')scan(/\bprompt\s*\(\s*(?:"([^"]*)"|'([^']*)')?/g,m=>push(m.index,m[1]||m[2]||'JavaScript prompt()'));
  if(lang==='cs')scan(/\bConsole\.ReadLine\s*\(\s*\)/g,m=>push(m.index,'C# Console.ReadLine()'));
  if(lang==='java')scan(/\b(\w+)\.(nextInt|nextDouble|nextFloat|nextLine|next)\s*\(\s*\)/g,m=>push(m.index,'Java '+m[1]+'.'+m[2]+'()'));
+ if(lang==='cpp')scan(/\b(?:std::)?getline\s*\(\s*(?:std::)?cin\s*,\s*(\w+)\s*\)/g,m=>push(m.index,'C++ getline: '+m[1]));
  if(lang==='cpp')scan(/\b(?:std::)?cin\s*>>\s*(\w+(?:\s*>>\s*\w+)*)/g,m=>{
    const names=m[1].split(/\s*>>\s*/);
    names.forEach((name,i)=>push(m.index+i/100,'C++ cin: '+name));
  });
+ if(lang==='c')scan(/\bgetchar\s*\(\s*\)/g,m=>push(m.index,'C getchar()'));
  if(lang==='c')scan(/\bscanf\s*\(\s*["']([^"']*)["']\s*,\s*([^)]*)\)/g,m=>{
    const names=m[2].split(',').map(s=>s.trim().replace(/^&/,'')).filter(Boolean);
    names.forEach((name,i)=>push(m.index+i/100,'C scanf: '+name));
