@@ -167,10 +167,112 @@ function parse(code,lang){
  }
  return root;
 }
+/* A deliberately scoped preflight. This does not claim to compile an entire language. */
+function validate(code,selected='auto'){
+ const source=String(code||''),lang=selected==='auto'?detect(source):LABEL[selected]?selected:detect(source);
+ const rows=source.split(/\r?\n/),issues=[],seen=new Set();
+ const add=(line,message,kind='syntax')=>{
+   const key=String(line)+':'+kind+':'+message;
+   if(!seen.has(key)&&issues.length<20){seen.add(key);issues.push({line:Math.max(1,Number(line)||1),message,kind});}
+ };
+ if(!source.trim()){add(1,'Enter source code before building a trace.');return {ok:false,lang,issues,scope:'supported-subset'};}
+ if(lang==='sql')return {ok:true,lang,issues,scope:'sql-outline'};
+ const stack=[];
+ let blockComment=false,blockStart=0;
+ for(let i=0;i<rows.length;i++){
+   const row=rows[i];let quote='',escaped=false,quoteCol=0;
+   for(let j=0;j<row.length;j++){
+     const ch=row[j],next=row[j+1];
+     if(blockComment){if(ch==='*'&&next==='/'){blockComment=false;j++;}continue;}
+     if(quote){if(escaped){escaped=false;continue;}if(ch==='\\'){escaped=true;continue;}if(ch===quote){quote='';}continue;}
+     if(ch==='/'&&next==='*'&&lang!=='py'){blockComment=true;blockStart=i+1;j++;continue;}
+     if((lang!=='py'&&ch==='/'&&next==='/')||(lang==='py'&&ch==='#')||(ch==='-'&&next==='-'&&lang==='sql'))break;
+     if(ch==='"'||ch==="'"){quote=ch;quoteCol=j;continue;}
+     if('([{'.includes(ch))stack.push({ch,line:i+1});
+     else if(')]}'.includes(ch)){
+       const expected={')':'(',']':'[','}':'{'}[ch];
+       if(!stack.length||stack.at(-1).ch!==expected)add(i+1,'Unexpected closing "'+ch+'". Check your brackets.');
+       else stack.pop();
+     }
+   }
+   if(quote)add(i+1,'Unclosed string literal near column '+(quoteCol+1)+'.');
+ }
+ if(blockComment)add(blockStart,'Unclosed block comment.');
+ for(const entry of stack.slice(0,8))add(entry.line,'Opening "'+entry.ch+'" has no matching closing bracket.');
+ if(lang==='py'){
+   const rowsWithCode=rows.map((raw,i)=>({line:i+1,text:raw.trim(),indent:raw.match(/^\s*/)[0].replace(/\t/g,'    ').length})).filter(x=>x.text&&!x.text.startsWith('#'));
+   for(let i=0;i<rowsWithCode.length;i++){
+     const row=rowsWithCode[i],text=row.text.replace(/#.*$/,'').trim();
+     const header=/^(?:async\s+)?(?:if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(text);
+     if(header&&!text.includes(':'))add(row.line,'Expected ":" after the Python block header.');
+     if(i===0&&row.indent)add(row.line,'Unexpected indentation at the beginning of the program.');
+     if(i>0){
+       const prev=rowsWithCode[i-1];
+       const prevHeader=/^(?:async\s+)?(?:if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(prev.text);
+       const prevEndsColon=prevHeader&&/:\s*(?:#.*)?$/.test(prev.text);
+       if(prevEndsColon&&row.indent<=prev.indent)add(row.line,'Expected an indented block after line '+prev.line+'.');
+       if(row.indent>prev.indent&&!prevEndsColon)add(row.line,'Unexpected indentation. Only a block header may introduce a new indentation level.');
+     }
+     if(/^(?:if|elif|while|for)\b.*:\s*$/.test(text)&&i===rowsWithCode.length-1)add(row.line,'This Python block needs at least one indented statement.');
+   }
+ }
+ const splitDecls=raw=>{
+   let chunks=[],part='',depth=0,quote='',escaped=false;
+   for(const ch of raw){
+     if(quote){part+=ch;if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch===quote)quote='';continue;}
+     if(ch==='"'||ch==="'"){quote=ch;part+=ch;continue;}
+     if('([{'.includes(ch))depth++;
+     if(')]}'.includes(ch))depth--;
+     if(ch===','&&depth===0){chunks.push(part.trim());part='';continue;}
+     part+=ch;
+   }
+   chunks.push(part.trim());return chunks;
+ };
+ const type=/^(?:(?:const|static|unsigned|signed)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|let|var)\s+/;
+ for(let i=0;i<rows.length;i++){
+   const original=rows[i],trim=original.trim();
+   if(!trim||trim.startsWith('//')||trim.startsWith('#')||trim.startsWith('/*')||trim==='{'||trim==='}')continue;
+   if(['c','cpp','java','cs'].includes(lang)){
+     const plain=/^(?:(?:const|static|unsigned|signed)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object)\s+\w+(?:\s*(?:,|=)[^(){}]*)?$/;
+     if(!trim.endsWith(';')&&!trim.includes('{')&&!trim.includes('}')&&plain.test(trim))add(i+1,'Missing ";" at the end of a variable declaration.');
+   }
+   const withoutSemicolon=trim.replace(/;\s*$/,'');
+   let rest=null,typed=false;
+   if(type.test(withoutSemicolon)&&!/^(?:int|void|double|float|long|short|char|bool|String)\s+[A-Za-z_]\w*\s*\(/.test(withoutSemicolon)){
+     rest=withoutSemicolon.replace(type,'');typed=true;
+   }
+   if(typed&&rest!==null){
+     const entries=splitDecls(rest);
+     if(entries.length>1||/=\s*$/.test(rest)){
+       for(const entry of entries){
+         if(!entry){add(i+1,'A variable name is missing after a comma.');continue;}
+         const matched=/^([A-Za-z_]\w*)(?:\s*=(?!=)\s*(.*))?$/.exec(entry);
+         if(!matched){if(!/^(?:\*|&|new\b)/.test(entry))add(i+1,'Malformed variable declaration near "'+entry.slice(0,55)+'".');continue;}
+         if(matched[2]!==undefined){
+           if(!matched[2].trim())add(i+1,'Missing a value after "=" for '+matched[1]+'.');
+           else if(!/\bnew\b|=>|::/.test(matched[2]))try{parseExpression(matched[2]);}catch(e){add(i+1,'Invalid expression for '+matched[1]+': '+e.message);}
+         }
+       }
+     }else if(rest&&/^[A-Za-z_]\w*\s*=(?!=)/.test(rest)){
+       const matched=/^[A-Za-z_]\w*\s*=(?!=)\s*(.*)$/.exec(rest);
+       if(matched&&matched[1].trim()&&!/\bnew\b|=>|::/.test(matched[1]))try{parseExpression(matched[1]);}catch(e){add(i+1,'Invalid initializer: '+e.message);}
+     }
+   }else if(/^[A-Za-z_$]\w*\s*=(?!=)\s*$/.test(withoutSemicolon)){
+     add(i+1,'Missing expression after "=".');
+   }
+ }
+ try{parse(source,lang);}catch(e){
+   const found=String(e.message||e).match(/\bline\s+(\d+)/i);
+   add(found?Number(found[1]):1,String(e.message||e),'syntax');
+ }
+ issues.sort((a,b)=>a.line-b.line);
+ return {ok:issues.length===0,lang,issues,scope:'supported-subset'};
+}
+
 function run(code,selected='auto',options={}){
  const lang=selected==='auto'?detect(code):LABEL[selected]?selected:detect(code);
  if(lang==='sql')return sqlWalkthrough(code);
- const warnings=[],steps=[],frames=[{name:'Global',vars:{}}],heap={},functions={},output=[];
+ const warnings=[],errors=[],steps=[],frames=[{name:'Global',vars:{}}],heap={},functions={},output=[];
  const supplied=Array.isArray(options?.inputs)?options.inputs.slice(0,80).map(v=>String(v)):[];
  let consumed=0,currentLine=0,pendingInput=null;
  class InputPause extends Error{constructor(detail){super('Input required');this.detail=detail;}}
@@ -404,8 +506,18 @@ function run(code,selected='auto',options={}){
      else result=toNumber(left)/toNumber(right);
      assign(aug[1],result);snapshot(node.line,aug[1]+' is now '+display(result));return;
    }
-   const multi=/^(?:(?:const|static|unsigned)\s+)?(?:int|float|double|long|char|bool|String|string|auto|let|var)\s+\w+\s*=.+,\s*\w+\s*=/.test(raw);
-   if(multi){const parts=splitArgs(raw),type=parts[0].trim().split(/\s+/)[0];for(const [i,part] of parts.entries())statement({text:i?type+' '+part:part,line:node.line});return;}
+   const multiDecl=/^((?:(?:const|static|unsigned|signed)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|let|var))\s+(.+)$/.exec(raw);
+   if(multiDecl&&multiDecl[2].includes(',')){
+     const parts=splitArgs(multiDecl[2]);
+     if(!parts.length||/,\s*$/.test(multiDecl[2]))ERROR('A variable name is missing after a comma.');
+     if(parts.length>1){
+       for(const part of parts){
+         if(!/^[A-Za-z_]\w*(?:\s*=(?!=)\s*.+)?$/.test(part))ERROR('Invalid variable declaration: '+part);
+         statement({text:multiDecl[1]+' '+part,line:node.line});
+       }
+       return;
+     }
+   }
    const arrayDecl=/^(?:(?:const|static)\s+)?(?:int|char|float|double|long|String|bool)\s+(\w+)\s*\[\s*\]\s*=\s*(.+)$/.exec(raw);
    if(arrayDecl){let init=arrayDecl[2].trim();if(init[0]==='{'&&init.endsWith('}'))init='['+init.slice(1,-1)+']';
      const value=evaluate(init);assign(arrayDecl[1],value,true);snapshot(node.line,'Allocate array '+arrayDecl[1]+' in memory.');return;}
@@ -476,9 +588,15 @@ function run(code,selected='auto',options={}){
    block(parsed.body);
    if(['c','cpp','java','cs'].includes(lang)){if(functions.main)invoke('main',[]);else if(functions.Main)invoke('Main',[]);}
    snapshot(0,'Trace finished. This represents the supported educational subset.');
- }catch(e){if(e instanceof InputPause){pendingInput=e.detail;}else{warnings.push(String(e.message||e));if(steps.length)snapshotSafe();}}
+ }catch(e){if(e instanceof InputPause){pendingInput=e.detail;}else{
+     const message=String(e.message||e);
+     const kind=/outside this tracer|not in the supported teaching subset|not included in the learning subset|unsupported|not supported|syntax outside the learning tracer/i.test(message)?'unsupported':'runtime';
+     warnings.push(message);
+     errors.push({line:currentLine||1,message,kind});
+     if(steps.length)snapshotSafe();
+   }}
  function snapshotSafe(){const last=steps.at(-1);if(last)last.note+=' · Trace stopped: '+warnings.at(-1);}
- return {lang,mode:'interpreted-subset',steps,warnings,pendingInput,consumedInputs:consumed,lines:String(code).split(/\r?\n/)};
+ return {lang,mode:'interpreted-subset',steps,warnings,errors,pendingInput,consumedInputs:consumed,lines:String(code).split(/\r?\n/)};
 }
 function sqlWalkthrough(code){
  const lines=String(code).split(/\r?\n/),steps=[],parts=lines.map((text,i)=>({text:text.trim(),line:i+1})).filter(x=>x.text&&!x.text.startsWith('--'));
@@ -491,5 +609,5 @@ function sqlWalkthrough(code){
  steps.push({line:0,note:'To see real SQL results, run the query in GearEx’s playground.',frames:[{name:'SQL query plan',vars:{status:'Plan reviewed'}}],heap:[],output:''});
  return {lang:'sql',mode:'sql-plan',steps,warnings:[],lines};
 }
-return {detect,run,LABEL,parseExpression,parse};
+return {detect,validate,run,LABEL,parseExpression,parse};
 });

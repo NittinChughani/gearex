@@ -174,3 +174,82 @@ test('Plain input-only programs are detected without a print statement',()=>{
  assert.equal(engine.detect("value = prompt('Value?')"),'js');
  assert.equal(engine.detect("x = Console.ReadLine()"),'cs');
 });
+
+test('Grouped C declarations are traced as separate variables rather than unsupported syntax',()=>{
+ const code='#include <stdio.h>\nint main(){\n int a,b;\n scanf("%d %d",&a,&b);\n printf("%d\\n",a+b);\n return 0;\n}';
+ const checked=engine.validate(code,'c');
+ assert.equal(checked.ok,true,JSON.stringify(checked.issues));
+ assert.equal(engine.run(code,'c').pendingInput.prompt,'Enter a (scanf)');
+ const traced=engine.run(code,'c',{inputs:['3','4']});
+ assert.deepEqual(traced.warnings,[]);
+ assert.equal(resultOutput(traced),'7\n');
+ assert.ok(traced.steps.some(s=>s.frames.some(f=>f.vars.a==='3'&&f.vars.b==='4')));
+});
+test('Grouped declarations with independent initializers work in C/C++/Java/C#',()=>{
+ const examples=[
+ ['c','#include <stdio.h>\nint main(){int a=3, b=5;\nprintf("%d\\n",a+b);\nreturn 0;}'],
+ ['cpp','#include <iostream>\nint main(){int a=3, b=5;\nstd::cout << a+b << std::endl;\nreturn 0;}'],
+ ['java','public class Main {\npublic static void main(String[] args){int a=3, b=5;\nSystem.out.println(a+b);\n}}'],
+ ['cs','using System;\nclass Program {static void Main(){int a=3, b=5;\nConsole.WriteLine(a+b);\n}}']
+ ];
+ for(const [lang,code] of examples){
+   assert.equal(engine.validate(code,lang).ok,true,lang+' preflight should allow grouped declarations');
+   const result=engine.run(code,lang);
+   assert.deepEqual(result.warnings,[],lang);
+   assert.equal(resultOutput(result),'8\n',lang);
+ }
+});
+test('Preflight catches missing semicolon and reports original source line',()=>{
+ const checked=engine.validate('#include <stdio.h>\nint main(){\nint a,b\nreturn 0;\n}','c');
+ assert.equal(checked.ok,false);
+ assert.ok(checked.issues.some(i=>i.line===3&&i.message.includes('Missing ";"')));
+});
+test('Preflight catches invalid initializers even on unreachable lines',()=>{
+ const src='int main(){\nint a = 1;\nif (a == 2) {\nint b = (3 + );\n}\nreturn 0;\n}';
+ const checked=engine.validate(src,'c');
+ assert.equal(checked.ok,false);
+ assert.ok(checked.issues.some(i=>i.line===4&&i.message.includes('Invalid initializer')));
+});
+test('Preflight reports unmatched braces and unterminated string literals with line',()=>{
+ const unmatched=engine.validate('int main(){\nint a=3;\n','c');
+ assert.ok(unmatched.issues.some(i=>i.line===1&&i.message.includes('matching closing')));
+ const unterminated=engine.validate('int main(){\nprintf("hello);\nreturn 0;\n}','c');
+ assert.ok(unterminated.issues.some(i=>i.line===2&&i.message.includes('Unclosed string')));
+});
+test('Preflight spots Python missing colon and missing indentation',()=>{
+ const colon=engine.validate('if True\n    print(1)','py');
+ assert.equal(colon.ok,false);
+ assert.ok(colon.issues.some(i=>i.line===1&&i.message.includes('Expected ":"')));
+ const indent=engine.validate('if True:\nprint(1)','py');
+ assert.equal(indent.ok,false);
+ assert.ok(indent.issues.some(i=>i.line===2&&i.message.includes('indented block')));
+});
+test('Waiting for stdin passes preflight and is not mistaken for a syntax problem',()=>{
+ const code="a = int(input('Value? '))\nprint(a+1)";
+ const checked=engine.validate(code,'py');
+ assert.equal(checked.ok,true,JSON.stringify(checked.issues));
+ const pending=engine.run(code,'py');
+ assert.deepEqual(pending.warnings,[]);
+ assert.equal(pending.pendingInput.line,1);
+});
+test('Runtime errors expose the original execution source line',()=>{
+ const code='int main(){\nint a=4;\nint b=0;\nint answer=a/b;\nreturn 0;\n}';
+ const checked=engine.validate(code,'c');
+ assert.equal(checked.ok,true);
+ const result=engine.run(code,'c');
+ assert.ok(result.warnings.length>0);
+ assert.ok(result.errors.some(e=>e.line===4&&e.message.includes('Division by zero')));
+});
+test('SQL preflight clearly remains conceptual rather than full database validation',()=>{
+ const result=engine.validate('SELECT name FROM people','sql');
+ assert.equal(result.scope,'sql-outline');
+ assert.equal(result.ok,true);
+});
+test('Visualizer checks code before building and lets users inspect diagnostic lines',()=>{
+ const ui=read('assets/gearex-trace-ui.js');
+ assert.ok(ui.includes('E.validate(text,language)'),'Validation must happen before starting the trace');
+ assert.ok(ui.includes('if(!check.ok){showDiagnostics'),'Do not start tracing on a failed syntax check');
+ assert.ok(ui.includes('traceErrors(candidate,language)'),'Dynamic errors must be shown before tracing');
+ assert.ok(ui.includes('setSelectionRange(start,end)'),'Diagnostic line buttons must select the source line');
+ assert.ok(ui.includes('trace-preflight-status'),'Users need a validation result');
+});

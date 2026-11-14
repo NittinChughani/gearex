@@ -197,3 +197,55 @@ body[data-mode="light"] .lesson-grid .lesson-card:focus-within{border-color:var(
  .execution-input-panel,.trace-mode-chooser,.trace-interactive-input{animation:none!important}
  .trace-mode-option{transition:none!important;transform:none!important}
 }
+
+
+/* Readable preflight diagnostics for the native Code Visualizer. */
+.trace-preflight-status{
+ margin:0 0 12px;padding:11px 14px;border-left:3px solid var(--gx-hit);
+ background:var(--gx-paper2);color:var(--gx-muted);
+ font:600 12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;
+ border-radius:4px;
+}
+.trace-diagnostics{
+ background:var(--gx-paper);border:1px solid var(--gx-rule);
+ border-left:4px solid var(--gx-secondary);
+ border-radius:9px;padding:22px;margin:16px 0;
+ animation:gearInputOpen .28s ease both;
+}
+.trace-diagnostics-kicker{
+ font:700 11px/1.4 ui-monospace,Consolas,monospace;
+ letter-spacing:.12em;color:var(--gx-secondary);
+}
+.trace-diagnostics h3{
+ font-size:20px;line-height:1.35;letter-spacing:-.025em;
+ color:var(--gx-ink);margin:8px 0;
+}
+.trace-diagnostics-intro,.trace-diagnostics-note{
+ font-size:13px;line-height:1.6;color:var(--gx-muted);
+ margin:8px 0 13px;
+}
+.trace-diagnostics-list{display:grid;gap:9px}
+.trace-diagnostic-item{
+ padding:14px;border:1px solid var(--gx-rule);
+ background:var(--gx-code);border-radius:7px;
+}
+.trace-diagnostic-item p{margin:8px 0;color:var(--gx-ink);font-size:13px;line-height:1.6}
+.trace-diagnostic-line{
+ appearance:none;background:color-mix(in srgb,var(--gx-secondary) 14%,var(--gx-paper));
+ border:1px solid color-mix(in srgb,var(--gx-secondary) 40%,var(--gx-rule));
+ border-radius:5px;padding:6px 10px;color:var(--gx-ink);
+ font:700 12px ui-monospace,Consolas,monospace;cursor:pointer;
+}
+.trace-diagnostic-line:hover,.trace-diagnostic-line:focus-visible{
+ background:color-mix(in srgb,var(--gx-secondary) 24%,var(--gx-paper));
+ outline:2px solid var(--gx-hit);outline-offset:2px;
+}
+.trace-diagnostic-source{
+ display:block;white-space:pre-wrap;overflow-wrap:anywhere;
+ color:var(--gx-muted);font:12px/1.6 ui-monospace,Consolas,monospace;
+ padding:9px 11px;border-radius:4px;background:var(--gx-paper2);
+}
+.trace-diagnostics-note{margin-top:16px;border-top:1px solid var(--gx-rule);padding-top:13px}
+@media(prefers-reduced-motion:reduce){
+ .trace-diagnostics{animation:none!important}
+}

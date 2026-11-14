@@ -83,6 +83,10 @@
     status.textContent='Step '+index+' / '+last+' · '+E.LABEL[result.lang];
     prev.disabled=index===0;next.disabled=index===last;
     target.replaceChildren();
+    const preflight=create('p','trace-preflight-status',
+      result.mode==='sql-plan'?'SQL query outline only — not database syntax validation.':
+      'Basic supported-syntax checks passed. This is an educational trace, not full language compilation.');
+    target.append(preflight);
     const head=create('div','trace-live-heading');
     head.append(create('span','trace-live-badge',result.mode==='sql-plan'?'Query outline':'Native execution · teaching subset'),
       create('span','trace-live-counter','Step '+String(index).padStart(2,'0')+' / '+String(last).padStart(2,'0')));
@@ -161,7 +165,6 @@
           return;
         }
         input.setCustomValidity('');
-        input.setCustomValidity('');
         const oldIndex=index;
         const resumeAuto=mode==='auto';
         const candidate=E.run(code.value,actualLanguage(),{inputs:[...inputs,input.value]});
@@ -170,6 +173,7 @@
           input.reportValidity();
           return;
         }
+        if(traceErrors(candidate,actualLanguage()))return;
         inputs.push(input.value);
         result=candidate;
         index=Math.min(oldIndex+1,result.steps.length-1);
@@ -183,6 +187,49 @@
     const active=target.querySelector('.trace-code-row.active');
     if(active)active.scrollIntoView({block:'nearest',behavior:'auto'});
   }
+  function showDiagnostics(issues,language){
+    stop();closeChooser();result=null;
+    prev.disabled=true;next.disabled=true;
+    target.replaceChildren();
+    const box=create('section','trace-diagnostics');
+    box.setAttribute('role','alert');
+    const types=new Set(issues.map(x=>x.kind));
+    const unsupported=types.has('unsupported')&&!types.has('syntax');
+    box.append(create('span','trace-diagnostics-kicker',unsupported?'TRACE SUPPORT CHECK':'CODE VALIDATION'));
+    box.append(create('h3','',unsupported?'This code needs an unsupported feature':'Fix the highlighted code before tracing'));
+    box.append(create('p','trace-diagnostics-intro',
+      'GearEx found '+issues.length+' issue'+(issues.length===1?'':'s')+' in '+E.LABEL[language]+'. Select a line to locate it in the source editor.'));
+    const list=create('div','trace-diagnostics-list');
+    const rows=code.value.split(/\r?\n/);
+    for(const issue of issues.slice(0,20)){
+      const item=create('div','trace-diagnostic-item');
+      const line=Number(issue.line)||1;
+      const jump=create('button','trace-diagnostic-line','Line '+line);
+      jump.type='button';
+      jump.addEventListener('click',()=>{
+        const start=rows.slice(0,Math.max(0,line-1)).reduce((n,row)=>n+row.length+1,0);
+        const end=start+(rows[line-1]||'').length;
+        code.focus();
+        code.setSelectionRange(start,end);
+        const editorLine=code.value.slice(0,start).split('\n').length-1;
+        const height=Number.parseFloat(getComputedStyle(code).lineHeight)||21;
+        code.scrollTop=Math.max(0,(editorLine-2)*height);
+      });
+      item.append(jump,create('p','',issue.message));
+      if(rows[line-1])item.append(create('code','trace-diagnostic-source',rows[line-1].trim().slice(0,180)));
+      list.append(item);
+    }
+    box.append(list);
+    box.append(create('p','trace-diagnostics-note','These checks cover the visualizer’s supported teaching syntax, not complete language compilation. Use the Compiler for full compiler diagnostics.'));
+    target.append(box);
+    status.textContent=unsupported?'Code outside visualizer coverage':'Code check found '+issues.length+' issue'+(issues.length===1?'':'s');
+  }
+  function traceErrors(candidate,language){
+    if(!candidate.warnings?.length)return false;
+    const issues=(candidate.errors?.length?candidate.errors:candidate.warnings.map(message=>({line:1,message,kind:'runtime'})));
+    showDiagnostics(issues,language);
+    return true;
+  }
   function prepare(){
     stop();closeChooser();inputs=[];mode='manual';
     const text=code.value;
@@ -190,12 +237,16 @@
     if(text.length>9000){target.replaceChildren(create('p','trace-coverage-note','Use an example under 9,000 characters for this educational trace.'));return;}
     const language=actualLanguage();
     try{
-      result=E.run(text,language,{inputs});index=0;
-      if(!result.steps.length)throw Error('No traceable statements were found.');
+      status.textContent='Checking code before trace…';
+      const check=E.validate(text,language);
+      if(!check.ok){showDiagnostics(check.issues,language);return;}
+      const candidate=E.run(text,language,{inputs});
+      if(traceErrors(candidate,language))return;
+      if(!candidate.steps.length)throw Error('No traceable statements were found.');
+      result=candidate;index=0;
       updateLanguageInfo();render();
     }catch(e){
-      result=null;target.replaceChildren(create('p','trace-coverage-note','This example uses syntax beyond the current visualizer: '+String(e.message||e)));
-      status.textContent='Could not prepare this example';
+      showDiagnostics([{line:1,kind:'unsupported',message:String(e.message||e)}],language);
     }
   }
   go.addEventListener('click',prepare);

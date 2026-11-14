@@ -64,9 +64,12 @@ Use a short example from a lesson, write your own source, or click **Trace my co
 - **Heap diagrams** for arrays, objects and shared references.
 - **Output tracking** and Previous, Next, Play and Reset controls.
 - **Input-aware tracing** that pauses at supported input requests, asks for the value, then resumes execution and updates variables, stack frames and output. Multiple inputs inside loops are requested as execution reaches them.
+- **Before-you-trace code checks:** GearEx screens for common syntax problems and supported-subset execution errors first. When it finds an issue, it displays the source line number, a helpful explanation, and a clickable line link that selects that code in the editor. That means supported errors are shown **before** you start stepping through the program.
 - **Automatic language detection** across the seven course languages.
 
 **Input support:** the native Code Visualizer can pause for Python `input()`, JavaScript `prompt()`, C `scanf()` and `getchar()`, C++ `cin` and `getline()`, Java `Scanner.nextInt()/nextLine()/next()`, and C# `Console.ReadLine()` in supported basic examples. Input prompts are local to your browser; your answers are used to rebuild the educational trace rather than submitted to an online debugging website.
+
+**Validation scope:** the local preflight identifies common missing semicolons in declarations, malformed initializers, unmatched brackets, unclosed string literals, and typical Python colon/indentation mistakes. It also checks for runtime and unsupported-subset issues that can be observed without additional input. The visualizer supports grouped declarations like `int a,b;` and `int a=3, b=5;`. These are **basic checks, not a complete compiler or language syntax certification**; other errors may be discovered after input is provided. Use **Compiler** for full language diagnostics.
 
 **Accuracy and scope:** the visualizer is a browser-based *educational interpreter* for supported foundational features, **not a full debugger or complete language runtime**. Advanced operations and unsupported library calls can stop with a coverage note. For SQL, the visualizer explains query stages; use the Compiler to run SQL queries and see actual results.
 
