@@ -254,7 +254,7 @@ body[data-mode="light"] .lesson-grid .lesson-card:focus-within{border-color:var(
 /* Mirrored source editor: editable textarea with precise red error lines. */
 .trace-editor-shell{position:relative;width:100%;margin-top:4px;isolation:isolate;background:var(--gx-ground);border-radius:6px}
 .trace-source-overlay{position:absolute;inset:1px;z-index:1;overflow:hidden;pointer-events:none;
- border-radius:5px;padding:13px 15px;background:var(--gx-ground)}
+ border-radius:5px;padding:14px 16px;background:var(--gx-ground)}
 .trace-source-mirror{width:max-content;min-width:100%;will-change:transform;tab-size:4}
 .trace-source-mirror-line{min-height:22.75px;height:22.75px;
  font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;
@@ -301,7 +301,7 @@ body[data-mode="light"] .trace-editor-shell #traceSource{caret-color:#e5eff4}
  border-left:3px solid #25a765;background:color-mix(in srgb,#25a765 10%,var(--gx-paper));
  color:#38c983}
 .trace-check-ready-icon{font-size:18px;font-weight:900}
-body[data-mode="light"] .trace-check-feedback.has-errors,.trace-check-feedback.has-errors:where(body[data-mode="light"] *){
+body[data-mode="light"] .trace-check-feedback.has-errors{
  color:#ae1f30;background:#fff0f0
 }
 body[data-mode="light"] .trace-check-feedback.is-ready{color:#167540;background:#e9f8ef}
