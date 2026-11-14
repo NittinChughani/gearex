@@ -228,9 +228,26 @@ function validate(code,selected='auto'){
    }
    chunks.push(part.trim());return chunks;
  };
+ // Remove comments before inspecting individual declarations. A semicolon before
+ // // or /*...*/ is still the end of a valid statement.
+ let isComment=false;
+ const visibleRows=rows.map(raw=>{
+   if(!['c','cpp','java','cs','js'].includes(lang))return raw;
+   let text='',quote='',escaped=false;
+   for(let i=0;i<raw.length;i++){
+     const c=raw[i],next=raw[i+1];
+     if(isComment){if(c==='*'&&next==='/'){isComment=false;i++;}continue;}
+     if(quote){text+=c;if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c===quote)quote='';continue;}
+     if(c==='"'||c==="'"){quote=c;text+=c;continue;}
+     if(c==='/'&&next==='/')break;
+     if(c==='/'&&next==='*'){isComment=true;i++;continue;}
+     text+=c;
+   }
+   return text;
+ });
  const type=/^(?:(?:const|static|unsigned|signed)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|let|var)\s+/;
  for(let i=0;i<rows.length;i++){
-   const original=rows[i],trim=original.trim();
+   const original=visibleRows[i],trim=original.trim();
    if(!trim||trim.startsWith('//')||trim.startsWith('#')||trim.startsWith('/*')||trim==='{'||trim==='}')continue;
    if(['c','cpp','java','cs'].includes(lang)){
      const plain=/^(?:(?:const|static|unsigned|signed)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object)\s+\w+(?:\s*(?:,|=)[^(){}]*)?$/;
