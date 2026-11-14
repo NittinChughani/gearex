@@ -6,8 +6,8 @@
   const button=(text,fn,cls='button secondary compact')=>{const el=create('button',cls,text);el.type='button';el.addEventListener('click',fn);return el;};
   const code=$('#traceSource'),picker=$('#traceLanguage'),target=$('#traceSteps'),
     status=$('#traceProgress'),prev=$('#traceBack'),next=$('#traceNext'),reset=$('#traceReset'),go=$('#traceStart');
-  const play=$('#tracePlay'),sample=$('#traceSample'),hint=$('#traceMismatch');
-  let result=null,index=0,clock=null,sourceHint='py';
+  const play=$('#tracePlay'),sample=$('#traceSample'),hint=$('#traceMismatch'),chooser=$('#traceModeChooser'),manual=$('#traceManualMode'),automatic=$('#traceAutoMode');
+  let result=null,index=0,clock=null,sourceHint='py',inputs=[],mode='manual';
   const demos={
     py:"numbers = [2, 4, 6]\nshared = numbers\nshared.append(8)\nfor n in numbers:\n    print(n)",
     js:"const values = [10, 20];\nconst shared = values;\nshared.push(30);\nfor (let i = 0; i < 3; i++) {\n  console.log(values[i]);\n}",
@@ -17,7 +17,29 @@
     cs:"using System;\nclass Program {\n  static void Main() {\n    int score = 8;\n    score += 4;\n    Console.WriteLine(score);\n  }\n}",
     sql:"SELECT name, score\nFROM learners\nWHERE score >= 80\nORDER BY score DESC;"
   };
-  function stop(){if(clock)clearInterval(clock);clock=null;play.textContent='Play trace';play.setAttribute('aria-pressed','false');}
+  function stop(){
+    if(clock)clearInterval(clock);
+    clock=null;
+    play.textContent='Play trace';
+    play.setAttribute('aria-pressed','false');
+  }
+  function closeChooser(){chooser.hidden=true;}
+  function startAuto(){
+    if(!result)return;
+    if(index===result.steps.length-1){
+      if(result.pendingInput){render();return;}
+      index=0;render();
+    }
+    stop();
+    play.textContent='Pause auto run';
+    play.setAttribute('aria-pressed','true');
+    clock=setInterval(()=>{
+      if(!result){stop();return;}
+      if(index>=result.steps.length-1){stop();return;}
+      index++;render();
+      if(index>=result.steps.length-1)stop();
+    },1250);
+  }
   function actualLanguage(){
     const fallback=picker.value!=='auto'?picker.value:sourceHint;
     return E.detect(code.value,fallback);
@@ -33,7 +55,7 @@
     }
   }
   function load(codeText,lang='auto',navigate=true){
-    stop();code.value=String(codeText||'');picker.value='auto';
+    stop();closeChooser();inputs=[];mode='manual';code.value=String(codeText||'');picker.value='auto';
     sourceHint=E.LABEL[lang]?lang:'py';
     result=null;index=0;updateLanguageInfo();
     target.replaceChildren(create('div','trace-empty','Ready to trace. Select “Build execution trace” to inspect the stack, heap, variables and output.'));
@@ -115,17 +137,53 @@
     }else{
       target.append(create('p','trace-coverage-note','This is a local teaching interpreter for common statements, loops, functions, arrays and objects—not a complete compiler or debugger. Some library calls, classes and advanced syntax are outside its scope.'));
     }
+    if(result.pendingInput&&index===last){
+      stop();
+      const prompt=result.pendingInput;
+      const form=create('form','trace-interactive-input');
+      form.id='traceInputForm';
+      form.append(create('span','eyebrow','INPUT REQUEST · PAUSED'));
+      form.append(create('h3','','The program is waiting for input'));
+      const label=create('label','',prompt.prompt);
+      label.htmlFor='traceInputValue';
+      const input=document.createElement('input');
+      input.id='traceInputValue';input.type='text';input.autocomplete='off';input.spellcheck=false;
+      input.placeholder=prompt.type==='number'?'Enter a number':'Enter input here';
+      input.setAttribute('aria-label',prompt.prompt);
+      const submit=create('button','button primary compact','Submit input & continue');submit.type='submit';
+      form.append(label,input,submit);
+      form.append(create('p','trace-input-help','Step-by-step execution pauses here until you provide a value. It will never skip this input.'));
+      form.addEventListener('submit',event=>{
+        event.preventDefault();
+        if(prompt.type==='number'&&(!input.value.trim()||!Number.isFinite(Number(input.value)))){
+          input.setCustomValidity('Please enter a valid number.');
+          input.reportValidity();
+          return;
+        }
+        input.setCustomValidity('');
+        const oldIndex=index;
+        const resumeAuto=mode==='auto';
+        inputs.push(input.value);
+        result=E.run(code.value,actualLanguage(),{inputs});
+        index=Math.min(oldIndex+1,result.steps.length-1);
+        render();
+        if(resumeAuto && !(result.pendingInput&&index===result.steps.length-1))startAuto();
+      });
+      target.append(form);
+      input.focus({preventScroll:true});
+      status.textContent='Waiting for input '+(prompt.index+1)+' · '+E.LABEL[result.lang];
+    }
     const active=target.querySelector('.trace-code-row.active');
     if(active)active.scrollIntoView({block:'nearest',behavior:'auto'});
   }
   function prepare(){
-    stop();
+    stop();closeChooser();inputs=[];mode='manual';
     const text=code.value;
     if(!text.trim()){target.replaceChildren(create('p','trace-coverage-note','Enter code to visualize.'));return;}
     if(text.length>9000){target.replaceChildren(create('p','trace-coverage-note','Use an example under 9,000 characters for this educational trace.'));return;}
     const language=actualLanguage();
     try{
-      result=E.run(text,language);index=0;
+      result=E.run(text,language,{inputs});index=0;
       if(!result.steps.length)throw Error('No traceable statements were found.');
       updateLanguageInfo();render();
     }catch(e){
@@ -134,21 +192,34 @@
     }
   }
   go.addEventListener('click',prepare);
-  prev.addEventListener('click',()=>{if(result&&index>0){stop();index--;render();}});
-  next.addEventListener('click',()=>{if(result&&index<result.steps.length-1){stop();index++;render();}});
-  reset.addEventListener('click',()=>{stop();index=0;render();});
+  prev.addEventListener('click',()=>{
+    if(result&&index>0){stop();closeChooser();mode='manual';index--;render();}
+  });
+  next.addEventListener('click',()=>{
+    if(result&&index<result.steps.length-1){stop();closeChooser();mode='manual';index++;render();}
+  });
+  reset.addEventListener('click',()=>{stop();closeChooser();mode='manual';index=0;render();});
   play.addEventListener('click',()=>{
     if(clock){stop();return;}
-    if(!result)prepare();if(!result)return;
-    if(index>=result.steps.length-1)index=0;
-    play.textContent='Pause trace';play.setAttribute('aria-pressed','true');
-    clock=setInterval(()=>{if(!result||index>=result.steps.length-1){stop();return;}index++;render();},850);
+    if(!result)prepare();
+    if(!result)return;
+    chooser.hidden=false;
+    manual.focus();
+  });
+  manual.addEventListener('click',()=>{
+    closeChooser();stop();mode='manual';
+    status.textContent='Manual mode · use Next step to continue';
+    if(result.pendingInput&&index===result.steps.length-1)render();
+    else next.focus();
+  });
+  automatic.addEventListener('click',()=>{
+    closeChooser();mode='auto';startAuto();
   });
   const order=['py','js','c','cpp','java','cs','sql'];let n=0;
   sample.addEventListener('click',()=>{const lang=order[(n++)%order.length];load(demos[lang],lang);prepare();});
   $('#traceFromEditor').addEventListener('click',()=>load($('#codeEditor').value,$('#editorLanguage').value));
-  picker.addEventListener('change',()=>{sourceHint=picker.value==='auto'?sourceHint:picker.value;updateLanguageInfo();stop();result=null;target.replaceChildren(create('p','trace-empty','Language updated. Build the trace for this source.'));});
-  code.addEventListener('input',()=>{stop();result=null;updateLanguageInfo();status.textContent='Source modified';target.replaceChildren(create('p','trace-empty','Code changed. Build a new execution trace to inspect the latest version.'));});
+  picker.addEventListener('change',()=>{sourceHint=picker.value==='auto'?sourceHint:picker.value;updateLanguageInfo();stop();closeChooser();inputs=[];mode='manual';result=null;target.replaceChildren(create('p','trace-empty','Language updated. Build the trace for this source.'));});
+  code.addEventListener('input',()=>{stop();closeChooser();inputs=[];mode='manual';result=null;updateLanguageInfo();status.textContent='Source modified';target.replaceChildren(create('p','trace-empty','Code changed. Build a new execution trace to inspect the latest version.'));});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   const direct=button('Trace my code',()=>load($('#codeEditor').value,$('#editorLanguage').value));
   direct.id='sendToVisualizer';$('#runCode').before(direct);
