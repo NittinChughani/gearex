@@ -145,7 +145,11 @@ try {
     </div>
     <p id="traceMismatch" class="trace-detect" role="status" aria-live="polite"></p>
     <div class="trace-edit-label"><label for="traceSource">SOURCE EDITOR</label><span>Runs locally in your browser</span></div>
-    <textarea id="traceSource" spellcheck="false" aria-label="Source code for GearEx visualization" rows="9"></textarea>
+    <div class="trace-editor-shell">
+      <div class="trace-source-overlay" aria-hidden="true"><div id="traceMirrorLines" class="trace-source-mirror"></div></div>
+      <textarea id="traceSource" spellcheck="false" wrap="off" aria-label="Source code for GearEx visualization" aria-describedby="traceCheckFeedback" rows="9"></textarea>
+    </div>
+    <div id="traceCheckFeedback" class="trace-check-feedback" role="status" aria-live="polite" hidden></div>
     <div class="trace-controls" aria-label="Trace playback controls">
       <button id="traceBack" type="button" class="button secondary compact" disabled>← Previous</button>
       <button id="traceNext" type="button" class="button secondary compact" disabled>Next step →</button>
