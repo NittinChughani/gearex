@@ -92,3 +92,72 @@ test('the site uses only its native trace engine and local controls',()=>{
  assert.ok(!html.includes('<iframe'));
  assert.ok(!/<iframe\b/i.test(ui),'Trace UI must be fully local');
 });
+
+test('Python input waits for each value and resumes with a numeric conversion',()=>{
+ const src="name = input('Name? ')\nage = int(input('Age? '))\nprint(name, age)";
+ const first=engine.run(src,'py');
+ assert.equal(first.pendingInput.prompt,'Name? ');
+ assert.deepEqual(first.warnings,[]);
+ const second=engine.run(src,'py',{inputs:['Sam']});
+ assert.equal(second.pendingInput.prompt,'Age? ');
+ assert.equal(second.pendingInput.index,1);
+ const done=engine.run(src,'py',{inputs:['Sam','17']});
+ assert.equal(done.pendingInput,null);
+ assert.deepEqual(done.warnings,[]);
+ assert.equal(resultOutput(done),'Sam 17\n');
+});
+test('Input inside a Python loop pauses once for every iteration',()=>{
+ const src="total = 0\nfor i in range(3):\n    total += int(input('Number? '))\nprint(total)";
+ for(let n=0;n<3;n++){
+   const part=engine.run(src,'py',{inputs:['2','3','4'].slice(0,n)});
+   assert.equal(part.pendingInput?.index,n);
+   assert.deepEqual(part.warnings,[]);
+ }
+ const done=engine.run(src,'py',{inputs:['2','3','4']});
+ assert.equal(resultOutput(done),'9\n');
+});
+test('JavaScript prompt pauses and resumes with actual user text',()=>{
+ const src="const name=prompt('Your name?');\nconsole.log('Hello '+name);";
+ const part=engine.run(src,'js');
+ assert.equal(part.pendingInput.prompt,'Your name?');
+ const done=engine.run(src,'js',{inputs:['Ava']});
+ assert.deepEqual(done.warnings,[]);
+ assert.equal(resultOutput(done),'Hello Ava\n');
+});
+test('C scanf prompts for both numeric variables and then computes correctly',()=>{
+ const src='#include <stdio.h>\nint main(){\nint x;\nint y;\nprintf("Enter values: ");\nscanf("%d %d", &x, &y);\nprintf("%d\\n",x+y);\nreturn 0;\n}';
+ assert.equal(engine.run(src,'c').pendingInput.prompt,'Enter x (scanf)');
+ assert.equal(engine.run(src,'c',{inputs:['10']}).pendingInput.prompt,'Enter y (scanf)');
+ const done=engine.run(src,'c',{inputs:['10','20']});
+ assert.deepEqual(done.warnings,[]);
+ assert.equal(resultOutput(done),'Enter values: 30\n');
+});
+test('C++ cin reads multiple typed values in one expression',()=>{
+ const src='#include <iostream>\nint main(){\nint a;\nint b;\nstd::cin >> a >> b;\nstd::cout << a + b << std::endl;\nreturn 0;\n}';
+ assert.equal(engine.run(src,'cpp').pendingInput.prompt,'Enter a (cin)');
+ const done=engine.run(src,'cpp',{inputs:['4','6']});
+ assert.deepEqual(done.warnings,[]);
+ assert.equal(resultOutput(done),'10\n');
+});
+test('C# and Java input APIs continue trace after user supplies values',()=>{
+ const cs='using System;\nclass Program {\nstatic void Main(){\nint value = Convert.ToInt32(Console.ReadLine());\nConsole.WriteLine(value+3);\n}\n}';
+ assert.equal(engine.run(cs,'cs').pendingInput.prompt,'C# Console.ReadLine()');
+ assert.equal(resultOutput(engine.run(cs,'cs',{inputs:['12']})),'15\n');
+ const java='import java.util.Scanner;\nclass Main {\npublic static void main(String[] args){\nScanner sc = new Scanner(System.in);\nint value = sc.nextInt();\nSystem.out.println(value+2);\n}\n}';
+ assert.equal(engine.run(java,'java').pendingInput.prompt,'Java sc.nextInt()');
+ assert.equal(resultOutput(engine.run(java,'java',{inputs:['8']})),'10\n');
+});
+test('Malformed numeric input returns a coverage warning, not fabricated output',()=>{
+ const src="age = int(input('Age? '))\nprint(age)";
+ const result=engine.run(src,'py',{inputs:['banana']});
+ assert.ok(result.warnings.length>0,'Invalid numeric input must not silently count as zero');
+});
+test('Manual and auto trace controls and input form are wired up',()=>{
+ const html=read('index.html'),ui=read('assets/gearex-trace-ui.js');
+ for(const id of ['traceModeChooser','traceManualMode','traceAutoMode'])assert.ok(html.includes('id="'+id+'"'));
+ assert.ok(ui.includes("mode='manual'"),'Manual must be the default');
+ assert.ok(ui.includes("manual.addEventListener('click'"));
+ assert.ok(ui.includes("automatic.addEventListener('click'"));
+ assert.ok(ui.includes("result.pendingInput"));
+ assert.ok(ui.includes("inputs.push(input.value)"));
+});
