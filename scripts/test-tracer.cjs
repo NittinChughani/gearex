@@ -161,3 +161,16 @@ test('Manual and auto trace controls and input form are wired up',()=>{
  assert.ok(ui.includes("result.pendingInput"));
  assert.ok(ui.includes("inputs.push(input.value)"));
 });
+
+test('C++ getline reads a complete name including spaces',()=>{
+ const src='#include <iostream>\nint main(){\nstd::string name;\nstd::getline(std::cin, name);\nstd::cout << name << std::endl;\nreturn 0;\n}';
+ assert.equal(engine.run(src,'cpp').pendingInput.prompt,'Enter name (getline)');
+ const result=engine.run(src,'cpp',{inputs:['Ada Lovelace']});
+ assert.deepEqual(result.warnings,[]);
+ assert.equal(resultOutput(result),'Ada Lovelace\n');
+});
+test('Plain input-only programs are detected without a print statement',()=>{
+ assert.equal(engine.detect("name = input('Name?')"),'py');
+ assert.equal(engine.detect("value = prompt('Value?')"),'js');
+ assert.equal(engine.detect("x = Console.ReadLine()"),'cs');
+});
