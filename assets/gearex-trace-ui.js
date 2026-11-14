@@ -161,10 +161,17 @@
           return;
         }
         input.setCustomValidity('');
+        input.setCustomValidity('');
         const oldIndex=index;
         const resumeAuto=mode==='auto';
+        const candidate=E.run(code.value,actualLanguage(),{inputs:[...inputs,input.value]});
+        if(candidate.warnings.some(w=>/Expected a valid (?:integer|number)|A numeric value is required/.test(w))){
+          input.setCustomValidity('Please provide a valid number for this input.');
+          input.reportValidity();
+          return;
+        }
         inputs.push(input.value);
-        result=E.run(code.value,actualLanguage(),{inputs});
+        result=candidate;
         index=Math.min(oldIndex+1,result.steps.length-1);
         render();
         if(resumeAuto && !(result.pendingInput&&index===result.steps.length-1))startAuto();
