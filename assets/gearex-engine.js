@@ -404,8 +404,18 @@ function run(code,selected='auto',options={}){
      else result=toNumber(left)/toNumber(right);
      assign(aug[1],result);snapshot(node.line,aug[1]+' is now '+display(result));return;
    }
-   const multi=/^(?:(?:const|static|unsigned)\s+)?(?:int|float|double|long|char|bool|String|string|auto|let|var)\s+\w+\s*=.+,\s*\w+\s*=/.test(raw);
-   if(multi){const parts=splitArgs(raw),type=parts[0].trim().split(/\s+/)[0];for(const [i,part] of parts.entries())statement({text:i?type+' '+part:part,line:node.line});return;}
+   const multiDecl=/^((?:(?:const|static|unsigned|signed)\s+)*(?:int|float|double|long|short|char|bool|boolean|String|string|std::string|auto|decimal|object|let|var))\s+(.+)$/.exec(raw);
+   if(multiDecl&&multiDecl[2].includes(',')){
+     const parts=splitArgs(multiDecl[2]);
+     if(!parts.length||/,\s*$/.test(multiDecl[2]))ERROR('A variable name is missing after a comma.');
+     if(parts.length>1){
+       for(const part of parts){
+         if(!/^[A-Za-z_]\w*(?:\s*=(?!=)\s*.+)?$/.test(part))ERROR('Invalid variable declaration: '+part);
+         statement({text:multiDecl[1]+' '+part,line:node.line});
+       }
+       return;
+     }
+   }
    const arrayDecl=/^(?:(?:const|static)\s+)?(?:int|char|float|double|long|String|bool)\s+(\w+)\s*\[\s*\]\s*=\s*(.+)$/.exec(raw);
    if(arrayDecl){let init=arrayDecl[2].trim();if(init[0]==='{'&&init.endsWith('}'))init='['+init.slice(1,-1)+']';
      const value=evaluate(init);assign(arrayDecl[1],value,true);snapshot(node.line,'Allocate array '+arrayDecl[1]+' in memory.');return;}
