@@ -191,17 +191,21 @@
     }
     if(index===last&&!result.pendingInput&&!result.warnings?.length){
       stop();
+      const sql=result.mode==='sql-plan';
       const finished=create('section','trace-finished');
       finished.setAttribute('role','status');
       const head=create('div','trace-finished-heading');
-      head.append(create('span','trace-finished-check','✓'),create('strong','','Program ended'));
+      head.append(create('span','trace-finished-check','✓'),
+        create('strong','',sql?'Query outline complete':'Program ended'));
       finished.append(head,
-        create('p','','You reached the end of the execution. Review the output and memory state, or run the visualizer again from the first instruction.'));
-      const restart=button('↻ Run visualizer again',()=>{prepare();index=0;render();},'button primary compact');
+        create('p','',sql?
+          'The conceptual SQL walkthrough is complete. For a real query result, use the Compiler.':
+          'You reached the end of execution. Review the output and memory state, or start the visualizer again.'));
+      const restart=button(sql?'↻ Review outline again':'↻ Run visualizer again',()=>{prepare();index=0;render();},'button primary compact');
       restart.id='traceRunAgain';
       finished.append(restart);
       target.append(finished);
-      status.textContent='Program ended · '+E.LABEL[result.lang];
+      status.textContent=(sql?'Query outline complete':'Program ended')+' · '+E.LABEL[result.lang];
     }
     if(result.pendingInput&&index===last){
       stop();
