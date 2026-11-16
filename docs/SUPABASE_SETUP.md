@@ -1,6 +1,6 @@
 # Connect GearEx to Supabase — beginner's step-by-step guide
 
-**Status:** GearEx has an optional account frontend, database policies, private avatar bucket, progress synchronization, and a server-side account deletion function in this development branch. **They are not active until you create and configure your own Supabase project.** Guest lessons, code editor, compiler, quizzes, certificates and local progress work without Supabase. Do not change domains during these steps.
+**Release status (16 November 2026):** The public GearEx website on `main` has connected Supabase login, private progress sync and profile features, with owner-verified Google sign-in and persistence. **Account deletion is not yet live:** the `delete-account` function is committed, but server deployment and a disposable-account deletion test are outstanding. The deployment workflow reports that its GitHub Actions `SUPABASE_ACCESS_TOKEN` secret is missing. This guide is primarily for maintainers, self-hosters and forks; guest lessons, editor, compiler, quizzes, certificates and local progress also work without an account.
 
 > **Never share or commit:** the database password, the Supabase **secret/service_role** key, Google OAuth Client Secret, or your Supabase access token. The **project URL** and **publishable** key are designed to be present in a public frontend, but only with Row Level Security configured.
 
@@ -76,8 +76,8 @@ Official docs: https://supabase.com/docs/guides/auth/social-sign-in/auth-google
 1. Open **Supabase → Project Settings → API Keys / Data API**. Look for:
    - **Project URL**, such as \`https://YOUR_PROJECT_REF.supabase.co\`.
    - **Publishable key**, often beginning with \`sb_publishable_\`. A legacy public anon key can also work.
-2. In the GearEx GitHub development branch, open **assets/supabase-config.js**.
-3. Replace the **two empty strings only**:
+2. In your GearEx fork or checkout, open **assets/supabase-config.js**.
+3. Set the two **public** config values for your own project (the live GearEx repository already contains its public URL and publishable key):
 
    \`\`\`js
    window.GearExSupabaseConfig=Object.freeze({
