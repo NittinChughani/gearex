@@ -75,15 +75,21 @@ function loadSocketClient(){
  if(!root?.document)throw new CompilerServiceError('Browser runtime client is unavailable.','client_unavailable');
  clientPromise=new Promise((resolve,reject)=>{
   const script=root.document.createElement('script');
+  let settled=false;
+  const done=(error,client)=>{
+   if(settled)return;settled=true;clearTimeout(timer);
+   if(error){script.remove();reject(error);}else resolve(client);
+  };
+  const timer=setTimeout(()=>done(new CompilerServiceError('Compiler connection library loading took too long.','client_unavailable')),3000);
   script.src=SOCKET_IO_CDN;
   script.async=true;
   script.integrity=SOCKET_IO_INTEGRITY;
   script.crossOrigin='anonymous';
   script.onload=()=>{
-   if(typeof root.io==='function')resolve(root.io);
-   else reject(new CompilerServiceError('Compiler connection library failed to initialize.','client_unavailable'));
+   if(typeof root.io==='function')done(null,root.io);
+   else done(new CompilerServiceError('Compiler connection library failed to initialize.','client_unavailable'));
   };
-  script.onerror=()=>reject(new CompilerServiceError('Compiler connection library could not be loaded.','client_unavailable'));
+  script.onerror=()=>done(new CompilerServiceError('Compiler connection library could not be loaded.','client_unavailable'));
   root.document.head.appendChild(script);
  }).catch(error=>{clientPromise=null;throw error;});
  return clientPromise;
@@ -150,10 +156,16 @@ async function compile(source,lang,stdin='',onStatus){
  const started=Date.now(),deadline=started+RESPONSE_BUDGET_MS;
  try{
   onStatus?.('Connecting to the code runner…');
-  const conn=await Promise.race([
-   ensureSocket(Math.min(SOCKET_CONNECT_BUDGET_MS,Math.max(1,deadline-Date.now()))),
-   new Promise((_,reject)=>setTimeout(()=>reject(makeTimeout('Compiler connection exceeded the response budget.')),RESPONSE_BUDGET_MS))
-  ]);
+  let connectionTimer;
+  let conn;
+  try{
+   conn=await Promise.race([
+    ensureSocket(Math.min(SOCKET_CONNECT_BUDGET_MS,Math.max(1,deadline-Date.now()))),
+    new Promise((_,reject)=>{
+     connectionTimer=setTimeout(()=>reject(makeTimeout('Compiler connection exceeded the response budget.')),Math.max(1,deadline-Date.now()));
+    })
+   ]);
+  }finally{clearTimeout(connectionTimer);}
   const remaining=deadline-Date.now();
   if(remaining<=0)throw makeTimeout('Compiler connection took longer than 7 seconds.');
   onStatus?.('Running '+LANGUAGES[lang]+'…');
