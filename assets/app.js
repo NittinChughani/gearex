@@ -85,7 +85,27 @@ function renderLessons() {
 function renderLessonDetail(id) {
   const lesson=LESSONS.find(l=>l.id===id);if(!lesson)return false;
   const root=$('#lessonContent');root.replaceChildren();const article=make('article','lesson-body');article.append(make('span','eyebrow',`${lesson.lang==='c'?'C LANGUAGE':lesson.lang==='cpp'?'C++':GEAREX_LANGUAGES[lesson.lang]} • ${lesson.level}`),make('h2','',lesson.title),make('p','lede',lesson.intro));
-  const goals=make('div','lesson-info');goals.append(make('h3','','What you will learn'));addList(goals,lesson.points);article.append(goals);
+  const guide=typeof GEAR_LESSON_GUIDES!=='undefined'?GEAR_LESSON_GUIDES[id]:null;
+   if(guide){
+     const teaching=make('section','lesson-teaching');
+     teaching.append(make('span','eyebrow','LEARN IT FROM THE BEGINNING'),
+       make('h3','','Understand the concept, not just the syntax'));
+     const chapters=[
+       ['01','What does it mean?',guide[0]],
+       ['02','Let’s unpack the example',guide[1]],
+       ['03','Where is it useful?',guide[2]],
+       ['04','Think before you run',guide[3]]
+     ];
+     for(const [number,title,explanation] of chapters){
+       const segment=make('div','lesson-teaching-segment');
+       const label=make('div','lesson-teaching-heading');
+       label.append(make('span','lesson-teaching-number',number),make('h4','',title));
+       segment.append(label,make('p','',explanation));
+       teaching.append(segment);
+     }
+     article.append(teaching);
+   }
+   const goals=make('div','lesson-info');goals.append(make('h3','','What you will learn'));addList(goals,lesson.points);article.append(goals);
   article.append(make('h3','','Syntax essentials'),make('p','',lesson.syntax||lesson.points[0]));article.append(make('h3','','Example source code'),plainCodeBlock(lesson.code));
   const actions=make('div','lesson-actions');const copy=make('button','button secondary compact','Copy example');copy.type='button';copy.dataset.original='Copy example';copy.addEventListener('click',()=>copyContent(lesson.code,copy));const tryIt=make('button','button primary compact','▶ Try in compiler');tryIt.type='button';tryIt.addEventListener('click',()=>{loadIntoEditor(lesson.code,lesson.lang,`Lesson: ${lesson.title}`,null);location.hash='playground';});const trace=make('button','button secondary compact','◎ Visualize step by step');trace.type='button';trace.addEventListener('click',()=>{window.gearexTraceLesson(lesson.code,lesson.lang);location.hash='trace';});actions.append(copy,tryIt,trace);article.append(actions);
   if(lesson.output){const out=make('div','example-output');out.append(make('strong','','Example output'));if(typeof INPUT_EXAMPLES!=='undefined'&&INPUT_EXAMPLES[id])out.append(make('p','muted-small','Example input: '+INPUT_EXAMPLES[id]));out.append(make('pre','',lesson.output));article.append(out);}
