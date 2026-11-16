@@ -414,3 +414,153 @@ Object.assign(GEAR_LESSON_GUIDES,{
 'Replace 42 with a different number. What changes if you omit await and log the Promise object instead?'
 ]
 });
+
+
+Object.assign(GEAR_LESSON_GUIDES,{
+'java-gearex-1':[
+'Java programs group methods and data into classes. A Java program is compiled into bytecode and can run on a compatible Java Virtual Machine. To start a basic command-line application, Java looks for a main method with a specific signature. The class gives the method an owner, while the statements inside main describe what to do.',
+'The example defines a class named prog, then public static void main(String[] args). The System.out.println call displays Hello, GearEx! with a newline. The braces mark which statements belong to the class and which belong to the method; semicolons end ordinary statements.',
+'This structure appears in introductory Java programs and in the entry points of many command-line applications.',
+'Change the greeting, then find the class, main method, print statement, and closing braces in the source.'
+],
+'java-gearex-2':[
+'Java is statically typed: a variable is declared with a type that determines what kind of value can be stored there. An int stores whole-number values, including negative numbers and zero; it does not directly store fractions. A String represents text such as a name. Using the correct type helps Java detect mistakes before execution.',
+'The example creates int score = 95 and String name = "Ada". The + operator joins text when one operand is a string, so name + ": " + score becomes Ada: 95. Java converts the numeric score to text as part of that concatenation, but the score variable itself remains an integer.',
+'Typed variables help structure records, calculations, and parameters in large applications.',
+'Change score to 87 and print score+5 separately. Why does adding two integers differ from joining a String with an integer?'
+],
+'java-gearex-3':[
+'An if statement controls which piece of code runs. Its condition must evaluate to a boolean, true or false. else supplies a path when the condition is false. Braces allow you to group more than one statement into a branch; omitting braces permits only a single following statement.',
+'The sample assigns 76 to score, then tests score >= 50. Since the condition is true, Java prints Pass and skips the else branch. If score were 49 it would print Retry. Notice that >= includes equality, while == compares values for equality.',
+'Conditionals are used for validating user input, checking grades, and choosing which screen or message to display.',
+'Try scores 49, 50, and 76. Which one enters the else branch?'
+],
+'java-gearex-4':[
+'A for loop repeats a block while its condition remains true. Its three sections specify the starting counter, a test, and an update after each iteration. This pattern is ideal when you want to count from one number to another.',
+'for (int i = 1; i <= 3; i++) first creates i with value 1. Java prints i, adds one, and checks again. It prints 1, 2, and 3, then stops when i becomes 4 because the condition fails.',
+'For loops are useful for arrays, repetitive tasks, and scheduled calculations.',
+'Change the upper limit from 3 to 5. Why does the program still stop even though you never write a break statement?'
+],
+'java-gearex-5':[
+'A method is a named operation inside a Java class. Parameters receive arguments from callers, and a return statement supplies a result to the caller. The static keyword allows a method to be called through its class without first creating an object of that class.',
+'The example defines static int add(int a,int b). It promises to return an integer and calculates a+b. main calls add(3,5), receives 8, then System.out.println displays that result. The add method does not print by itself; it returns a value that another statement uses.',
+'Methods are how Java applications organize calculations, validations, and reusable business rules.',
+'Call add(9,4). What is the difference between returning a value and printing it?'
+],
+'java-gearex-6':[
+'An array stores a fixed number of elements of the same type. Each element has a numeric index starting at 0, so a three-item array has indices 0, 1, and 2. The array length does not change after creation, unlike many dynamic collection classes.',
+'int[] a = {3,5,8} creates an array holding three integers. System.out.println(a[1]) reads the second value, 5. The brackets in int[] tell Java the variable refers to an array, while brackets after a name select a particular element.',
+'Arrays are useful when several related measurements or scores must be processed together.',
+'Predict a[0], a[2], and a.length. Why is a[3] not a valid element?'
+],
+'java-gearex-7':[
+'A class defines the data and behavior its objects can have. A constructor is invoked when an object is created and commonly initializes its fields. The new keyword creates an instance. Every separate instance can hold its own data even though the objects follow the same class blueprint.',
+'Learner declares a String field called name. Its constructor receives a value and stores it in that field. The statement new Learner("Ada") creates a learner whose name is Ada, and the following .name reads the stored field. The example prints Ada.',
+'Objects make it practical to represent students, products, contacts, or other records with related behavior.',
+'Create another Learner with a different name. Explain why its name field need not match the first object.'
+],
+'java-gearex-8':[
+'Inheritance means that one class can extend another class and reuse its accessible members. The parent describes shared behavior, while the child may add new behavior or override an existing method. Overriding means supplying a replacement implementation with a compatible method signature.',
+'Dog extends Animal, so Dog has the shared interface of Animal. The Dog version of speak returns woof rather than the parent implementation sound. @Override asks the compiler to verify that the method really replaces a parent method. Calling new Dog().speak() therefore prints woof.',
+'Inheritance is useful when related objects share an interface, though not every shared feature requires inheritance.',
+'Remove the Dog override. Which version of speak should the new Dog object use then?'
+],
+'cs-gearex-1':[
+'C# is a modern language commonly used with .NET. Code can be organized inside classes and methods. A console application prints text to a terminal, which makes it a good starting point for learning statements and program structure.',
+'using System; makes the System namespace convenient to use. The Program class contains a static Main method where this example starts. Console.WriteLine prints Hello, GearEx! and moves to the next line. Semicolons terminate ordinary statements; braces define the class and method bodies.',
+'C# console programs are useful for small tools, scripts, learning exercises, and the logic behind larger applications.',
+'Change the message and identify which line imports a namespace versus which line actually writes output.'
+],
+'cs-gearex-2':[
+'C# is statically typed, meaning that a variable has a defined type. string is used for text, while int stores whole numbers. C# also supports type inference through var: the compiler determines the variable type from its initializer, but the type still remains fixed afterward.',
+'The sample creates string name = "Ada" and int score = 95. The $ before the quoted text starts an interpolated string, so {name} and {score} are replaced with their values. Console.WriteLine produces Ada: 95 without changing either variable.',
+'These typed values are the building blocks of forms, records, services, and application state.',
+'Change score to 100 and predict the printed message. Why would assigning a text value to score be a type error?'
+],
+'cs-gearex-3':[
+'An if statement asks a true/false question and chooses which statement to execute. The condition appears in parentheses, and braces can group multiple statements into a branch. An else branch runs only if the if condition fails.',
+'The example stores score = 76 and tests score >= 50. The test is true, so Console.WriteLine("Pass") runs and the Retry branch is skipped. If the score were 49, the condition would be false and Retry would be printed. The >= operator includes equality.',
+'Conditionals are useful for validation, grading, and adapting a program to different situations.',
+'Test values 49, 50, and 51. For each, explain why exactly one message should print.'
+],
+'cs-gearex-4':[
+'A for loop performs repeated work using a counter. The initializer runs once, the condition runs before each iteration, and the update runs after the body. A loop can therefore count a known number of repetitions without copying the body multiple times.',
+'The header for (int i = 1; i <= 3; i++) starts i at 1. Console.WriteLine prints 1, then i increments to 2. The program prints 2 and 3 and stops when i becomes 4. The braces and indentation make the repeated statement easy to see.',
+'Loops are important for arrays, reporting, and processing a group of similar items.',
+'Change the test to i < 3. How many values will now be printed?'
+],
+'cs-gearex-5':[
+'A method encapsulates a calculation or action behind a name. Parameters receive inputs, and return transfers a computed value back to the calling expression. Static methods can be called without creating an instance of the containing class.',
+'The example defines static int Add(int a,int b), which returns the sum of its two integer parameters. Main calls Add(3,5) and receives 8. Console.WriteLine prints that returned result. The method itself performs the calculation but is not responsible for the output.',
+'Methods make programs easier to test because each operation can have a small, clear purpose.',
+'Try Add(10,4). Why does Console.WriteLine not need to know how Add calculates its result?'
+],
+'cs-gearex-6':[
+'An array stores a fixed sequence of values with one declared element type. Each item has an index starting at zero. A three-item array can be pictured as three labeled boxes: index 0, index 1, and index 2.',
+'int[] numbers = {3,5,8} creates the array. Console.WriteLine(numbers[1]) reads the item at position 1, which is 5. The int[] type means the variable holds an array of integers rather than one integer.',
+'Arrays are useful for storing measurements, game scores, and other ordered collections whose size is known.',
+'Predict numbers[0], numbers[2], and numbers.Length. Why would numbers[3] be outside the array?'
+],
+'cs-gearex-7':[
+'A class describes objects, and a property provides a controlled way to read or change part of an object’s state. A property using get and set behaves like a field from the caller’s perspective but can later add validation or computed behavior.',
+'The example defines a Learner class with a public Name property, initialized to Ada. new Learner() creates an instance. The expression .Name reads that property, so Console.WriteLine displays Ada. The braces on get; set; define accessors rather than an ordinary method body.',
+'Properties are common in application models, data binding, configuration, and API response objects.',
+'Create a learner, assign a different Name, then read it. How does using a property differ from defining a method GetName()?'
+],
+'cs-gearex-8':[
+'LINQ stands for Language Integrated Query. It provides operators that ask questions of collections, such as “keep elements matching this condition” or “transform each element.” The Where operation filters a collection based on a predicate: a function that returns true or false.',
+'The example stores 2, 5, and 8 in an array. scores.Where(x => x > 3) visits each value and retains only 5 and 8 because they satisfy the condition. string.Join(",", ...) combines those numbers into the text 5,8 for display.',
+'LINQ is useful for searching, filtering, summarizing, and reshaping collection data without writing repetitive loops.',
+'Change the predicate to x >= 5. Which elements remain? What changes if you use x > 5 instead?'
+],
+'sql-gearex-1':[
+'SQL is a language for asking questions about data stored in tables. A table has columns, which describe fields, and rows, which are individual records. SELECT chooses which columns to return, while FROM identifies where to find those records.',
+'The example creates temporary learner data with names and scores using WITH and VALUES. The SELECT name FROM learners part asks for the name column from each row. The result is a table containing Ada and Sam, rather than the original score values.',
+'SELECT queries are the foundation of reporting, dashboards, and finding relevant records in databases.',
+'Change SELECT name to SELECT name, score. Predict how many columns appear in the result.'
+],
+'sql-gearex-2':[
+'WHERE filters which rows of a table belong in the result. It uses a condition, often comparing a column to a value. Rows satisfying the condition are included; rows that do not satisfy it are excluded.',
+'The sample has two learners: Ada with score 95 and Sam with score 72. WHERE score >= 80 keeps Ada’s row and removes Sam’s row before the displayed name column is returned. This does not change the original data; it only changes the query result.',
+'Filtering is useful for search, selecting passing students, date ranges, and many database reports.',
+'Change the threshold from 80 to 70. Which names should be returned?'
+],
+'sql-gearex-3':[
+'ORDER BY arranges returned rows by one or more columns. ASC means ascending order, usually smallest to largest or alphabetically A to Z; DESC means descending order. Sorting changes the order of the result, not the underlying stored rows.',
+'The sample data has Ada with score 95 and Sam with score 72. ORDER BY score DESC places the higher score first, so Ada appears before Sam. The SELECT still chooses name as the output column even though the ordering uses score.',
+'Sorting is useful for leaderboards, newest-first feeds, ranked reports, and alphabetical lists.',
+'Change DESC to ASC. Which learner appears first, and why?'
+],
+'sql-gearex-4':[
+'An aggregate function summarizes several rows into a single result. SUM adds numbers, AVG calculates a mean, COUNT counts rows or values, and MIN or MAX finds an extreme value. These functions are designed for reporting rather than listing every record.',
+'The example builds a temporary scores table containing 10, 20, and 30. SELECT SUM(score) asks the database to add those three values, so the answer is 60. The query returns one aggregate result rather than three separate rows.',
+'Aggregates are used for financial totals, class averages, attendance, and performance dashboards.',
+'Replace SUM with AVG. Calculate the expected answer before running the query.'
+],
+'sql-gearex-5':[
+'GROUP BY collects rows with matching key values into groups. You can then use an aggregate such as COUNT to summarize each group independently. Without grouping, COUNT(*) summarizes all rows together.',
+'The sample data contains two rows with language C and one with Python. GROUP BY lang forms one C group and one Python group. COUNT(*) counts the rows in each group, yielding C: 2 and Python: 1.',
+'Grouping is useful for counting users per country, orders per month, or students per course.',
+'Add another Python row. Predict how the two group counts change.'
+],
+'sql-gearex-6':[
+'A JOIN combines rows from two tables using a relationship between them. Tables often store related information separately to avoid repetition. A JOIN condition describes how to match them, usually by an ID stored in both tables.',
+'The example has a students table with IDs and names and a marks table with matching IDs and scores. JOIN marks ON students.id = marks.id pairs each student with the score belonging to the same ID. SELECT then displays the combined name and score columns.',
+'Joins are essential when a database stores customers and orders, students and grades, or products and categories separately.',
+'Imagine a marks row whose student ID does not appear in students. Would an ordinary inner JOIN include it?'
+],
+'sql-gearex-7':[
+'CREATE TABLE defines the structure of a new database table, including its columns and their types. INSERT INTO adds rows to that table. SQL can therefore both define where information belongs and populate the structure with records.',
+'The example creates learners with an INTEGER id column and TEXT name column. INSERT INTO adds one row containing ID 1 and name Ada. SELECT name FROM learners then retrieves Ada from the stored row.',
+'Creating and inserting data are basic tasks in applications that store accounts, inventory, or form submissions.',
+'Add a second row with a different ID and name. Predict what the final SELECT returns.'
+],
+'sql-gearex-8':[
+'UPDATE changes values in existing rows. DELETE removes rows. A WHERE condition is especially important because it selects which records are affected. Forgetting WHERE in an UPDATE or DELETE can change or remove every row of a table.',
+'The example creates a learners table, inserts a row with score 50, then runs UPDATE learners SET score = 95 WHERE id = 1. Only the row with ID 1 is changed. The final SELECT returns the updated score, 95.',
+'Updates and deletes are used when correcting records, changing application state, or cleaning stored data.',
+'Predict what would happen if the UPDATE statement had no WHERE clause and the table contained many learners.'
+]
+});
+
+Object.freeze(GEAR_LESSON_GUIDES);
