@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify pinned Supabase browser SDK is reachable
+        run: curl --fail --location --silent --show-error --head --max-time 20 https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js
       - name: Install Playwright
         run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.56.1
       - name: Install Chromium
