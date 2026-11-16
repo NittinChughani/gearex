@@ -11,6 +11,7 @@ const LABEL={py:'Python',js:'JavaScript',c:'C',cpp:'C++',java:'Java',cs:'C#',sql
 function detect(code,fallback='py'){
   const s=String(code||'');
   if(/^\s*(?:SELECT|WITH|CREATE\s+TABLE|INSERT\s+INTO|UPDATE\s+\w+|DELETE\s+FROM|DROP\s+TABLE)\b/im.test(s))return 'sql';
+  if(/\busing\s+namespace\s+std\s*;|#include\s*<(?:iostream|vector|algorithm|cmath|bits\/stdc\+\+)>/.test(s))return 'cpp';
   if(/\b(?:Console\.(?:WriteLine|ReadLine|Read)|using\s+System\s*;|namespace\s+\w+|static\s+void\s+Main)\b/.test(s))return 'cs';
   if(/\b(?:System\.out\.(?:print|println)|public\s+class\s+\w+|@Override|System\.in|new\s+Scanner\s*\(|\w+\.nextInt\s*\()\b/.test(s))return 'java';
   if(/#include\s*<(?:iostream|vector|bits\/stdc\+\+|string|algorithm|cmath|iomanip|fstream|map|set|memory|array|utility)>|\busing\s+namespace\s+std\s*;|std::|\bcout\s*<<|\bcin\s*>>|\bgetline\s*\(/.test(s))return 'cpp';
