@@ -129,8 +129,10 @@ async function syncNow(){
  }finally{syncing=false;}
 }
 function scheduleSync(){
- if(!user||!authReady)return;
- dirty=true;clearTimeout(uploadTimer);
+ if(!user)return;
+ dirty=true;
+ if(!authReady)return;
+ clearTimeout(uploadTimer);
  uploadTimer=setTimeout(syncNow,1600);
  announce('Saving securely…');
 }
@@ -182,7 +184,8 @@ async function startUser(account){
    location.hash='dashboard';location.reload();return;
   }
   authReady=true;await loadProfile();
-  announce('All changes saved to your account');
+  if(dirty) scheduleSync();
+  else announce('All changes saved to your account');
   setDialog(false);
  }catch(err){
   // The visible guest workspace remains untouched when the provider isn't ready.
