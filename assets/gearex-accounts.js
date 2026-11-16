@@ -61,7 +61,7 @@ function updateAvatar(src){
 function refreshIdentity(){
  const name=displayName();
  if($('profileName')&&document.activeElement!==$('profileName'))$('profileName').value=name;
- if($('welcomeName'))$('welcomeName').textContent=user?'Welcome back, '+name:'Your learning journey, your pace';
+ if($('welcomeName'))$('welcomeName').textContent=user?'Welcome back, '+name:name==='Guest learner'?'Your learning journey, your pace':'Welcome, '+name;
  if($('accountLaunch')){
   $('accountLaunch').setAttribute('aria-label',user?'Open account settings':'Sign in to GearEx');
   $('accountLaunch').title=user?'Account · '+name:'Sign in (optional)';
