@@ -9,7 +9,7 @@
   /* Completion and credentials: 70 marks lesson checks + 30 final assessment. */
   const certKey='gearex-certificates-v2',nameKey='gearex-certificate-name-v1';
   const final=read(certKey);
-  const save=()=>{try{localStorage.setItem(certKey,JSON.stringify(final));}catch{}};
+  const save=()=>{try{localStorage.setItem(certKey,JSON.stringify(final));window.dispatchEvent(new CustomEvent('gearex:progresschange'));}catch{}};
   const getName=()=>{try{return String(localStorage.getItem(nameKey)||'').trim();}catch{return '';}};
   const lessons=lang=>LESSONS.filter(l=>l.lang===lang);
   const snapshot=lang=>{
@@ -118,7 +118,7 @@
         if(value.length<2||!/[A-Za-z\u00c0-\u024f\u0600-\u06ff]/u.test(value)){input.setCustomValidity('Enter your full name.');input.reportValidity();return;}
         input.setCustomValidity('');
         if(!confirm('Confirm certificate name as "'+value+'"? You will not be able to change it within GearEx after confirmation.'))return;
-        try{localStorage.setItem(nameKey,value);}catch{alert('This browser is not allowing local certificate storage. Enable local storage and try again.');return;}
+        try{localStorage.setItem(nameKey,value);window.dispatchEvent(new CustomEvent('gearex:progresschange'));}catch{alert('This browser is not allowing local certificate storage. Enable local storage and try again.');return;}
         showCertificate(lang);
       },'button primary compact'));
       root.append(el('h3','','Confirm your certificate name'),el('p','','You may enter the recipient name only once. After confirmation, GearEx does not offer an edit action for this browser.'),form);
