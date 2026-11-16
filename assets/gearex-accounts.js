@@ -42,6 +42,7 @@ function announce(msg){
 }
 let client=null,user=null,profile=null,transitioning=false,avatarUrl=null;
 let dirty=false,reset=false,uploadTimer=null,syncing=false,authReady=false;
+let deletingAccount=false;
 function displayName(){
  if(user)return String(profile?.display_name||user.user_metadata?.full_name||user.email?.split('@')[0]||'Learner').slice(0,60);
  return get(GUEST_NAME,'Guest learner');
@@ -215,7 +216,7 @@ function onChange(event,session){
  if(event==='INITIAL_SESSION')return;
  if(session?.user&&['SIGNED_IN','TOKEN_REFRESHED','USER_UPDATED'].includes(event)){
   if(!user||user.id!==session.user.id)startUser(session.user);
- }else if(event==='SIGNED_OUT')restoreGuest();
+ }else if(event==='SIGNED_OUT'&&!deletingAccount)restoreGuest();
 }
 async function startAuth(){
  if(!available){if(owner().startsWith('user:')){restoreGuest();return;}announce('Cloud accounts are not yet connected. Guest learning and local profiles work now.');return;}
@@ -325,13 +326,50 @@ async function googleSignIn(){
  if(error)announce('Google sign-in failed: '+error.message);
 }
 async function deleteAccount(){
- if(!client||!user)return;
+ if(!client||!user||deletingAccount)return;
  if(window.prompt('Permanently delete your GearEx account, cloud progress and photo? Type DELETE to confirm:')!=='DELETE')return;
+ deletingAccount=true;
+ const accountId=user.id;
+ const button=$('accountDelete');
+ if(button)button.disabled=true;
  announce('Deleting account and private data…');
- const {error}=await client.functions.invoke('delete-account',{body:{confirmation:'DELETE'}});
- if(error){announce('Account deletion unavailable: '+error.message+'. Your account remains active.');return;}
- try{await client.auth.signOut({scope:'local'});}catch{}
- restoreGuest();
+ let deleted=false;
+ try{
+  const {data,error}=await client.functions.invoke('delete-account',{body:{confirmation:'DELETE'}});
+  if(error){
+   let reason=String(error.message||'The request failed');
+   try{
+    const payload=await error.context?.json?.();
+    if(typeof payload?.error==='string')reason=payload.error;
+   }catch{}
+   if(/failed to send a request|failed to fetch|networkerror/i.test(reason))
+    reason='The deletion service could not be reached. Its deployment or browser access needs attention';
+   announce('Account deletion unavailable: '+reason+'. Your account remains active.');
+   return;
+  }
+  if(data?.ok!==true){
+   announce('Deletion was not confirmed by the server. Your account has not been marked as deleted.');
+   return;
+  }
+  deleted=true;
+  // A deleted account must not leave its private progress in an account cache.
+  // Preserve ONLY the separate guest workspace, not the deleted account data.
+  clearTimeout(uploadTimer);
+  dirty=false;reset=false;authReady=false;
+  try{await client.auth.signOut({scope:'local'});}catch{}
+  try{localStorage.removeItem('gearex-account-cache:'+accountId);}catch{}
+  user=null;profile=null;avatarUrl=null;
+  try{writeSnapshot(parse(get(GUEST),blank()));put(OWNER,'guest');}
+  catch{try{localStorage.removeItem(OWNER);}catch{}}
+  announce('Account deleted. Returning to guest mode…');
+  location.hash='dashboard';
+  location.reload();
+ }catch(err){
+  if(!deleted)announce('Account deletion unavailable: '+String(err.message||err).slice(0,160)+'. Your account remains active.');
+  else announce('Your account was deleted, but local cleanup needs a page refresh.');
+ }finally{
+  if(!deleted){deletingAccount=false;if(button)button.disabled=false;}
+ }
 }
 function initialize(){
  refreshIdentity();
