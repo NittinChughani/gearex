@@ -214,7 +214,7 @@ function onChange(event,session){
  }else if(event==='SIGNED_OUT')restoreGuest();
 }
 async function startAuth(){
- if(!available){announce('Cloud accounts are not yet connected. Guest learning and local profiles work now.');return;}
+ if(!available){if(owner().startsWith('user:')){restoreGuest();return;}announce('Cloud accounts are not yet connected. Guest learning and local profiles work now.');return;}
  announce('Connecting account services…');
  try{
   const sdk=await loadSdk();
@@ -227,7 +227,7 @@ async function startAuth(){
   if(data.session?.user)await startUser(data.session.user);
   else if(owner().startsWith('user:'))restoreGuest();
   else{announce('Guest mode · Sign in anytime to sync progress');refreshIdentity();}
- }catch(err){announce('Account connection unavailable · Guest mode works: '+String(err.message||err).slice(0,130));}
+ }catch(err){if(owner().startsWith('user:')){restoreGuest();return;}announce('Account connection unavailable · Guest mode works: '+String(err.message||err).slice(0,130));}
 }
 function transformPhoto(file){
  return new Promise((resolve,reject)=>{
