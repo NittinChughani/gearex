@@ -6,7 +6,7 @@
   const clean=v=>String(v||'').replace(/\s+/g,' ').trim();
   const read=()=>{try{const d=JSON.parse(localStorage.getItem(key)||'{}');return d&&typeof d==='object'&&!Array.isArray(d)?d:{};}catch{return {};}};
   const scores=read();
-  const save=()=>{try{localStorage.setItem(key,JSON.stringify(scores));}catch{}};
+  const save=()=>{try{localStorage.setItem(key,JSON.stringify(scores));window.dispatchEvent(new CustomEvent('gearex:progresschange'));}catch{}};
   const sampleLine=l=>String(l.code||'').split(/\r?\n/).map(x=>x.trim()).find(x=>x.length>=12&&!/^(\/\/|#include|using namespace|int main|public class Main|class prog|static void Main|\{|\}|\/\/)/.test(x))||String(l.code||'').split('\n').find(x=>x.trim().length>3)||'';
   const hash=s=>Array.from(String(s)).reduce((n,c)=>(n*31+c.charCodeAt(0))>>>0,7);
   const collect=(lesson,field)=>{
