@@ -5,6 +5,6 @@
  * While blank, GearEx remains fully usable in guest mode.
  */
 window.GearExSupabaseConfig=Object.freeze({
-  url:'',
-  publishableKey:''
+  url:'https://erljgeqlntpllyikrvns.supabase.co',
+  publishableKey:'sb_publishable_yznUBGRCY0kPsWElGQCyiQ_o9ws0Js4'
 });
