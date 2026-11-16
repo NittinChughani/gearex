@@ -15,6 +15,7 @@ jobs:
         run: |
           node --check assets/data.js
           node --check assets/gearex-courses.js
+          node --check assets/lesson-guides.js
           node --check assets/challenges.js
           node --check assets/projects.js
           node --check assets/app.js
@@ -30,5 +31,5 @@ jobs:
         run: node --test scripts/test-tracer.cjs
       - name: Navigation and appearance tests
         run: node --test scripts/test-shell.cjs
-      - name: Compiler recovery and language tests
+      - name: Single compiler, syntax and language tests
         run: node --test scripts/test-compiler.cjs
