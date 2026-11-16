@@ -109,7 +109,7 @@
     showCheckFeedback();
     sourceHint=E.LABEL[lang]?lang:'py';
     result=null;index=0;updateLanguageInfo();
-    target.replaceChildren(create('div','trace-empty','Ready to trace. Select “Build execution trace” to inspect the stack, heap, variables and output.'));
+    target.replaceChildren(create('div','trace-empty','Ready to trace. Select “Check code & build trace” to inspect the stack, heap, variables and output.'));
     status.classList.remove('trace-status-error');
     status.textContent='Editor ready';
     prev.disabled=true;next.disabled=true;
@@ -188,6 +188,24 @@
       target.append(create('p','trace-coverage-note','SQL view explains query stages only. It does not execute SQL or invent results.'));
     }else{
       target.append(create('p','trace-coverage-note','This is a local teaching interpreter for common statements, loops, functions, arrays and objects—not a complete compiler or debugger. Some library calls, classes and advanced syntax are outside its scope.'));
+    }
+    if(index===last&&!result.pendingInput&&!result.warnings?.length){
+      stop();
+      const sql=result.mode==='sql-plan';
+      const finished=create('section','trace-finished');
+      finished.setAttribute('role','status');
+      const head=create('div','trace-finished-heading');
+      head.append(create('span','trace-finished-check','✓'),
+        create('strong','',sql?'Query outline complete':'Program ended'));
+      finished.append(head,
+        create('p','',sql?
+          'The conceptual SQL walkthrough is complete. For a real query result, use the Compiler.':
+          'You reached the end of execution. Review the output and memory state, or start the visualizer again.'));
+      const restart=button(sql?'↻ Review outline again':'↻ Run visualizer again',()=>{prepare();index=0;render();},'button primary compact');
+      restart.id='traceRunAgain';
+      finished.append(restart);
+      target.append(finished);
+      status.textContent=(sql?'Query outline complete':'Program ended')+' · '+E.LABEL[result.lang];
     }
     if(result.pendingInput&&index===last){
       stop();

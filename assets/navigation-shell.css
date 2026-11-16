@@ -312,3 +312,50 @@ body[data-mode="light"] .trace-source-mirror-line.has-error{color:#ff8794!import
  .trace-check-error{gap:6px}
 }
 @media(prefers-reduced-motion:reduce){.trace-source-mirror{will-change:auto}}
+
+
+/* Spacious tracing workspace and a reassuring, explicit completion state. */
+body[data-theme] .trace-editor-shell #traceSource{
+ height:420px;min-height:350px;max-height:75svh;
+}
+.trace-source-overlay{min-height:100%}
+.trace-finished{
+ margin-top:20px;padding:21px 23px;border:1px solid color-mix(in srgb,var(--gx-hit) 35%,var(--gx-rule));
+ border-radius:10px;background:color-mix(in srgb,var(--gx-hit) 8%,var(--gx-paper));
+ animation:gearInputOpen .28s cubic-bezier(.16,1,.3,1) both;
+}
+.trace-finished-heading{display:flex;align-items:center;gap:11px;color:var(--gx-ink);font-size:18px}
+.trace-finished-check{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;
+ background:color-mix(in srgb,#23a56b 20%,var(--gx-paper));color:#27b77c;font-weight:900}
+.trace-finished p{margin:12px 0 18px;color:var(--gx-muted);line-height:1.7;font-size:13px;max-width:690px}
+@media(max-width:680px){
+ body[data-theme] .trace-editor-shell #traceSource{height:330px;min-height:280px;max-height:68svh}
+ .trace-finished{padding:15px}
+}
+@media(prefers-reduced-motion:reduce){.trace-finished{animation:none!important}}
+
+
+/* Proper beginner-first explanations: readable, source-grounded, reusable lesson layout. */
+.lesson-teaching{
+ margin:28px 0 30px;padding:25px 27px 12px;
+ border:1px solid var(--gx-rule);border-left:3px solid var(--gx-hit);
+ background:var(--gx-paper);border-radius:10px;
+}
+.lesson-teaching>.eyebrow{letter-spacing:.12em;color:var(--gx-hit);font-size:11px;font-weight:750}
+.lesson-teaching>h3{font-size:clamp(20px,3vw,26px);line-height:1.32;color:var(--gx-ink);margin:8px 0 22px;letter-spacing:-.035em}
+.lesson-teaching-segment{padding:16px 0 19px;border-top:1px solid var(--gx-rule)}
+.lesson-teaching-heading{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.lesson-teaching-heading h4{margin:0;color:var(--gx-ink);font-size:16px;letter-spacing:-.02em;font-weight:760}
+.lesson-teaching-number{display:grid;place-items:center;width:32px;height:30px;flex-shrink:0;border-radius:6px;
+ background:var(--gx-paper2);color:var(--gx-hit);font:750 12px ui-monospace,Consolas,monospace}
+.lesson-teaching-segment p{max-width:82ch;margin:0;color:var(--gx-ink);opacity:.91;font-size:14px;line-height:1.85}
+.lesson-teaching-segment:last-child{margin:0 -12px -3px;padding:16px 12px 20px;border-radius:6px;
+ background:color-mix(in srgb,var(--gx-hit) 7%,var(--gx-paper))}
+.lesson-teaching-segment:last-child .lesson-teaching-heading h4{color:var(--gx-hit)}
+body[data-mode="dark"] .lesson-teaching-segment p{color:var(--gx-ink);opacity:.95}
+@media(max-width:680px){
+ .lesson-teaching{padding:17px 18px 8px;margin:20px 0}
+ .lesson-teaching>h3{font-size:21px;margin-bottom:15px}
+ .lesson-teaching-heading h4{font-size:15px}
+ .lesson-teaching-segment p{font-size:13.5px;line-height:1.8}
+}

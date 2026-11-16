@@ -48,6 +48,19 @@ No signup is needed. The website is open-source, built with HTML, CSS and JavaSc
 
 </details>
 
+## Lessons that teach from the beginning
+
+Every one of the **91 lessons** now has a full, topic-specific learning guide. Instead of leaving a new learner with a short definition, each lesson provides four readable stages:
+
+| Stage | What you'll understand |
+|:--|:--|
+| **01 · What does it mean?** | The idea in plain language, with terminology explained rather than assumed |
+| **02 · Let's unpack the example** | What the actual example does, how values change, and why each major part matters |
+| **03 · Where is it useful?** | A concrete situation where the concept is used |
+| **04 · Think before you run** | A specific change or prediction to practice independent reasoning |
+
+For example, the **C Variables & Data Types** lesson explains why an `int` holds whole numbers, how `double` differs, what `char` represents, how the values in the code are initialized, and why `printf` uses different format specifiers. The new guides sit alongside syntax references, worked code, output, challenges, and **five-question completion assessments**. Existing scores and certificates remain intact.
+
 ## Meet the Code Visualizer
 
 <p align="center">
@@ -58,6 +71,7 @@ GearEx has a **built-in Code Visualizer** to help learners understand how code w
 
 Use a short example from a lesson, write your own source, or click **Trace my code** from the **Compiler**. GearEx recognizes familiar syntax and provides:
 
+- **Larger source editor, completion and replay:** The expanded coding area shows more lines at once. The last execution step displays **Program ended** and a **Run visualizer again** control.
 - **Manual or Auto playback:** click **Play trace** and choose **Manual — Next step** (recommended for learning) or **Auto run**. Manual moves one instruction at a time; Auto uses timed steps and can be paused.
 - **Line-by-line stepping** with highlighted source and explanations.
 - **Call-stack views** showing function frames and variables.
@@ -70,6 +84,8 @@ Use a short example from a lesson, write your own source, or click **Trace my co
 **Input support:** the native Code Visualizer can pause for Python `input()`, JavaScript `prompt()`, C `scanf()` and `getchar()`, C++ `cin` and `getline()`, Java `Scanner.nextInt()/nextLine()/next()`, and C# `Console.ReadLine()` in supported basic examples. Input prompts are local to your browser; your answers are used to rebuild the educational trace rather than submitted to an online debugging website.
 
 **Validation scope:** the local preflight identifies common missing semicolons in C, C++, Java and C# declarations, assignments, output statements and returns—not just variable declarations. It also checks malformed initializers, unmatched brackets, unclosed string literals and common Python colon/indentation mistakes. JavaScript and Python do not require semicolons at the end of ordinary statements. It also checks for runtime and unsupported-subset issues that can be observed without additional input. The visualizer supports grouped declarations like `int a,b;` and `int a=3, b=5;`. These are **basic checks, not a complete compiler or language syntax certification**; other errors may be discovered after input is provided. Use **Compiler** for full language diagnostics.
+
+**Headers and namespaces:** The visualizer recognizes C/C++ `#include` and `using namespace std;` directives as setup steps. Some common math functions such as `sqrt`, `pow`, `abs` and `sin` can be traced in simple examples, but it **does not execute arbitrary header implementations or third-party libraries**. Full compilation uses the remote Compiler with whichever headers the provider actually has installed.
 
 **Accuracy and scope:** the visualizer is a browser-based *educational interpreter* for supported foundational features, **not a full debugger or complete language runtime**. Advanced operations and unsupported library calls can stop with a coverage note. For SQL, the visualizer explains query stages; use the Compiler to run SQL queries and see actual results.
 
@@ -128,9 +144,11 @@ When code uses a recognized input command and the standard-input box is empty, G
 **Technical limitation:** the hosted compiler services take standard input **before** execution; they do not provide a live interactive terminal session. GearEx collects values in advance and passes them to the compiler as stdin, then shows the real program output. Programs with input requirements that cannot be determined statically may need additional lines entered manually. The Code Visualizer is different: it can actually pause and ask during its supported execution trace.
 
 
-Actual code execution uses **[Judge0 CE](https://ce.judge0.com/)** with automatic recovery through **[Wandbox](https://wandbox.org/)** when the first remote service is unavailable. The compiler recognizes familiar language syntax from the source before submission and adjusts the selected language when there is a confident match. It displays genuine program output or compiler diagnostics, including which service completed the run and the elapsed time. The second service can handle transient infrastructure errors such as a sandbox failing to start; normal syntax errors are shown directly rather than rerun unnecessarily.
+Actual code execution uses **one remote service: [Wandbox](https://wandbox.org/)**. GearEx does not switch to a backup compiler, duplicate submissions or poll a separate job queue. It caches available language runtimes so subsequent runs avoid fetching the compiler list again. The page prepares the runtime list when you open the Compiler, and one compile/run request returns program output or compiler diagnostics.
 
-Execution requires internet access and availability of at least one remote service. GearEx does **not** guarantee uptime or instantaneous results when those shared services are at capacity. **Don't include passwords or personal information in submitted code.**
+**C/C++ headers:** Source code is sent to Wandbox **with its original `#include` directives and `using namespace std;` intact**. C, C++, and their standard-library headers are compiled by the provider's installed toolchain. Other headers may work when that environment provides them; a locally unavailable or custom header cannot be guaranteed by a static website. The browser-based Code Visualizer implements only its documented teaching subset.
+
+**Reliability:** Wandbox is a shared third-party service. It can be slow, unavailable or rate-limited, and no free remote execution service can promise instant responses or 100% uptime. GearEx limits how long it waits, gives a concise **service-unavailable** message if the request fails, and keeps that message separate from genuine syntax/compiler errors. Running code requires internet access. **Don't include passwords or personal information in submitted code.**
 
 The Code Visualizer is separate from the Compiler and works locally in the browser for its supported teaching subset.
 
@@ -158,7 +176,8 @@ gearex/
 │   ├── navigation-shell.css      # Light/dark switch, palettes, view transitions
 │   ├── studio-motion.js          # View animation and staggered cards
 │   ├── app.js                    # Hash routing, lessons, compiler UI, progress
-│   ├── compiler-service.js       # Dual-service runner and OCI-error recovery
+│   ├── compiler-service.js       # Single provider, runtime caching and execution
+│   ├── lesson-guides.js          # 91 detailed, topic-specific beginner explanations
 │   ├── gearex-engine.js          # Built-in teaching interpreter
 │   ├── gearex-trace-ui.js        # Code Visualizer stack/heap interface
 │   ├── gearex-features.js        # Assessments and certificates

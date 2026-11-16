@@ -6,7 +6,7 @@ GearEx is a dependency-free, browser-first learning platform. It is hosted as a 
 
 The visual language follows a software lab: information-dense controls, monospace labels for execution state, restrained backgrounds, clear reading rhythm, and color reserved for meaningful status. The home page includes a handcrafted code/stack/heap demonstration. Short animations express real changes—active instruction, new heap value, entering a section—rather than decorating the entire interface.
 
-Five appearance palettes are preserved through CSS custom properties. `assets/style.css` maintains existing components and theme definitions; `assets/studio.css` provides the core workbench layout; `assets/navigation-shell.css` adds the default light appearance, dark mode, palette launcher, and view transitions; `assets/studio-motion.js` adds route-change animations and card sequencing while respecting reduced-motion preferences. No framework or animation package is needed.
+Four colored palettes plus a neutral option are preserved through CSS custom properties. `assets/style.css` maintains existing components and theme definitions; `assets/studio.css` provides the core workbench layout; `assets/navigation-shell.css` adds the default light appearance, dark mode, palette launcher, and view transitions; `assets/studio-motion.js` adds route-change animations and card sequencing while respecting reduced-motion preferences. No framework or animation package is needed.
 
 ## Source map
 
@@ -15,10 +15,11 @@ Five appearance palettes are preserved through CSS custom properties. `assets/st
 | `index.html` | Semantic structure, editors, controls, runtime panels and metadata |
 | `assets/data.js` | Original C/C++ lessons and general quizzes |
 | `assets/gearex-courses.js` | Python, JavaScript, Java, C#, SQL teaching material |
+| `assets/lesson-guides.js` | Four substantial, source-specific beginner teaching stages for every lesson |
 | `assets/challenges.js` | C/C++ programming challenges |
 | `assets/projects.js` | C/C++ guided projects |
 | `assets/app.js` | Hash-routed views, appearance preferences, lessons, compiler UI and progress storage |
-| `assets/compiler-service.js` | API submission/polling, status normalization and automatic remote-service failover |
+| `assets/compiler-service.js` | Single Wandbox compile request, cached runtime catalog and error categorization |
 | `assets/lesson-assessments.js` | Five-question checks, 4/5 pass rule, best marks and progress migration |
 | `assets/gearex-engine.js` | Pure, browser-local educational expression and statement interpreter |
 | `assets/gearex-trace-ui.js` | Language auto-detection, source stepping, stack/heap visualization, playback |
@@ -81,7 +82,7 @@ Theme CSS is split between `assets/studio.css` (dark palette definitions) and `a
 
 ## Learning and certification
 
-Every language track consists of lessons with an intro, concept explanation, syntax, executable example and practice task. The `lesson-assessments.js` module derives **five multiple-choice questions from the specific lesson content** and requires 4/5 to verify a lesson. Best scores are stored in `gearex-lesson-checks-v1` and included in imported/exported progress.
+Every language track consists of lessons with a detailed explanation of its concept, worked-example reasoning, a real-world use, a specific prediction task, syntax references, executable source and practice. The four teaching paragraphs for each of the 91 lesson IDs live in `assets/lesson-guides.js` and are rendered before the shorter quick-reference teaching points. When adding a lesson, always create its four paragraphs with source-specific explanation; the content check requires all guides to be present. The `lesson-assessments.js` module derives **five multiple-choice questions from the specific lesson content** and requires 4/5 to verify a lesson. Best scores are stored in `gearex-lesson-checks-v1` and included in imported/exported progress.
 
 Certificates unlock when all lessons for a language have verified checks and the final assessment reaches 70%. A certificate receives up to 70 marks from lesson checks and 30 from the final assessment, for a combined score out of 100. The recipient enters their name once; the website stores it in browser localStorage and does not provide an editing control afterward.
 
@@ -100,19 +101,20 @@ Run these commands before merging:
 ```bash
 node scripts/check-content.cjs
 node --test scripts/test-tracer.cjs
+node --test scripts/test-compiler.cjs
 ```
 
 The `.github/workflows/validate.yml` workflow also checks the syntax of every production JavaScript file. Verify the live GitHub Pages deployment separately before announcing changes; successful lint checks alone do not validate interactive rendering or third-party compilation.
 
 ## Online Compiler reliability
 
-The **Compiler** submits source and stdin to remote sandboxed services. The standalone `assets/compiler-service.js` first tries Judge0 CE (using a known language ID and asynchronous submission-token polling), then uses Wandbox as backup when the request fails, times out, the queue is unreachable, or a container runtime error is returned (including `OCI runtime error: crun: clone: Resource temporarily unavailable`). The backup uses a cached compiler catalog and prefers stable releases over HEAD builds.
+The Compiler sends source and stdin to **one external compiler provider, Wandbox**. It does not retry the code through other vendors or poll a second queue. On entering the Compiler view, `GearExCompiler.warmup()` loads the provider's available compiler list and selects stable installed runtime versions. The selected names are cached in localStorage for up to 24 hours; subsequent submissions make **one** `POST /api/compile.json` request. The source and `#include` directives are preserved exactly, apart from a documented stdin adapter for JavaScript `prompt()` in Node.
 
-`assets/app.js` detects recognizable source syntax through `GearExEngine.detect`, updates the language selector on a confident mismatch, and submits the chosen language to `GearExCompiler.compile`. The output shows which backend completed the run and how long the run took. Genuine code errors return unsuccessful results and **must not trigger a second execution**. A successful sample test still compares raw stdout against the sample's expected output, and is only counted for the correct challenge language.
+`assets/app.js` detects recognizable source syntax through `GearExEngine.detect`, adjusts the language selector on a confident mismatch, and calls `GearExCompiler.compile`. The result returns genuine standard output or compiler diagnostics. The UI shows elapsed time and separates ordinary program errors from **service errors** such as HTTP 429, network failures, timeouts and OCI container startup failures. Service errors must never be presented as evidence that the learner's source code is incorrect. A failed remote service must not prompt automatic resubmission.
 
-Both remote services are independent of GitHub Pages and may rate-limit requests, be unavailable, or have a backlog. Never imply local compilation or guarantee runtime success when both are offline; errors should explain that the external service did not execute the code. A JavaScript browser sandbox is not a safe substitute for real multi-language program execution. The Code Visualizer remains a separate educational interpreter with deliberately limited syntax coverage.
+The first visit may require a catalog lookup; later visits generally reuse the cached selection. The request has a finite timeout, but the service is operated by others, so neither performance nor 100% uptime can be guaranteed. The compiler can only use headers and libraries actually installed on Wandbox. Do not claim that arbitrary third-party or local header files will compile in the hosted environment. Real multi-language execution cannot be made fully independent or always available by static GitHub Pages alone.
 
-Test local service behavior without making real network calls:
+Test the compiler module without calling the live third-party API:
 
 ```
 node --test scripts/test-compiler.cjs
@@ -135,3 +137,9 @@ The teaching interpreter now supports **comma-separated typed variables** with o
 **Playback modes:** Build Trace is initially **manual**. When visitors click `Play trace`, display `#traceModeChooser` with Manual and Auto choices. Manual uses the existing Next/Previous buttons; Auto advances on a readable interval and can be paused. Either mode stops at required input; manual remains manual afterward, while auto can resume once that input is supplied. Reset returns to the first step without changing the source. Mode and code are not uploaded or sent to a third-party trace service.
 
 **Limits:** the interpreter supports an educational subset, not full language semantics. Some library input APIs (such as event-driven asynchronous prompts) remain unsupported; show a coverage note instead of inventing data. Inputs in loops are requested on each supported iteration. Test with `node --test scripts/test-tracer.cjs` and `node --test scripts/test-compiler.cjs`.
+
+## Extended beginner curriculum and program completion
+
+Each lesson renders a four-stage authored guide from `GEAR_LESSON_GUIDES[lesson.id]`: **What does it mean?**, **Let's unpack the example**, **Where is it useful?**, and **Think before you run**. All 91 lessons (C 25, C++ 26, plus 8 each in Python, JavaScript, Java, C#, and SQL) have individual prose. The new guidance does not change lesson IDs, assessments, progress storage or certificates.
+
+The Code Visualizer's source editor has a taller, resizable area. For C/C++ source, `#include` and `using namespace std;` produce explanatory setup snapshots; the interpreter also understands a small selected set of mathematical built-ins such as `sqrt()`. This does **not** mean arbitrary included library routines are executed by the local interpreter. When the final step is reached without a pending input request or warning, the visualizer shows **Program ended** and a **Run visualizer again** button. SQL remains a conceptual outline, not a database execution.
