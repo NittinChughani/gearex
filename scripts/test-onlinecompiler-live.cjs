@@ -54,6 +54,11 @@ function run(label,compiler,code,input,expectedSuccess,pattern){
    ['C++ headers + stdin','g++-15','#include <iostream>\n#include <cmath>\nusing namespace std;\nint main(){int n;cin>>n;cout<<sqrt(n)<<endl;}','25\n',true,/5/],
    ['C++ compiler error','g++-15','#include <iostream>\nint main(){int value = ; cout << value;}','',false,/error|expected/i],
    ['Python output','python-3.14','print(42)','',true,/42/],
+   ['C stdio header','gcc-15','#include <stdio.h>\nint main(){printf("42\\n");return 0;}','',true,/42/],
+   ['JavaScript output','nodejs-24','console.log(42)','',true,/42/],
+   ['Java output','openjdk-25','public class Main { public static void main(String[] args){System.out.println(42);} }','',true,/42/],
+   ['C# output','dotnet-csharp-10','using System; class Program {static void Main(){Console.WriteLine(42);}}','',true,/42/],
+   ['SQLite output','sqlite-3','SELECT 42;','',true,/42/],
   ];
   for(let i=0;i<cases.length;i++){
    if(i)await pause(1250);
