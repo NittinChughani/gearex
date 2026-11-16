@@ -1,0 +1,6 @@
+# GearEx project configuration for Supabase CLI.
+# The function authenticates the caller internally with auth.getUser(jwt).
+project_id = "gearex"
+
+[functions.delete-account]
+verify_jwt = false

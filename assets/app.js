@@ -1,6 +1,6 @@
 /* GearEx — plain JavaScript, GitHub Pages compatible.
    User content is inserted with textContent, never interpreted as HTML.
-   Compiler execution goes to one external Wandbox runtime; input is submitted as stdin. */
+   Compiler execution uses the single OnlineCompiler.io service; optional cloud sync is separate. */
 'use strict';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
@@ -31,7 +31,7 @@ const state = {
   currentChallenge: null, visual: 'loops', loopStep: 0, arrayIndex: 0, pointerValue: 12,
   quiz: [], quizIndex: 0, quizScore: 0, quizSelected: null, quizMissed: [], quizRetry: false
 };
-function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify({theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts})); } catch { /* Browser storage may be disabled. */ } }
+function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify({theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts})); window.dispatchEvent(new CustomEvent('gearex:progresschange')); } catch { /* Browser storage may be disabled. */ } }
 const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
 const text = (selector, value) => { const node = $(selector); if (node) node.textContent = String(value); };
 const normal = value => String(value || '').trim().replace(/\s+/g, ' ');
@@ -44,6 +44,11 @@ function updateStats() {
   const lp = Math.round(state.completed.size / LESSONS.length * 100), cp = Math.round(state.passed.size / CHALLENGES.length * 100);
   text('#lessonProgressLabel', `${lp}%`);text('#challengeProgressLabel', `${cp}%`);
   $('#lessonProgressBar').style.width = lp + '%'; $('#challengeProgressBar').style.width = cp + '%';
+  const next=LESSONS.find(l=>!state.completed.has(l.id));
+  const link=$('#nextLesson');
+  if(link){link.href=next?'#lesson/'+encodeURIComponent(next.id):'#certificate';link.textContent=next?'Continue learning ↗':'View certificates ↗';}
+  text('#nextLessonDescription',next?'Next up: '+next.title+'. Pick up right where you left off.':'You finished the lesson curriculum. Explore your certificates.');
+  renderSavedPrograms();
 }
 function setTheme() {
   const mode=state.mode==='dark'?'dark':'light';
@@ -272,10 +277,39 @@ function visualTabs(){setActiveButtons('[data-visual]','visual',state.visual);co
  }else{
   const card=make('div','pointer-model');const name=make('div','pointer-block');name.append(make('small','','Variable: score'),make('strong','',state.pointerValue));const pointer=make('div','pointer-arrow','ptr → &score');const value=make('div','pointer-block');value.append(make('small','','Dereference: *ptr'),make('strong','',state.pointerValue));card.append(name,pointer,value);root.append(card);const info=make('p','visual-explanation','ptr refers to score. Writing through *ptr changes the original score too.');root.append(info);const inc=make('button','button primary compact','*ptr += 1');inc.addEventListener('click',()=>{state.pointerValue++;visualTabs()});const reset=make('button','button secondary compact','Reset');reset.addEventListener('click',()=>{state.pointerValue=12;visualTabs()});const actions=make('div','lesson-actions');actions.append(inc,reset);root.append(actions,plainCodeBlock('int score = 12;\nint *ptr = &score;\n*ptr += 1; // updates score'));}
 }
+
+function renderSavedPrograms(){
+ const root=$('#savedProgramsList');if(!root)return;
+ root.replaceChildren();
+ const entries=Object.entries(state.drafts).filter(([k,v])=>k.startsWith('saved:')&&typeof v==='string').slice(0,80);
+ if(!entries.length){root.append(make('p','privacy-note','Save a useful snippet from the compiler to see it here.'));return;}
+ for(const [key,code] of entries){
+  const parts=key.split(':'),lang=parts[1],name=parts.slice(2).join(':').replace(/::backup-[0-9a-f]+$/,' · backup');
+  if(!Object.hasOwn(examples,lang))continue;
+  const item=make('article','saved-program');
+  const info=make('div','saved-program-info');
+  info.append(make('strong','',name),make('small','',String(GEAREX_LANGUAGES[lang]||lang)+' · '+code.split(/\r?\n/).length+' lines'));
+  const open=make('button','button secondary compact','Open code ↗');open.type='button';
+  open.addEventListener('click',()=>{loadIntoEditor(code,lang,'Saved: '+name,null);location.hash='playground';});
+  item.append(info,open);root.append(item);
+ }
+}
+function saveCurrentProgram(){
+ const code=$('#codeEditor').value.trim();
+ if(!code){dashboardStatus('Write some code before saving.');return;}
+ const nameInput=prompt('Name this program:','My '+$('#editorLanguage').selectedOptions[0].textContent+' program');
+ if(nameInput===null)return;
+ const name=normal(nameInput).replace(/[:<>]/g,'').slice(0,55);
+ if(!name){dashboardStatus('Please choose a program name.');return;}
+ const lang=$('#editorLanguage').value,key='saved:'+lang+':'+name;
+ if(Object.hasOwn(state.drafts,key)&&!confirm('Replace your saved program named '+name+'?'))return;
+ state.drafts[key]=code;persist();renderSavedPrograms();
+ dashboardStatus('Saved '+name+'. Open it again from your dashboard.');
+}
 function dashboardStatus(message){text('#dashboardMessage',message);}
-function exportProgress(){const payload={app:'GearEx',version:2,exportedAt:new Date().toISOString(),progress:{theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts}};payload.certificates=window.gearexExportCertificates?window.gearexExportCertificates():{};payload.lessonChecks=window.gearexExportLessonChecks?window.gearexExportLessonChecks():{};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=make('a');a.href=url;a.download='gearex-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);dashboardStatus('Your progress file was prepared for download.');}
-async function importProgress(file){if(!file)return;if(file.size>1024*1024){dashboardStatus('Import rejected: file is too large.');return;}try{const data=JSON.parse(await file.text());if(!['CodeLab Academy','GearEx'].includes(data.app)||!data.progress||typeof data.progress!=='object')throw new Error('Not a GearEx progress export.');const p=data.progress;state.completed=restoreList(p.completed,lessonIds);if(window.gearexImportLessonChecks)window.gearexImportLessonChecks(data.lessonChecks||{});state.completed=new Set([...state.completed].filter(id=>window.gearexLessonPassed?.(id)));state.bookmarks=restoreList(p.bookmarks,lessonIds);state.practiced=restoreList(p.practiced,lessonIds);state.passed=restoreList(p.passed,challengeIds);state.tried=restoreList(p.tried,challengeIds);state.projects=restoreList(p.projects,projectIds);state.quizAttempts=Math.floor(clamp(p.quizAttempts||0,0,1000000));state.best=p.best&&Number.isFinite(Number(p.best.percent))&&Number(p.best.percent)>=0&&Number(p.best.percent)<=100?{percent:Number(p.best.percent),lang:String(p.best.lang||'Quiz').slice(0,60)}:null;state.theme=['none','cyberpunk','quantum','synthwave','matrix'].includes(p.theme)?p.theme:'none';state.mode=p.mode==='dark'?'dark':'light';persist();if(window.gearexImportCertificates)window.gearexImportCertificates(data.certificates);setTheme();updateStats();renderLessons();renderRoadmap();renderChallenges();renderProjects();dashboardStatus('Progress imported successfully.');}catch(err){dashboardStatus('Import failed: '+err.message);}finally{$('#importFile').value='';}}
-const GEAR_VIEWS=new Set(['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about']);
+function exportProgress(){const payload={app:'GearEx',version:2,exportedAt:new Date().toISOString(),progress:{theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts}};payload.certificates=window.gearexExportCertificates?window.gearexExportCertificates():{};payload.lessonChecks=window.gearexExportLessonChecks?window.gearexExportLessonChecks():{};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=make('a');a.href=url;a.download='gearex-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);dashboardStatus('Your progress file was prepared for download.');}
+async function importProgress(file){if(!file)return;if(file.size>1024*1024){dashboardStatus('Import rejected: file is too large.');return;}try{const data=JSON.parse(await file.text());if(!['CodeLab Academy','GearEx'].includes(data.app)||!data.progress||typeof data.progress!=='object')throw new Error('Not a GearEx progress export.');const p=data.progress;state.completed=restoreList(p.completed,lessonIds);if(window.gearexImportLessonChecks)window.gearexImportLessonChecks(data.lessonChecks||{});state.completed=new Set([...state.completed].filter(id=>window.gearexLessonPassed?.(id)));state.bookmarks=restoreList(p.bookmarks,lessonIds);state.practiced=restoreList(p.practiced,lessonIds);state.passed=restoreList(p.passed,challengeIds);state.tried=restoreList(p.tried,challengeIds);state.projects=restoreList(p.projects,projectIds);state.quizAttempts=Math.floor(clamp(p.quizAttempts||0,0,1000000));state.drafts=p.drafts&&typeof p.drafts==='object'&&!Array.isArray(p.drafts)?Object.fromEntries(Object.entries(p.drafts).filter(([k,v])=>k.length<140&&typeof v==='string'&&v.length<=100000)):{};state.best=p.best&&Number.isFinite(Number(p.best.percent))&&Number(p.best.percent)>=0&&Number(p.best.percent)<=100?{percent:Number(p.best.percent),lang:String(p.best.lang||'Quiz').slice(0,60)}:null;state.theme=['none','cyberpunk','quantum','synthwave','matrix'].includes(p.theme)?p.theme:'none';state.mode=p.mode==='dark'?'dark':'light';persist();if(window.gearexImportCertificates)window.gearexImportCertificates(data.certificates);setTheme();updateStats();renderLessons();renderRoadmap();renderChallenges();renderProjects();dashboardStatus('Progress imported successfully.');}catch(err){dashboardStatus('Import failed: '+err.message);}finally{$('#importFile').value='';}}
+const GEAR_VIEWS=new Set(['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about','privacy']);
 function closeThemeMenu(refocus=false){
   const menu=$('#themeMenu'),launcher=$('#themeLauncher');
   if(!menu||!launcher)return;
@@ -341,8 +375,8 @@ function init(){text('#year',new Date().getFullYear());setTheme();updateStats();
   });
  $('#backLessons').addEventListener('click',()=>{location.hash='learn';});$('#backChallenges').addEventListener('click',()=>{location.hash='practice';});$('#backProjects').addEventListener('click',()=>{location.hash='projects';});
  $('#showBookmarks').addEventListener('click',()=>{state.lessonFilter='bookmarks';state.lessonSearch='';$('#search').value='';setActiveButtons('[data-filter]','filter',state.lessonFilter);renderLessons();location.hash='learn';});
- $('#exportProgress').addEventListener('click',exportProgress);$('#importProgress').addEventListener('click',()=>$('#importFile').click());$('#importFile').addEventListener('change',e=>importProgress(e.target.files[0]));
- $('#resetProgress').addEventListener('click',()=>{if(!confirm('Clear lessons, bookmarks, quiz scores, challenge and project progress on this device? This cannot be undone unless you exported a backup.'))return;state.completed.clear();state.bookmarks.clear();state.practiced.clear();state.passed.clear();state.tried.clear();state.projects.clear();state.best=null;state.quizAttempts=0;if(window.gearexResetLessonChecks)window.gearexResetLessonChecks();if(window.gearexResetCertificates)window.gearexResetCertificates();persist();updateStats();renderRoadmap();renderLessons();renderChallenges();renderProjects();dashboardStatus('Saved progress cleared.');});
+ $('#saveCurrentProgram')?.addEventListener('click',saveCurrentProgram);$('#exportProgress').addEventListener('click',exportProgress);$('#importProgress').addEventListener('click',()=>$('#importFile').click());$('#importFile').addEventListener('change',e=>importProgress(e.target.files[0]));
+ $('#resetProgress').addEventListener('click',()=>{if(!confirm('Clear lessons, bookmarks, quiz scores, challenge and project progress on this device? This cannot be undone unless you exported a backup.'))return;state.completed.clear();state.bookmarks.clear();state.practiced.clear();state.passed.clear();state.tried.clear();state.projects.clear();state.best=null;state.quizAttempts=0;if(window.gearexResetLessonChecks)window.gearexResetLessonChecks();if(window.gearexResetCertificates)window.gearexResetCertificates();persist();updateStats();renderRoadmap();renderLessons();renderChallenges();renderProjects();window.dispatchEvent(new CustomEvent('gearex:reset-progress'));dashboardStatus('Saved progress cleared.');});
  $$('[data-visual]').forEach(b=>b.addEventListener('click',()=>{state.visual=b.dataset.visual;visualTabs();}));
  const editor=$('#codeEditor');editor.addEventListener('input',()=>{updateEditorView();saveEditorSoon();});editor.addEventListener('scroll',editorSync);editor.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();editor.setRangeText('    ',editor.selectionStart,editor.selectionEnd,'end');editor.dispatchEvent(new Event('input'));}else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();runEditor();}});
  $('#editorLanguage').addEventListener('change',e=>{const lang=e.target.value;const draft=state.drafts['scratch:'+lang];loadIntoEditor(typeof draft==='string'?draft:examples[lang][$('#starterExample').value],lang,'Scratchpad',null);});
