@@ -6,5 +6,5 @@
  * Until configured, the compiler displays a setup notice rather than faking output.
  */
 window.GearExCompilerConfig=Object.freeze({
-  widgetKey:''
+  widgetKey:'e334daaffea0b59dbc20e57ae34b2113'
 });
