@@ -12,7 +12,6 @@ const url=process.env.GEAREX_TEST_URL||'http://127.0.0.1:8765/';
   await page.locator('#accountLaunch').waitFor();
   assert.equal(await page.evaluate(()=>window.GearExAccounts?.isConfigured()),false);
   await page.goto(url+'#dashboard',{waitUntil:'domcontentloaded'});
-  await page.locator('#account-unknown').count(); // harmless selector: confirms page initialized
   await page.locator('#profileName').fill('GearEx Demo Learner');
   await page.locator('#saveProfile').click();
   assert.match(await page.locator('#welcomeName').innerText(),/GearEx Demo Learner/);
@@ -34,7 +33,8 @@ const url=process.env.GEAREX_TEST_URL||'http://127.0.0.1:8765/';
   await page.goto(url+'#playground',{waitUntil:'domcontentloaded'});
   await page.locator('#editorLanguage').selectOption('py');
   await page.locator('#codeEditor').fill('print("saved for later")');
-  await page.goto(url+'#dashboard',{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>{location.hash='dashboard'});
+  await page.locator('#dashboard').waitFor({state:'visible'});
   page.once('dialog',d=>d.accept('My Python practice'));
   await page.locator('#saveCurrentProgram').click();
   await page.locator('.saved-program').first().waitFor();
