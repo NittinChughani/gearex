@@ -10,7 +10,7 @@ const url=process.env.GEAREX_TEST_URL||'http://127.0.0.1:8765/';
  try{
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:25000});
   await page.locator('#accountLaunch').waitFor();
-  assert.equal(await page.evaluate(()=>window.GearExAccounts?.isConfigured()),false);
+  assert.equal(await page.evaluate(()=>window.GearExAccounts?.isConfigured()),true);
   await page.goto(url+'#dashboard',{waitUntil:'domcontentloaded'});
   await page.locator('#profileName').fill('GearEx Demo Learner');
   await page.locator('#saveProfile').click();
@@ -26,7 +26,7 @@ const url=process.env.GEAREX_TEST_URL||'http://127.0.0.1:8765/';
 
   await page.locator('#accountSignIn').click();
   assert.equal(await page.locator('#authDialog').isVisible(),true);
-  assert.match(await page.locator('#authMessage').innerText(),/not yet connected/i);
+  assert.equal(await page.locator('#authGoogle').isVisible(),true);
   await page.locator('#authClose').click();
   console.log('Optional account dialog in pre-configuration guest mode: PASS');
 
