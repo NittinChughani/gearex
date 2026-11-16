@@ -160,3 +160,25 @@ test('compiler guided input panel remains functional and preserves provided stdi
  assert.ok(app.includes('runEditor(true)'));
  assert.ok(app.includes("if(!inputsConfirmed&&!stdin.trim())"));
 });
+
+test('slow-but-successful compilation is not cancelled at ten seconds',async()=>{
+ const calls=[];
+ const {compiler}=createRunner(async(url)=>{
+   calls.push(url);
+   if(url.endsWith('/list.json'))return response(sampleList);
+   await new Promise(resolve=>setTimeout(resolve,25));
+   return response({status:0,program_stdout:'5\n',program_message:'5\n'});
+ });
+ const result=await compiler.compile('#include <iostream>\nint main(){std::cout<<5;}','cpp');
+ assert.equal(result.success,true);
+ assert.equal(result.stdout,'5\n');
+ assert.equal(calls.filter(x=>x.endsWith('/compile.json')).length,1);
+ assert.match(source,/EXECUTION_TIMEOUT_MS=45000/);
+ assert.match(source,/CATALOG_TIMEOUT_MS=12000/);
+ assert.ok(!source.includes('},10000)'), 'Do not restore the premature 10-second timeout');
+});
+test('timeout errors clearly identify the service rather than the source',()=>{
+ assert.match(source,/service timeout, not a code error/);
+ assert.match(source,/remote compiler did not respond within/);
+ assert.ok(!source.includes('Judge0 CE is primary'));
+});
