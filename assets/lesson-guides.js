@@ -314,3 +314,103 @@ Object.assign(GEAR_LESSON_GUIDES,{
 'Add another grade and predict the new average. Then test the empty-vector case and explain why that guard is essential.'
 ]
 });
+
+
+Object.assign(GEAR_LESSON_GUIDES,{
+'py-gearex-1':[
+'Python is a programming language designed to make many common tasks readable. You write instructions in a .py file and an interpreter executes them. You do not need a main function for a simple script. Python uses new lines and indentation to organize instructions, so spacing is part of how code is structured.',
+'The example has one statement: print("Hello, GearEx!") displays the text inside its parentheses. The quotes tell Python the content is text rather than a variable name; print sends it to standard output. You can use either single or double quotes for a simple string.',
+'Printing is the first step toward showing calculated answers, verifying program state, and communicating with users.',
+'Replace the message with your own sentence. What happens if you remove one quote or mistype print?'
+],
+'py-gearex-2':[
+'A Python variable is a name that refers to a value. You do not have to declare int or string in the assignment: Python determines the current type of the value. The = sign means assignment, not “is mathematically equal.” Values can have different types, such as integers and text.',
+'The example assigns the text Ada to name and the number 95 to score. In print(f"{name}: {score}"), the f prefix lets the string contain expressions inside braces. Python replaces {name} and {score} with their current values, producing Ada: 95.',
+'Variables let programs remember measurements, names, scores, and intermediate results in a form you can reuse.',
+'Change score to 100 and add a second numeric variable. Predict the message if you include both values inside an f-string.'
+],
+'py-gearex-3':[
+'An if statement chooses whether a section of code should run. Its condition produces a Boolean answer: True or False. A colon ends the header, and indentation tells Python which instructions belong to the branch. The optional else branch handles the opposite case.',
+'The example stores 76 in score, then checks score >= 50. Since 76 is at least 50, the first indented print runs and displays Pass. The else block is skipped. If score were 49, the first branch would not run, and Retry would be printed instead.',
+'Conditionals are useful for grades, access checks, minimum ages, and any feature that responds to different circumstances.',
+'Test scores of 49, 50, and 51. Which of the three should pass, and why?'
+],
+'py-gearex-4':[
+'A for loop visits values from a sequence one at a time. range is useful when you want counting numbers rather than a list you wrote by hand. In Python, the ending number in range(start, stop) is excluded, so range(1,4) produces 1, 2, and 3.',
+'Each iteration assigns the next range value to i, then runs the indented body. In the example, print(i) executes three times. The first pass shows 1, the second 2, and the third 3. After that range has no more values and execution continues after the loop.',
+'Counting loops are useful for repetitive calculations, processing records, and generating simple patterns.',
+'Change range(1,4) to range(2,8,2). Predict the values before you run the example.'
+],
+'py-gearex-5':[
+'A function groups steps into one reusable operation. The def keyword introduces its name and parameters. Parameters receive the values supplied by the caller, and return sends a result back to the expression that called the function. Defining a function does not automatically execute it.',
+'def add(a,b) describes how to add two inputs. When print(add(3,5)) is reached, Python calls add with a=3 and b=5. The return statement produces 8, which is passed into print. The same function can be reused with different numbers without rewriting its body.',
+'Functions help separate a large problem into smaller steps that are easier to test and understand.',
+'Call add(10,7). Then create a second call and predict both outputs without running them first.'
+],
+'py-gearex-6':[
+'A Python list stores several values in an ordered, changeable collection. Each element has an index, beginning at 0. A list can grow with append, so you do not need to know its final length beforehand. Many useful operations work directly on the list object.',
+'The example starts numbers as [3,5,8]. numbers.append(13) adds a fourth item at the end. print(numbers[1]) asks for the element at index 1, which is 5, not 3. Appending does not move the earlier values to new indices.',
+'Lists are useful for scores, shopping items, search results, and data that a program needs to process together.',
+'Predict numbers[3] after append. What happens if you request an index larger than the last available position?'
+],
+'py-gearex-7':[
+'A dictionary connects keys to values. Instead of finding a learner by numeric position, you can ask for a field by its key, such as name or score. Dictionaries are especially useful for representing labeled information, and different fields may hold different kinds of values.',
+'The example creates learner with two key/value pairs: name maps to Ada, and score maps to 95. learner["name"] looks up the value associated with the name key and returns Ada. Notice that the square brackets use a string key, not a numbered list index.',
+'Dictionaries are useful for settings, API responses, small records, and collections of values with meaningful labels.',
+'Add a city key and print it. Predict what happens if you try to read a key that does not exist.'
+],
+'py-gearex-8':[
+'A class is a blueprint for objects that share a kind of data and behavior. Each object has its own attributes, while methods describe actions an object can perform. The special __init__ method runs when the object is created, and self refers to that particular instance.',
+'Learner.__init__ stores the supplied name in self.name. The greet method builds a message using the name stored in the object. When Learner("Ada").greet() runs, a new learner is created with name Ada, then its greet method returns Hi, Ada. The object keeps its data between those method calls.',
+'Classes make it easier to model people, products, game objects, or other related data with associated actions.',
+'Create two Learner objects with different names. Why should their greetings be different?'
+],
+'js-gearex-1':[
+'JavaScript is used to add logic and interactivity to websites, and it can also run outside browsers in environments such as Node.js. A program consists of expressions and statements, and the runtime executes them in order. A first console message is a simple way to see that your code works.',
+'console.log("Hello, GearEx!") sends text to the JavaScript console. The text is a string because it is enclosed in quotes. The period in console.log selects a function called log from the console object. In GearEx, that output appears in the Compiler output area.',
+'Console output is useful for inspecting values while developing a website or script.',
+'Change the greeting, then try logging a number without quotes. How does the displayed result compare with a string?'
+],
+'js-gearex-2':[
+'Variables give names to values. In modern JavaScript, const prevents you from assigning a different value to the same variable name, while let allows reassignment. That does not mean a const object can never be modified; it means the variable binding itself cannot be replaced.',
+'The example uses const name = "Ada" for text that should not be reassigned. let score = 90 creates a score that may change. score += 5 means score = score + 5, so it becomes 95. console.log then displays the name and the new number.',
+'Choosing const by default and let when reassignment is needed helps prevent accidental changes.',
+'Try changing score += 5 to score += 10. What would happen if you wrote name = "Sam" after a const declaration?'
+],
+'js-gearex-3':[
+'Conditionals choose which instructions execute based on a true/false question. JavaScript uses parentheses around the condition and often braces around each branch. In a simple if/else statement, exactly one branch runs when the program reaches it.',
+'The example sets score to 76 and asks whether it is at least 50. That is true, so the first console.log prints Pass. The else branch is skipped. If score were lower than 50, the else message would run instead. The >= operator includes equality with 50.',
+'Conditional logic is useful for form checks, access rules, and showing different page states.',
+'Try scores 49 and 50. Predict the console message for each and explain the difference between = and ===.'
+],
+'js-gearex-4':[
+'A for loop repeats code using a counter. The loop header has three parts: the starting value, the condition tested before each iteration, and the update performed afterward. This keeps the repeated work in one block instead of duplicating statements.',
+'for (let i = 1; i <= 3; i++) begins with 1, prints it, increments to 2, and repeats. It prints 1, 2, and 3, then stops because 4 is not <= 3. The let declaration makes i a variable that is allowed to change.',
+'Loops are a common way to walk through array elements, repeat animation steps, and process batches of data.',
+'Change the stopping condition to i < 3. How many console.log calls should execute now?'
+],
+'js-gearex-5':[
+'A function gives a name to a set of operations that can be called more than once. Parameters are names for the values supplied at a call, and return gives a result back. A function can compute a value without printing anything itself.',
+'The example defines add(a,b), which returns a+b. It then calls add(3,5) inside console.log. The function evaluates 3+5 to 8 and returns it; console.log displays 8. You can change the input arguments without editing the function definition.',
+'Functions make UI handlers, data transformations, and calculations reusable instead of scattered through code.',
+'Call add(7,4). Then try calling it twice with different arguments and predict each result.'
+],
+'js-gearex-6':[
+'An array is an ordered collection whose elements have numbered positions starting at zero. JavaScript arrays can grow and shrink while the program runs. push adds an element to the end and returns the new length of the array.',
+'numbers begins as [3,5,8]. numbers.push(13) extends it to [3,5,8,13]. Then numbers[1] accesses the second element, 5. Pushing onto the end does not change the index of the existing elements.',
+'Arrays are useful for lists of tasks, players, messages, search suggestions, and many other ordered datasets.',
+'Predict the value of numbers.length and numbers[3] after the push. What is numbers[0]?'
+],
+'js-gearex-7':[
+'Objects group related values under named properties. An object literal uses braces to list property names and their values. Properties are accessed with dot notation when their names are known, or with square brackets when the key comes from a variable.',
+'The example creates learner with name Ada and score 95. learner.name reads the name property and produces Ada. learner.score would read the numeric score. This differs from an array, where you normally reach items using positions like array[0].',
+'Objects are useful for representing user profiles, configuration, products, and structured data from APIs.',
+'Add a course property to the learner and print it. How would you access the score if its name came from a variable?'
+],
+'js-gearex-8':[
+'Some operations take time, such as fetching data from a network. A Promise represents a result that may become available later. An async function returns a Promise, and await lets that function continue only after the awaited result is ready. This keeps asynchronous code readable.',
+'main is declared async. Promise.resolve(42) creates an already-successful Promise containing 42. await extracts that eventual result into value, then console.log prints 42. The call to main starts this asynchronous function, and its return value is itself a Promise.',
+'Promises and async/await are essential for network requests, saving data, loading files, and coordinating asynchronous tasks.',
+'Replace 42 with a different number. What changes if you omit await and log the Promise object instead?'
+]
+});
