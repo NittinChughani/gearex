@@ -40,13 +40,14 @@ function announce(msg){
  if($('cloudStatus'))$('cloudStatus').textContent=msg;
  if($('authMessage'))$('authMessage').textContent=msg;
 }
-let client=null,user=null,profile=null,transitioning=false;
+let client=null,user=null,profile=null,transitioning=false,avatarUrl=null;
 let dirty=false,reset=false,uploadTimer=null,syncing=false,authReady=false;
 function displayName(){
  if(user)return String(profile?.display_name||user.user_metadata?.full_name||user.email?.split('@')[0]||'Learner').slice(0,60);
  return get(GUEST_NAME,'Guest learner');
 }
 function updateAvatar(src){
+ if(user)avatarUrl=src||null;
  const initials=avatarLetter(displayName());
  for(const name of ['profileAvatar','navAccountAvatar']){
   const image=$(name);
@@ -73,7 +74,7 @@ function refreshIdentity(){
  if($('accountPhotoHint'))$('accountPhotoHint').textContent=user?
   'Private photo · stored securely with your account':'Photo stays on this device until you sign in';
  if($('clearAvatar'))$('clearAvatar').hidden=!!(!user&&!get(GUEST_PHOTO))||!!(user&&!profile?.avatar_path);
- updateAvatar(user?null:get(GUEST_PHOTO));
+ updateAvatar(user?avatarUrl:get(GUEST_PHOTO));
 }
 function setDialog(open){
  const dialog=$('authDialog');
@@ -196,7 +197,7 @@ function restoreGuest(){
   put(OWNER,'guest');location.hash='dashboard';location.reload();
   return;
  }
- user=null;profile=null;authReady=false;refreshIdentity();
+ user=null;profile=null;avatarUrl=null;authReady=false;refreshIdentity();
  announce(available?'Guest mode · Progress saved on this device':'Guest mode · Cloud account setup pending');
 }
 async function signOut(){
