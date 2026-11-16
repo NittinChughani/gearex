@@ -7,16 +7,15 @@
   if(root)root.GearExCompiler=api;
 })(typeof window!=='undefined'?window:null,function(){
 'use strict';
-const JUDGE='https://ce.judge0.com';
-const WANDBOX='https://wandbox.org/api';
-const JUDGE_LANG={c:103,cpp:105,py:109,js:102,java:91,cs:51,sql:82};
-const WANDBOX_LANG={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
-const PREFERRED={c:/^(gcc|clang)/i,cpp:/^(gcc|clang)/i,py:/^(cpython|python)-?3/i,js:/^(nodejs|node)-?/i,java:/^(openjdk|java|jdk)/i,cs:/^(dotnet|mono|csharp)/i,sql:/^sqlite3?/i};
-const INFRASTRUCTURE=/OCI runtime error|crun: clone|Resource temporarily unavailable|runc (?:create|run) failed|failed to create (?:shim|task|container)|container (?:init|create) failed|failed to start container|service (?:unavailable|temporarily)|system is overloaded/i;
-let catalog=null;
-const delay=ms=>new Promise(done=>setTimeout(done,ms));
-class CompilerServiceError extends Error {
- constructor(message){super(message);this.name='CompilerServiceError';this.transient=true;}
+const ENDPOINT='https://wandbox.org/api';
+const LANGUAGES={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
+const PREF={c:/^(?:gcc|clang)/i,cpp:/^(?:gcc|clang)/i,py:/^(?:cpython|python)-?3/i,js:/^(?:nodejs|node)/i,java:/^(?:openjdk|java|jdk)/i,cs:/^(?:dotnet|mono|csharp)/i,sql:/^sqlite3?/i};
+const RUNTIME_ERROR=/OCI runtime error|crun: clone|Resource temporarily unavailable|runc (?:create|run) failed|failed to create (?:shim|task|container)|container (?:init|create) failed|failed to start container|service unavailable|service temporarily unavailable|system is overloaded/i;
+const CACHE_KEY='gearex-runtime-catalog-v1';
+const CACHE_TTL=24*60*60*1000;
+let catalog=null,selection=null,pendingCatalog=null;
+class CompilerServiceError extends Error{
+ constructor(message){super(message);this.name='CompilerServiceError';this.isServiceError=true;}
 }
 function findInputRequests(code,lang){
  const src=String(code||''),found=[];
@@ -54,123 +53,107 @@ globalThis.prompt = function(question) {
  return bridge+'\n'+code;
 }
 function assertLanguage(lang){
-  if(!Object.hasOwn(JUDGE_LANG,lang))throw new Error('Unsupported compiler language.');
-}
-async function jsonRequest(url,options={},timeout=8500){
- const ac=new AbortController();
- const timer=setTimeout(()=>ac.abort(),timeout);
- try{
-   const response=await fetch(url,{...options,signal:ac.signal});
-   if(!response.ok)throw new CompilerServiceError('HTTP '+response.status+' from '+new URL(url).hostname+'.');
-   try{return await response.json();}
-   catch{throw new CompilerServiceError('The remote compiler returned an invalid response.');}
- }catch(error){
-   if(error instanceof CompilerServiceError)throw error;
-   if(error?.name==='AbortError')throw new CompilerServiceError('The compiler service did not respond in time.');
-   throw new CompilerServiceError('Could not contact '+new URL(url).hostname+' ('+(error?.message||'network error')+').');
- }finally{clearTimeout(timer);}
+ if(!Object.hasOwn(LANGUAGES,lang))throw new Error('Unsupported compiler language.');
 }
 function normalize(raw){
  const output=String(raw.output||'').trimEnd();
  return {...raw,output:output||'(Program finished without printing output.)'};
 }
-function systemError(message){
- return INFRASTRUCTURE.test(String(message||''));
-}
-function judgeResult(result,lang){
- const status=Number(result?.status?.id??result?.status_id??0);
- const stdout=String(result?.stdout||'');
- const stderr=String(result?.stderr||'');
- const compile=String(result?.compile_output||'');
- const message=String(result?.message||'');
- const combined=[compile,stdout,stderr,message].filter(Boolean).join('\n');
- if(systemError(combined))throw new CompilerServiceError('The execution sandbox could not start.');
- if(status<=2||!status)throw new CompilerServiceError('The compiler did not finish its execution.');
- const success=status===3;
- return normalize({success,stdout,stderr,output:combined,compiler:'Judge0 CE',backend:'Judge0',lang,status});
-}
-async function judge0(source,lang,stdin,onStatus){
- onStatus?.('Starting the '+WANDBOX_LANG[lang]+' runtime…');
- const created=await jsonRequest(JUDGE+'/submissions?base64_encoded=false&wait=false',{
-   method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({source_code:source,language_id:JUDGE_LANG[lang],stdin:stdin||''})
- },9000);
- if(!created?.token){
-   throw new CompilerServiceError('The primary service did not accept this submission.');
- }
- const token=String(created.token);
- if(!/^[\w-]{8,128}$/.test(token))throw new CompilerServiceError('Invalid execution token from the compiler service.');
- for(let n=0;n<13;n++){
-   // The first small delay avoids a wasted poll while the queue starts.
-   await delay(n===0?380:Math.min(400+n*120,1150));
-   const result=await jsonRequest(JUDGE+'/submissions/'+encodeURIComponent(token)+'?base64_encoded=false',{},5000);
-   const status=Number(result?.status?.id??result?.status_id??0);
-   if(status===1||status===2||status===0){
-     if(n===1)onStatus?.('Your code is running…');
-     continue;
+function systemError(value){return RUNTIME_ERROR.test(String(value||''));}
+async function jsonRequest(url,options={},timeout=8500){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
+ try{
+   const response=await fetch(url,{...options,signal:controller.signal});
+   if(!response.ok){
+     if(response.status===429)return Promise.reject(new CompilerServiceError('The compiler is busy right now (rate limit).'));
+     if(response.status>=500)return Promise.reject(new CompilerServiceError('The compiler server is temporarily unavailable.'));
+     throw new CompilerServiceError('The compiler request could not be accepted (HTTP '+response.status+').');
    }
-   return judgeResult(result,lang);
- }
- throw new CompilerServiceError('The primary service was busy for too long.');
+   try{return await response.json();}
+   catch{throw new CompilerServiceError('The compiler returned an unreadable response.');}
+ }catch(err){
+   if(err instanceof CompilerServiceError)throw err;
+   if(err?.name==='AbortError')throw new CompilerServiceError('The compiler took too long to respond. Please try again.');
+   throw new CompilerServiceError('The compiler service is unreachable. Check your connection and try again.');
+ }finally{clearTimeout(timer);}
 }
-function chooseWandboxCompilers(list,lang){
- const matches=list.filter(item=>item&&item.language===WANDBOX_LANG[lang]&&typeof item.name==='string');
+function chooseCompiler(list,lang){
+ const matches=list.filter(item=>item&&item.language===LANGUAGES[lang]&&typeof item.name==='string');
  const score=item=>{
-   const name=item.name||'';
-   const version=Number(String(item.version||'').match(/\d+/)?.[0]||0);
-   const stable=/head|nightly|trunk|experimental/i.test(name)?-1000:0;
-   const pref=PREFERRED[lang].test(name)?500:0;
-   return pref+stable+Math.min(version,99);
+   const name=String(item.name),version=String(item.version||'');
+   const stable=/head|nightly|trunk|experimental|snapshot/i.test(name+' '+version)?-1000:0;
+   const preferred=PREF[lang].test(name)?500:0;
+   const ver=Number(version.match(/\d{1,3}/)?.[0]||0);
+   return stable+preferred+Math.min(ver,99);
  };
- return matches.sort((a,b)=>score(b)-score(a));
+ return matches.sort((a,b)=>score(b)-score(a))[0]||null;
 }
-async function wandbox(source,lang,stdin,onStatus){
- onStatus?.('Switching to the backup compiler…');
- if(!catalog){
-   const list=await jsonRequest(WANDBOX+'/list.json',{},7500);
-   if(!Array.isArray(list))throw new CompilerServiceError('The backup compiler list is unavailable.');
-   catalog=list;
- }
- const available=chooseWandboxCompilers(catalog,lang);
- if(!available.length)throw new CompilerServiceError('The backup service has no '+WANDBOX_LANG[lang]+' runtime.');
- // Stable compilers are preferred over experimental HEAD builds.
- let reason='';
- for(const compiler of available.slice(0,2)){
-   const raw=await jsonRequest(WANDBOX+'/compile.json',{
-     method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({compiler:compiler.name,code:source,stdin:stdin||'',save:false})
-   },12000);
-   const stdout=String(raw?.program_stdout||'');
-   const stderr=String(raw?.program_stderr||'');
-   const compile=String(raw?.compiler_message||raw?.compiler_error||'');
-   const run=String(raw?.program_message||'');
-   const signal=raw?.signal;
-   const status=Number(raw?.status??0);
-   const output=[compile,run].filter(Boolean).join('\n')||[stdout,stderr].filter(Boolean).join('\n');
-   if(systemError(output)){
-     reason='The backup compiler sandbox is temporarily exhausted.';
-     continue;
+function cachedChoices(){
+ if(selection)return selection;
+ try{
+   const value=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+   if(value&&Date.now()-Number(value.saved)<CACHE_TTL&&value.names&&typeof value.names==='object'){
+     selection=value.names;return selection;
    }
-   // Never treat a nonzero program status or compiler diagnostics as a service failure.
-   return normalize({success:status===0&&!signal&&!raw?.compiler_error,stdout,stderr,
-     output,compiler:compiler.name,backend:'Wandbox',lang,status});
- }
- throw new CompilerServiceError(reason||'The backup compiler could not start.');
+ }catch{/* Storage may be disabled. */}
+ return null;
+}
+function cacheChoices(names){
+ selection=names;
+ try{localStorage.setItem(CACHE_KEY,JSON.stringify({saved:Date.now(),names}));}
+ catch{/* Disabled or full local storage must not break compilation. */}
+}
+async function discover(){
+ if(cachedChoices())return selection;
+ if(pendingCatalog)return pendingCatalog;
+ pendingCatalog=(async()=>{
+   const data=await jsonRequest(ENDPOINT+'/list.json',{},4500);
+   if(!Array.isArray(data))throw new CompilerServiceError('Compiler language catalog is unavailable.');
+   catalog=data;
+   const names={};
+   for(const lang of Object.keys(LANGUAGES)){
+     const chosen=chooseCompiler(data,lang);
+     if(chosen)names[lang]=chosen.name;
+   }
+   cacheChoices(names);
+   return names;
+ })();
+ try{return await pendingCatalog;}
+ finally{pendingCatalog=null;}
+}
+async function warmup(){
+ try{await discover();return true;}catch{return false;}
 }
 async function compile(source,lang,stdin='',onStatus){
  assertLanguage(lang);
- const code=prepareSource(source,lang);
- if(!code.trim())throw new Error('Enter source code before running it.');
- const errors=[];
- for(const backend of [judge0,wandbox]){
-   try{
-     return await backend(code,lang,String(stdin||''),onStatus);
-   }catch(error){
-     if(!error?.transient)throw error;
-     errors.push(error.message);
-   }
- }
- throw new CompilerServiceError('Both compiler services are currently unavailable. '+errors.join(' '));
+ const original=String(source||'');
+ if(!original.trim())throw new Error('Enter source code before running it.');
+ const prepared=prepareSource(original,lang);
+ onStatus?.('Preparing '+LANGUAGES[lang]+'…');
+ const names=await discover();
+ const compiler=names[lang];
+ if(!compiler)throw new CompilerServiceError('This language is not available from the compiler service right now.');
+ onStatus?.('Compiling and running '+LANGUAGES[lang]+'…');
+ const raw=await jsonRequest(ENDPOINT+'/compile.json',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({compiler,code:prepared,stdin:String(stdin||''),save:false})
+ },10000);
+ if(!raw||typeof raw!=='object')throw new CompilerServiceError('The compiler returned an invalid result.');
+ const stdout=String(raw.program_stdout||'');
+ const runtimeStderr=String(raw.program_stderr||'');
+ const compilerError=String(raw.compiler_error||'');
+ const compileNotes=String(raw.compiler_message||'');
+ const programNotes=String(raw.program_message||'');
+ const status=Number(raw.status??0);
+ const signal=String(raw.signal||'');
+ const material=[compilerError,compileNotes,programNotes,stdout,runtimeStderr].filter(Boolean).join('\n');
+ if(systemError(material)||raw.status===null&&!!raw.error)throw new CompilerServiceError('The compiler sandbox is temporarily unavailable. Your code was not judged.');
+ if(raw.error&&typeof raw.error==='string')throw new CompilerServiceError('The compiler server did not complete the request.');
+ const printed=programNotes||[stdout,runtimeStderr].filter(Boolean).join('\n');
+ const output=[compilerError||compileNotes,printed].filter(Boolean).join('\n');
+ const success=status===0&&!signal&&!compilerError;
+ return normalize({success,stdout:stdout||(!runtimeStderr?programNotes:''),stderr:runtimeStderr,
+   output,compiler,backend:'Wandbox',lang,status});
 }
-return {compile,judgeResult,chooseWandboxCompilers,systemError,findInputRequests,prepareSource,JUDGE_LANG,CompilerServiceError};
+return {compile,warmup,chooseCompiler,systemError,findInputRequests,prepareSource,LANGUAGES,CompilerServiceError};
 });
