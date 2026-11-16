@@ -530,6 +530,20 @@ function run(code,selected='auto',options={}){
          if(args[0]===undefined||String(args[0]).trim()===''||!Number.isFinite(Number(args[0])))ERROR('Expected a valid number, got '+String(args[0]));
          return Number(args[0]);
        }
+       // A safe introductory subset of mathematical library calls.
+       const mathName=fn.startsWith('std::')?fn.slice(5):fn;
+       const unary={sqrt:Math.sqrt,abs:Math.abs,fabs:Math.abs,sin:Math.sin,cos:Math.cos,
+         tan:Math.tan,floor:Math.floor,ceil:Math.ceil,round:Math.round,log:Math.log,exp:Math.exp};
+       if(Object.hasOwn(unary,mathName)&&args.length===1){
+         const value=unary[mathName](toNumber(args[0]));
+         if(!Number.isFinite(value))ERROR('This math operation has no finite real result.');
+         return value;
+       }
+       if(mathName==='pow'&&args.length===2)return Math.pow(toNumber(args[0]),toNumber(args[1]));
+       if(mathName==='min'&&args.length)return Math.min(...args.map(toNumber));
+       if(mathName==='max'&&args.length)return Math.max(...args.map(toNumber));
+       if(fn==='strlen'&&args.length===1)return String(args[0]??'').length;
+       if(fn==='puts'){output.push(String(args[0]??'')+'\n');return null;}
        if(fn==='str'||fn==='String')return display(args[0]);
        if(fn==='sum')return (Array.isArray(args[0])?args[0]:heap[args[0]?.ref]?.value||[]).reduce((a,b)=>a+toNumber(b),0);
        if(fn==='print'||fn==='console.log'||fn==='System.out.println'||fn==='System.out.print'||fn==='Console.WriteLine'||fn==='printf'){
