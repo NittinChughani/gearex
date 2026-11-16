@@ -1,0 +1,35 @@
+name: Check compiler in Chrome after Pages deployment
+on:
+  workflow_run:
+    workflows:
+      - pages build and deployment
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.56.1
+      - name: Install Chromium and system dependencies
+        run: npx playwright install chromium --with-deps
+      - name: Verify actual GearEx editor, C++ compilation, errors and Python output
+        run: node scripts/test-compiler-browser.cjs
+      - name: Upload browser test screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gearex-browser-compiler
+          path: gear-compiler-browser*.png
+          if-no-files-found: ignore

@@ -141,12 +141,16 @@ console.log('Shell and README checks OK: independent theme/mode persistence, acc
 
 const compilerModule=fs.readFileSync(path.join(root,'assets/compiler-service.js'),'utf8');
 assert.ok(html.includes('assets/compiler-service.js'),'Compiler service is not loaded');
-assert.ok(compilerModule.includes('wandbox.org'),'Wandbox execution service is missing');
+assert.ok(compilerModule.includes('api.onlinecompiler.io'),'New fast browser execution endpoint is missing');
+assert.ok(!compilerModule.includes('wandbox.org'),'Old unresponsive runtime must not be used');
 assert.ok(!compilerModule.includes('ce.judge0.com'),'A second compiler service must not be reintroduced');
-assert.ok(compilerModule.includes('pendingCatalog')&&compilerModule.includes('CACHE_TTL'),'Selected runtimes should be cached');
-assert.ok(compilerModule.includes('Resource temporarily unavailable'),'OCI error detector is missing');
+assert.ok(compilerModule.includes('RESPONSE_BUDGET_MS=7000'),'Run must have a 7-second UI response budget');
+assert.ok(compilerModule.includes("'runcode'")&&compilerModule.includes("'codeoutput'"),'WebSocket result events missing');
+assert.ok(html.includes('assets/compiler-config.js'),'Public widget-key config script is missing');
+assert.ok(fs.existsSync(path.join(root,'assets','compiler-config.js')),'Widget key config file missing');
+assert.ok(!readme.includes('Wandbox'),'README must document current compiler service');
 assert.ok(fs.existsSync(path.join(root,'scripts','test-compiler.cjs')),'Compiler unit tests missing');
-console.log('Compiler checks OK: single execution service, caching, language detection and service failure handling.');
+console.log('Compiler checks OK: single WebSocket service, source preservation, activation and 7-second UI deadline.');
 
 const guideContent=fs.readFileSync(path.join(root,'assets','lesson-guides.js'),'utf8');
 const guides=vm.runInNewContext(guideContent+'\nGEAR_LESSON_GUIDES;');

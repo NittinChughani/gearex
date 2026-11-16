@@ -1,23 +1,32 @@
-/* GearEx Compiler — one remote Wandbox execution service.
- * Source is compiled remotely; provider errors are not learner code errors. */
+/* GearEx original compiler client.
+ * Uses the OnlineCompiler.io WebSocket API with a site-scoped public widget key.
+ * Never embed a REST API secret. The code editor and UI belong to GearEx.
+ * The deadline is a UI response budget, not a guarantee of upstream execution.
+ */
 (function(root,factory){
-  const api=factory();
-  if(typeof module==='object'&&module.exports)module.exports=api;
-  if(root)root.GearExCompiler=api;
-})(typeof window!=='undefined'?window:null,function(){
+ const api=factory(root);
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ if(root)root.GearExCompiler=api;
+})(typeof window!=='undefined'?window:null,function(root){
 'use strict';
-const ENDPOINT='https://wandbox.org/api';
+const ENDPOINT='https://api.onlinecompiler.io';
+const SOCKET_IO_CDN='https://cdn.socket.io/4.8.4/socket.io.min.js';
+const SOCKET_IO_INTEGRITY='sha384-fBrXvbDtHoeKWJ/hcA6M+YGueiDW+h45I7V6F2kD1S8bOkrF9rZYPLVkCR6BLR/1';
 const LANGUAGES={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
-const PREF={c:/^(?:gcc|clang)/i,cpp:/^(?:gcc|clang)/i,py:/^(?:cpython|python)-?3/i,js:/^(?:nodejs|node)/i,java:/^(?:openjdk|java|jdk)/i,cs:/^(?:dotnet|mono|csharp)/i,sql:/^sqlite3?/i};
-const RUNTIME_ERROR=/OCI runtime error|crun: clone|Resource temporarily unavailable|runc (?:create|run) failed|failed to create (?:shim|task|container)|container (?:init|create) failed|failed to start container|service unavailable|service temporarily unavailable|system is overloaded/i;
-const CACHE_KEY='gearex-runtime-catalog-v1';
-const CACHE_TTL=24*60*60*1000;
-const CATALOG_TIMEOUT_MS=12000;
-const EXECUTION_TIMEOUT_MS=45000;
-let catalog=null,selection=null,pendingCatalog=null;
+const RUNTIMES={c:'gcc-15',cpp:'g++-15',py:'python-3.14',js:'nodejs-24',java:'openjdk-25',cs:'dotnet-csharp-10',sql:'sqlite-3'};
+const RESPONSE_BUDGET_MS=7000;
+const SOCKET_CONNECT_BUDGET_MS=2800;
+let clientPromise=null,socket=null,busy=false;
 class CompilerServiceError extends Error{
- constructor(message){super(message);this.name='CompilerServiceError';this.isServiceError=true;}
+ constructor(message,code='service_unavailable'){
+  super(message);this.name='CompilerServiceError';this.isServiceError=true;this.code=code;
+ }
 }
+function getWidgetKey(){
+ const key=root?.GearExCompilerConfig?.widgetKey;
+ return typeof key==='string'?key.trim():'';
+}
+function isConfigured(){return !!getWidgetKey()&&!/^(YOUR_|PASTE_|REPLACE_|EXAMPLE)/i.test(getWidgetKey());}
 function findInputRequests(code,lang){
  const src=String(code||''),found=[];
  const push=(index,prompt)=>{
@@ -53,108 +62,132 @@ globalThis.prompt = function(question) {
 `;
  return bridge+'\n'+code;
 }
+
 function assertLanguage(lang){
- if(!Object.hasOwn(LANGUAGES,lang))throw new Error('Unsupported compiler language.');
+ if(!Object.hasOwn(RUNTIMES,lang))throw new Error('Unsupported compiler language.');
 }
-function normalize(raw){
- const output=String(raw.output||'').trimEnd();
- return {...raw,output:output||'(Program finished without printing output.)'};
+function makeTimeout(message,code='response_budget'){
+ return new CompilerServiceError(message,code);
 }
-function systemError(value){return RUNTIME_ERROR.test(String(value||''));}
-async function jsonRequest(url,options={},timeout=CATALOG_TIMEOUT_MS){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
- try{
-   const response=await fetch(url,{...options,signal:controller.signal});
-   if(!response.ok){
-     if(response.status===429)return Promise.reject(new CompilerServiceError('The compiler is busy right now (rate limit).'));
-     if(response.status>=500)return Promise.reject(new CompilerServiceError('The compiler server is temporarily unavailable.'));
-     throw new CompilerServiceError('The compiler request could not be accepted (HTTP '+response.status+').');
-   }
-   try{return await response.json();}
-   catch{throw new CompilerServiceError('The compiler returned an unreadable response.');}
- }catch(err){
-   if(err instanceof CompilerServiceError)throw err;
-   if(err?.name==='AbortError')throw new CompilerServiceError('The remote compiler did not respond within '+Math.round(timeout/1000)+' seconds. This is a service timeout, not a code error.');
-   throw new CompilerServiceError('The compiler service is unreachable. Check your connection and try again.');
- }finally{clearTimeout(timer);}
+function loadSocketClient(){
+ if(typeof root?.io==='function')return Promise.resolve(root.io);
+ if(clientPromise)return clientPromise;
+ if(!root?.document)throw new CompilerServiceError('Browser runtime client is unavailable.','client_unavailable');
+ clientPromise=new Promise((resolve,reject)=>{
+  const script=root.document.createElement('script');
+  let settled=false;
+  const done=(error,client)=>{
+   if(settled)return;settled=true;clearTimeout(timer);
+   if(error){script.remove();reject(error);}else resolve(client);
+  };
+  const timer=setTimeout(()=>done(new CompilerServiceError('Compiler connection library loading took too long.','client_unavailable')),3000);
+  script.src=SOCKET_IO_CDN;
+  script.async=true;
+  script.integrity=SOCKET_IO_INTEGRITY;
+  script.crossOrigin='anonymous';
+  script.onload=()=>{
+   if(typeof root.io==='function')done(null,root.io);
+   else done(new CompilerServiceError('Compiler connection library failed to initialize.','client_unavailable'));
+  };
+  script.onerror=()=>done(new CompilerServiceError('Compiler connection library could not be loaded.','client_unavailable'));
+  root.document.head.appendChild(script);
+ }).catch(error=>{clientPromise=null;throw error;});
+ return clientPromise;
 }
-function chooseCompiler(list,lang){
- const matches=list.filter(item=>item&&item.language===LANGUAGES[lang]&&typeof item.name==='string');
- const score=item=>{
-   const name=String(item.name),version=String(item.version||'');
-   const stable=/head|nightly|trunk|experimental|snapshot/i.test(name+' '+version)?-1000:0;
-   const preferred=PREF[lang].test(name)?500:0;
-   const ver=Number(version.match(/\d{1,3}/)?.[0]||0);
-   return stable+preferred+Math.min(ver,99);
- };
- return matches.sort((a,b)=>score(b)-score(a))[0]||null;
+function disconnect(){
+ if(socket){socket.disconnect();socket=null;}
 }
-function cachedChoices(){
- if(selection)return selection;
- try{
-   const value=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-   if(value&&Date.now()-Number(value.saved)<CACHE_TTL&&value.names&&typeof value.names==='object'){
-     selection=value.names;return selection;
-   }
- }catch{/* Storage may be disabled. */}
- return null;
-}
-function cacheChoices(names){
- selection=names;
- try{localStorage.setItem(CACHE_KEY,JSON.stringify({saved:Date.now(),names}));}
- catch{/* Disabled or full local storage must not break compilation. */}
-}
-async function discover(){
- if(cachedChoices())return selection;
- if(pendingCatalog)return pendingCatalog;
- pendingCatalog=(async()=>{
-   const data=await jsonRequest(ENDPOINT+'/list.json',{},CATALOG_TIMEOUT_MS);
-   if(!Array.isArray(data))throw new CompilerServiceError('Compiler language catalog is unavailable.');
-   catalog=data;
-   const names={};
-   for(const lang of Object.keys(LANGUAGES)){
-     const chosen=chooseCompiler(data,lang);
-     if(chosen)names[lang]=chosen.name;
-   }
-   cacheChoices(names);
-   return names;
- })();
- try{return await pendingCatalog;}
- finally{pendingCatalog=null;}
+async function ensureSocket(maxWait=SOCKET_CONNECT_BUDGET_MS){
+ if(!isConfigured())throw new CompilerServiceError(
+  'The site owner has not activated the new compiler yet. Code execution requires a site-scoped WebSocket key.','setup_required');
+ if(socket?.connected)return socket;
+ const io=await loadSocketClient();
+ if(!socket){
+  socket=io(ENDPOINT,{
+   autoConnect:false,reconnection:false,transports:['websocket','polling'],
+   auth:{token:getWidgetKey()},timeout:maxWait
+  });
+ }
+ const active=socket;
+ if(active.connected)return active;
+ return new Promise((resolve,reject)=>{
+  let finished=false;
+  const cleanup=()=>{clearTimeout(timer);active.off('connect',connected);active.off('connect_error',failed);active.off('disconnect',closed);};
+  const done=(error)=>{
+   if(finished)return;finished=true;cleanup();
+   if(error){disconnect();reject(error);}else resolve(active);
+  };
+  const connected=()=>done(null);
+  const failed=()=>done(new CompilerServiceError('Compiler connection was rejected. Check the website widget key and allowed domain.','connection_rejected'));
+  const closed=()=>done(new CompilerServiceError('Compiler connection closed before execution.','connection_lost'));
+  const timer=setTimeout(()=>done(makeTimeout('Unable to connect to the compiler within the time limit.','connect_timeout')),maxWait);
+  active.once('connect',connected);
+  active.once('connect_error',failed);
+  active.once('disconnect',closed);
+  active.connect();
+ });
 }
 async function warmup(){
- try{await discover();return true;}catch{return false;}
+ if(!isConfigured())return false;
+ try{await ensureSocket();return true;}catch{return false;}
+}
+function parseExecution(result,lang){
+ if(!result||typeof result!=='object')throw new CompilerServiceError('Compiler returned an unreadable response.','invalid_result');
+ if(result.code==='account_limit')throw new CompilerServiceError('The compiler site has reached its run limit.','usage_limit');
+ if(result.exit_code===undefined||result.exit_code===null){
+  throw new CompilerServiceError('Compiler did not accept this run. '+String(result.error||'Try again later.').slice(0,160),'run_rejected');
+ }
+ const stdout=String(result.output||'');
+ const stderr=String(result.error||'');
+ const exitCode=Number(result.exit_code);
+ const output=[stdout,stderr].filter(Boolean).join(stdout&&stderr&&!stdout.endsWith('\n')?'\n':'')||'(Program finished without printing output.)';
+ return {success:exitCode===0,stdout,stderr,output:output.slice(0,20000),
+  backend:'OnlineCompiler.io',compiler:RUNTIMES[lang],lang,status:exitCode};
 }
 async function compile(source,lang,stdin='',onStatus){
  assertLanguage(lang);
  const original=String(source||'');
  if(!original.trim())throw new Error('Enter source code before running it.');
- const prepared=prepareSource(original,lang);
- onStatus?.('Preparing '+LANGUAGES[lang]+'…');
- const names=await discover();
- const compiler=names[lang];
- if(!compiler)throw new CompilerServiceError('This language is not available from the compiler service right now.');
- onStatus?.('Running '+LANGUAGES[lang]+' on Wandbox… First runs may take longer while the remote sandbox starts.');
- const raw=await jsonRequest(ENDPOINT+'/compile.json',{
-   method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({compiler,code:prepared,stdin:String(stdin||''),save:false})
- },EXECUTION_TIMEOUT_MS);
- if(!raw||typeof raw!=='object')throw new CompilerServiceError('The compiler returned an invalid result.');
- const stdout=String(raw.program_stdout||'');
- const runtimeStderr=String(raw.program_stderr||'');
- const compilerError=String(raw.compiler_error||'');
- const compileNotes=String(raw.compiler_message||'');
- const programNotes=String(raw.program_message||'');
- const status=Number(raw.status??0);
- const signal=String(raw.signal||'');
- const material=[compilerError,compileNotes,programNotes,stdout,runtimeStderr].filter(Boolean).join('\n');
- if(systemError(material)||raw.status===null&&!!raw.error)throw new CompilerServiceError('The compiler sandbox is temporarily unavailable. Your code was not judged.');
- if(raw.error&&typeof raw.error==='string')throw new CompilerServiceError('The compiler server did not complete the request.');
- const printed=programNotes||[stdout,runtimeStderr].filter(Boolean).join('\n');
- const output=[compilerError||compileNotes,printed].filter(Boolean).join('\n');
- const success=status===0&&!signal&&!compilerError;
- return normalize({success,stdout:stdout||(!runtimeStderr?programNotes:''),stderr:runtimeStderr,
-   output,compiler,backend:'Wandbox',lang,status});
+ if(original.length>24000||String(stdin||'').length>4000)throw new Error('Source or stdin is too long.');
+ if(busy)throw new CompilerServiceError('A program is already running.','run_in_progress');
+ if(!isConfigured())throw new CompilerServiceError(
+  'Compiler activation pending. The site owner needs to add the public, domain-restricted widget key.','setup_required');
+ busy=true;
+ const started=Date.now(),deadline=started+RESPONSE_BUDGET_MS;
+ try{
+  onStatus?.('Connecting to the code runner…');
+  let connectionTimer;
+  let conn;
+  try{
+   conn=await Promise.race([
+    ensureSocket(Math.min(SOCKET_CONNECT_BUDGET_MS,Math.max(1,deadline-Date.now()))),
+    new Promise((_,reject)=>{
+     connectionTimer=setTimeout(()=>reject(makeTimeout('Compiler connection exceeded the response budget.')),Math.max(1,deadline-Date.now()));
+    })
+   ]);
+  }finally{clearTimeout(connectionTimer);}
+  const remaining=deadline-Date.now();
+  if(remaining<=0)throw makeTimeout('Compiler connection took longer than 7 seconds.');
+  onStatus?.('Running '+LANGUAGES[lang]+'…');
+  return await new Promise((resolve,reject)=>{
+   let settled=false;
+   const clean=()=>{clearTimeout(timer);conn.off('codeoutput',onResult);conn.off('disconnect',onDisconnect);conn.off('connect_error',onDisconnect);};
+   const done=(error,value)=>{if(settled)return;settled=true;clean();if(error)reject(error);else resolve(value);};
+   const onResult=result=>{
+    try{done(null,parseExecution(result,lang));}catch(error){done(error);}
+   };
+   const onDisconnect=()=>done(new CompilerServiceError('Connection to the compiler was interrupted.','connection_lost'));
+   const timer=setTimeout(()=>{
+    disconnect();done(makeTimeout('The compiler did not return a result within 7 seconds. This is a service delay, not a code error.'));
+   },remaining);
+   conn.once('codeoutput',onResult);
+   conn.once('disconnect',onDisconnect);
+   conn.once('connect_error',onDisconnect);
+   try{conn.emit('runcode',{compiler:RUNTIMES[lang],code:prepareSource(original,lang),input:String(stdin||'')});}
+   catch(error){done(new CompilerServiceError('Could not submit this program to the compiler.','submission_error'));}
+  });
+ }finally{busy=false;}
 }
-return {compile,warmup,chooseCompiler,systemError,findInputRequests,prepareSource,LANGUAGES,CompilerServiceError};
+return {compile,warmup,disconnect,getWidgetKey,isConfigured,parseExecution,
+ findInputRequests,prepareSource,RUNTIMES,LANGUAGES,RESPONSE_BUDGET_MS,CompilerServiceError};
 });

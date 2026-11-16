@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="preconnect" href="https://wandbox.org" crossorigin>
+<link rel="preconnect" href="https://api.onlinecompiler.io" crossorigin>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="GearEx is a free programming studio for seven languages, with interactive lessons, local execution traces, quizzes and completion certificates.">
@@ -125,7 +125,7 @@ try {
         <div class="execution-input-actions"><button id="compilerInputSubmit" class="button primary compact" type="submit">Continue</button>
           <button id="compilerInputCancel" class="button secondary compact" type="button">Cancel</button></div>
       </form>
-      <p id="compilerPrivacy" class="privacy-note">Running code uses one external service, <a href="https://wandbox.org/" target="_blank" rel="noopener noreferrer">Wandbox</a>. GearEx sends your code and optional input unchanged (except for its documented JavaScript prompt adapter) and displays actual results or compiler diagnostics. The provider must have the requested headers and libraries installed. The service may be busy or temporarily unavailable; no online compiler can guarantee instant execution. Do not submit secrets or personal information.</p>
+      <p id="compilerPrivacy" class="privacy-note">GearEx uses a custom editor connected to the <a href="https://onlinecompiler.io/" target="_blank" rel="noopener noreferrer">OnlineCompiler.io</a> browser execution API. Visitors do not need an account. A public, site-scoped widget key must be configured by the website owner before execution is available. Code and standard input are sent to the provider in a sandbox; the website gives up waiting after 7 seconds rather than leaving the Run button spinning. Provider delays or limits are not errors in your code. Never paste secrets or personal data.</p>
       <div id="runResult" class="run-result" aria-live="polite"></div>
     </div>
   </section>
@@ -178,6 +178,7 @@ try {
 <script src="assets/lesson-guides.js"></script>
 <script src="assets/challenges.js"></script>
 <script src="assets/projects.js"></script>
+<script src="assets/compiler-config.js"></script>
 <script src="assets/compiler-service.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/lesson-assessments.js"></script>

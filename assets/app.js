@@ -202,6 +202,12 @@ async function runEditor(inputsConfirmed=false){
    $('#editorLanguage').value=lang;
    text('#editorStatus','Detected '+names[lang]+' from your code');
  }
+ if(!window.GearExCompiler?.isConfigured()){
+   closeCompilerInputWizard();
+   text('#compilerOutput','Compiler setup pending. GearEx is switching to a faster seven-language execution service. The site owner must activate its public, domain-restricted WebSocket key; no code has been submitted.');
+   const out=$('#runResult');out.replaceChildren(make('p','run-info','Compiler activation is required before this feature can run code. The Code Visualizer remains available.'));
+   return;
+ }
  if(!inputsConfirmed&&!stdin.trim()){
    const questions=window.GearExCompiler?.findInputRequests(source,lang)||[];
    if(questions.length){
@@ -245,12 +251,15 @@ async function runEditor(inputsConfirmed=false){
    }
  }catch(error){
    const service=error?.isServiceError===true;
-   text('#compilerOutput',service?
-     'Compiler temporarily unavailable. Your code has not been judged.\n'+error.message:
+   const setup=error?.code==='setup_required';
+   const deadline=error?.code==='response_budget';
+   text('#compilerOutput',setup?
+     'Compiler setup pending. The website owner must activate the execution service before code can run.':
+     service?(deadline?'No result returned within 7 seconds.\n':'Execution service issue.\n')+error.message+'\nYour program has not been judged.':
      'Unable to run this program.\n'+(error?.message||'Unknown error.'));
-   info.textContent=service?'Execution service unavailable':'Execution not completed';
+   info.textContent=setup?'Compiler activation pending':deadline?'7-second response budget exceeded':service?'Execution service unavailable':'Execution not completed';
    resultBox.append(make('p',service?'run-info':'run-error',service?
-     'This is a compiler service issue, not a code error. Try again later.':
+     'Your source is not necessarily wrong. GearEx will not keep retrying or leave the Run button spinning.':
      'The request could not be completed.'));
  }finally{button.disabled=false;button.textContent='▶ Run code';}
 }

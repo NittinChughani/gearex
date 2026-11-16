@@ -102,21 +102,25 @@ Run these commands before merging:
 node scripts/check-content.cjs
 node --test scripts/test-tracer.cjs
 node --test scripts/test-compiler.cjs
+# Real provider integration (requires socket.io-client and public widget key):
+node scripts/test-onlinecompiler-live.cjs
 ```
 
 The `.github/workflows/validate.yml` workflow also checks the syntax of every production JavaScript file. Verify the live GitHub Pages deployment separately before announcing changes; successful lint checks alone do not validate interactive rendering or third-party compilation.
 
-## Online Compiler reliability
+## Online Compiler: tested WebSocket execution
 
-The Compiler sends source and stdin to **one external compiler provider, Wandbox**. It does not retry the code through other vendors or poll a second queue. On entering the Compiler view, `GearExCompiler.warmup()` loads the provider's available compiler list and selects stable installed runtime versions. The selected names are cached in localStorage for up to 24 hours; subsequent submissions make **one** `POST /api/compile.json` request. The source and `#include` directives are preserved exactly, apart from a documented stdin adapter for JavaScript `prompt()` in Node.
+The Compiler's original GearEx UI connects directly to [OnlineCompiler.io](https://onlinecompiler.io/docs/websocket) using Socket.IO and a **domain-scoped public WebSocket/widget key**. That key is configured in `assets/compiler-config.js`. It was supplied by the site owner and stored in the frontend configuration. Restrict its allowed domain to the public GitHub Pages origin `https://nittinchughani.github.io` in the provider dashboard. Never use a secret REST API key in static-site frontend files. The provider's widget key is explicitly intended for browser use and cannot call their REST endpoints.
 
-`assets/app.js` detects recognizable source syntax through `GearExEngine.detect`, adjusts the language selector on a confident mismatch, and calls `GearExCompiler.compile`. The result returns genuine standard output or compiler diagnostics. The UI shows elapsed time and separates ordinary program errors from **service errors** such as HTTP 429, network failures, timeouts and OCI container startup failures. Service errors must never be presented as evidence that the learner's source code is incorrect. A failed remote service must not prompt automatic resubmission.
+The client maps the seven existing learning tracks to the provider's current runtime identifiers: `gcc-15`, `g++-15`, `python-3.14`, `nodejs-24`, `openjdk-25`, `dotnet-csharp-10`, and `sqlite-3`. On opening Compiler, GearEx may preconnect to the WebSocket. Each execution emits one `runcode` event; the `codeoutput` event supplies actual stdout, compiler errors, exit codes and timing. The client uses the same source and stdin editor and keeps all existing navigation and lesson links. JavaScript `prompt()` receives the documented Node stdin adapter.
 
-The first visit may require a catalog lookup; later visits generally reuse the cached selection. The request has a finite timeout, but the service is operated by others, so neither performance nor 100% uptime can be guaranteed. The compiler can only use headers and libraries actually installed on Wandbox. Do not claim that arbitrary third-party or local header files will compile in the hosted environment. Real multi-language execution cannot be made fully independent or always available by static GitHub Pages alone.
+**Seven-second response budget:** a run either yields a program result or a clear service status within seven seconds. If the provider has not responded by then, the socket is disconnected to discard stale results; the client does not invent output, imply the source has an error, or silently retry. A response deadline is **not a guarantee** that upstream compilation will complete within seven seconds. The provider's published medians for small C++, Java and C# examples are below that threshold but may not describe current latency or larger programs. Users can initiate another run if needed.
 
-Test the compiler module without calling the live third-party API:
+**Activation and live verification:** `GearExCompiler.isConfigured()` returns false when no widget key is present, and `compile()` rejects with `setup_required`. The supplied public key has been tested through a real WebSocket connection from GitHub Actions with the intended Pages `Origin`. Live tests returned stdout for all seven languages, supported C++ headers and stdin, and real diagnostics for invalid C++. Every tested response completed within seven seconds. See `scripts/test-onlinecompiler-live.cjs` and [the completed workflow run](https://github.com/NittinChughani/gearex/actions/runs/43880876135). Unit tests mock Socket.IO for deterministic failures and coverage. These checks do **not** prove every user's browser and network will respond at the same speed; independent browser-end-to-end checks remain useful.
 
-```
+**Automated regression tests:**
+
+```bash
 node --test scripts/test-compiler.cjs
 ```
 
