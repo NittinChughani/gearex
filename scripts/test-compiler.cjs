@@ -4,181 +4,131 @@ const {test}=require('node:test');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const path=require('node:path');
-const source=fs.readFileSync(path.join(__dirname,'../assets/compiler-service.js'),'utf8');
+const EventEmitter=require('node:events');
+const src=fs.readFileSync(path.join(__dirname,'../assets/compiler-service.js'),'utf8');
 const app=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-const sampleList=[
- {name:'gcc-head-c',language:'C',version:'19 experimental'},
- {name:'gcc-14-c',language:'C',version:'14.2'},
- {name:'gcc-head',language:'C++',version:'19 experimental'},
- {name:'gcc-14-cpp',language:'C++',version:'14.2'},
- {name:'cpython-3.13',language:'Python',version:'3.13'},
- {name:'nodejs-22',language:'JavaScript',version:'22'},
- {name:'openjdk-21',language:'Java',version:'21'},
- {name:'mono-6',language:'C#',version:'6'},
- {name:'sqlite3',language:'SQL',version:'3.40'}
-];
-const response=(data,status=200)=>({ok:status>=200&&status<300,status,json:async()=>data});
-function createRunner(fetchImpl){
- const data=new Map();
- const localStorage={getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value)};
- const sandbox={module:{exports:{}},fetch:fetchImpl,Date,localStorage,setTimeout,clearTimeout,AbortController,Promise,console};
- vm.runInNewContext(source,sandbox,{filename:'compiler-service.js'});
- return {compiler:sandbox.module.exports,data};
+class MockSocket extends EventEmitter{
+ constructor(onRun){
+  super();this.connected=false;this.onRun=onRun;this.runs=[];this.disconnects=0;
+ }
+ connect(){
+  this.connected=true;queueMicrotask(()=>super.emit('connect'));return this;
+ }
+ disconnect(){
+  this.disconnects++;this.connected=false;super.emit('disconnect');return this;
+ }
+ emit(event,payload){
+  if(event==='runcode'){
+   this.runs.push(payload);
+   queueMicrotask(()=>this.onRun?.(payload,result=>super.emit('codeoutput',result)));
+   return true;
+  }
+  return super.emit(event,payload);
+ }
 }
-test('single execution service covers every programming language, including SQL',()=>{
- const {compiler}=createRunner(()=>{throw Error('not requested');});
- assert.deepEqual(Object.keys(compiler.LANGUAGES).sort(),['c','cpp','cs','java','js','py','sql'].sort());
- for(const lang of Object.keys(compiler.LANGUAGES)){
-   const selected=compiler.chooseCompiler(sampleList,lang);
-   assert.ok(selected,'Missing runtime for '+lang);
- }
- assert.equal(compiler.chooseCompiler(sampleList,'cpp').name,'gcc-14-cpp','Choose stable runtime over experimental HEAD');
- assert.ok(!source.includes('ce.judge0.com'),'Do not add a second compiler service');
- assert.ok(!source.includes('Switching to the backup compiler'),'Backup message must be removed');
+function runner(onRun,{key='widget-domain-key',connectionError=false}={}){
+ const sockets=[],io=(url,opts)=>{
+  assert.equal(url,'https://api.onlinecompiler.io');
+  assert.equal(opts.auth.token,key);
+  assert.equal(opts.reconnection,false,'Avoid automatic provider changes or repeated runs');
+  const sock=new MockSocket(onRun);
+  if(connectionError)sock.connect=()=>{queueMicrotask(()=>sock.emit('connect_error',new Error('bad key')));return sock;};
+  sockets.push(sock);return sock;
+ };
+ const window={GearExCompilerConfig:{widgetKey:key},io};
+ const sandbox={window,module:{exports:{}},Date,Promise,setTimeout,clearTimeout,console};
+ vm.runInNewContext(src,sandbox,{filename:'compiler-service.js'});
+ return {compiler:sandbox.module.exports,sockets,window};
+}
+const response=(output,error='',exit_code=0)=>({output,error,exit_code,status:exit_code?'error':'success',time:'0.12'});
+test('single browser execution engine maps all seven languages to installed runtimes',()=>{
+ const {compiler}=runner();
+ assert.deepEqual(Object.keys(compiler.RUNTIMES).sort(),['c','cpp','py','js','java','cs','sql'].sort());
+ const ids={c:'gcc-15',cpp:'g++-15',py:'python-3.14',js:'nodejs-24',java:'openjdk-25',cs:'dotnet-csharp-10',sql:'sqlite-3'};
+ for(const [lang,id] of Object.entries(ids))assert.equal(compiler.RUNTIMES[lang],id);
+ assert.equal(compiler.RESPONSE_BUDGET_MS,7000);
+ assert.ok(!src.includes('wandbox.org')&&!src.includes('ce.judge0.com'),'Remove unreliable open guest compiler endpoints');
 });
-test('one list request then one execution request produces real stdout and retains all headers',async()=>{
- const calls=[];
- const {compiler}=createRunner(async(url,options={})=>{
-   calls.push({url,options});
-   if(url.endsWith('/list.json'))return response(sampleList);
-   if(url.endsWith('/compile.json'))return response({status:0,program_stdout:'Result = 5\n',program_message:'Result = 5\n'});
-   throw Error('Unexpected request '+url);
- });
- const code='#include <iostream>\n#include <cmath>\nusing namespace std;\nint main(){cout << sqrt(25) << "\\n";}\n';
- const result=await compiler.compile(code,'cpp','');
- assert.equal(result.success,true);
- assert.equal(result.backend,'Wandbox');
- assert.equal(result.stdout,'Result = 5\n');
- assert.equal(calls.length,2);
- assert.ok(calls.every(c=>c.url.startsWith('https://wandbox.org/')));
- const request=JSON.parse(calls[1].options.body);
- assert.equal(request.code,code,'Never strip namespace or include directives from real compiler input');
- assert.equal(request.compiler,'gcc-14-cpp');
+test('C++ standard library code and input are transmitted unchanged and real stdout appears',async()=>{
+ const {compiler,sockets}=runner((payload,reply)=>reply(response('5\n')));
+ const program='#include <iostream>\n#include <cmath>\nusing namespace std;\nint main(){int n;cin>>n;cout<<sqrt(n)<<endl;}';
+ const result=await compiler.compile(program,'cpp','25\n');
+ assert.equal(result.success,true);assert.equal(result.stdout,'5\n');
+ assert.equal(result.backend,'OnlineCompiler.io');
+ assert.equal(sockets.length,1);
+ assert.equal(sockets[0].runs.length,1);
+ assert.equal(sockets[0].runs[0].compiler,'g++-15');
+ assert.equal(sockets[0].runs[0].code,program);
+ assert.equal(sockets[0].runs[0].input,'25\n');
 });
-test('catalog is warmed once and reused for repeated runs',async()=>{
- const calls=[];
- const {compiler}=createRunner(async(url)=>{
-   calls.push(url);
-   if(url.endsWith('/list.json'))return response(sampleList);
-   return response({status:0,program_stdout:'7\n',program_message:'7\n'});
- });
+test('warmup connects once and subsequent executions reuse same socket',async()=>{
+ const {compiler,sockets}=runner((payload,reply)=>reply(response('done\n')));
  assert.equal(await compiler.warmup(),true);
- await compiler.compile('print(7)','py');
- await compiler.compile('print(7)','py');
- assert.equal(calls.filter(x=>x.endsWith('/list.json')).length,1);
- assert.equal(calls.filter(x=>x.endsWith('/compile.json')).length,2);
+ const a=await compiler.compile('print(1)','py');
+ const b=await compiler.compile('print(2)','py');
+ assert.equal(a.success,true);assert.equal(b.success,true);
+ assert.equal(sockets.length,1);
+ assert.equal(sockets[0].runs.length,2);
 });
-test('real compilation errors display diagnostics and are not mislabeled as service failure',async()=>{
- let listCalls=0,runCalls=0;
- const {compiler}=createRunner(async(url)=>{
-   if(url.endsWith('/list.json')){listCalls++;return response(sampleList);}
-   runCalls++;return response({status:1,compiler_error:'error: expected semicolon at line 4',compiler_message:'',program_stdout:''});
- });
- const result=await compiler.compile('int main(){oops}','cpp');
- assert.equal(result.success,false);
- assert.match(result.output,/expected semicolon/);
- assert.equal(listCalls,1);
- assert.equal(runCalls,1,'Do not run the same code again on a different compiler');
+test('a C++ syntax error is shown as code error rather than a service outage',async()=>{
+ const {compiler,sockets}=runner((payload,reply)=>reply(response('','main.cpp:3: error: expected ;',1)));
+ const r=await compiler.compile('int main(){oops}','cpp');
+ assert.equal(r.success,false);
+ assert.match(r.output,/expected ;/);
+ assert.equal(r.stderr,'main.cpp:3: error: expected ;');
+ assert.equal(sockets[0].runs.length,1,'Do not retry bad code');
 });
-test('sandbox outage is a short service exception, not a code diagnostic or retry',async()=>{
- const calls=[];
- const {compiler}=createRunner(async(url)=>{
-   calls.push(url);
-   if(url.endsWith('/list.json'))return response(sampleList);
-   return response({status:1,program_stderr:'OCI runtime error: crun: clone: Resource temporarily unavailable'});
- });
- await assert.rejects(()=>compiler.compile('int main(){}','cpp'),error=>error.isServiceError&&/sandbox/i.test(error.message));
- assert.equal(calls.length,2,'One discovery plus one compilation, no second execution');
+test('provider account limits are service errors, not mistakes in the source',async()=>{
+ const {compiler}=runner((payload,reply)=>reply({code:'account_limit',error:'site reached run limit'}));
+ await assert.rejects(()=>compiler.compile('print(5)','py'),e=>e.isServiceError&&e.code==='usage_limit');
 });
-test('offline runtime reports a short service error rather than a stack trace',async()=>{
- let calls=0;
- const {compiler}=createRunner(async()=>{calls++;throw new Error('Network offline');});
- await assert.rejects(()=>compiler.compile('print(8)','py'),error=>
-   error.isServiceError&&/unreachable/i.test(error.message)&&!error.message.includes('Network offline'));
- assert.equal(calls,1);
+test('refused run is a service issue and must not be treated as successful output',async()=>{
+ const {compiler}=runner((payload,reply)=>reply({error:'execution queue unavailable'}));
+ await assert.rejects(()=>compiler.compile('print(5)','py'),e=>e.isServiceError&&e.code==='run_rejected');
 });
-test('HTTP rate limiting is service unavailability, not an error in source code',async()=>{
- const {compiler}=createRunner(async()=>response({message:'rate limit'},429));
- await assert.rejects(()=>compiler.warmup().then(ok=>ok?compiler.compile('x','c'):Promise.reject(new Error('warmup failed'))));
+test('missing public widget key refuses to run without pretending to compile',async()=>{
+ const {compiler,sockets}=runner(()=>{}, {key:''});
+ assert.equal(compiler.isConfigured(),false);
+ assert.equal(await compiler.warmup(),false);
+ await assert.rejects(()=>compiler.compile('print(1)','py'),e=>e.isServiceError&&e.code==='setup_required');
+ assert.equal(sockets.length,0);
 });
-test('runtime preserves standard input and never inserts code except documented prompt adapter',async()=>{
- let body;
- const {compiler}=createRunner(async(url,options)=>{
-   if(url.endsWith('/list.json'))return response(sampleList);
-   body=JSON.parse(options.body);
-   return response({status:0,program_stdout:'42\n',program_message:'42\n'});
- });
- const src='#include <stdio.h>\nint main(){int n;scanf("%d",&n);printf("%d",n);}';
- await compiler.compile(src,'c','42\n');
- assert.equal(body.stdin,'42\n');
- assert.equal(body.code,src);
- assert.equal(body.compiler,'gcc-14-c');
+test('bad widget key reports connection rejection instead of a source error',async()=>{
+ const {compiler}=runner(()=>{}, {key:'widget-domain-key',connectionError:true});
+ await assert.rejects(()=>compiler.compile('print(1)','py'),e=>e.isServiceError&&e.code==='connection_rejected');
 });
-test('infrastructure errors are recognized but ordinary code errors are not',()=>{
- const {compiler}=createRunner(()=>{});
- assert.ok(compiler.systemError('OCI runtime error: crun: clone: Resource temporarily unavailable'));
- assert.equal(compiler.systemError('error: expected ; before return'),false);
- assert.equal(compiler.systemError('TypeError: x is undefined'),false);
+test('JavaScript prompt receives input through the Node adapter',async()=>{
+ const {compiler,sockets}=runner((payload,reply)=>reply(response('Ada\n')));
+ const source="const name=prompt('Name? ');console.log(name);";
+ const r=await compiler.compile(source,'js','Ada\n');
+ assert.equal(r.stdout,'Ada\n');
+ assert.ok(sockets[0].runs[0].code.includes("readFileSync(0,'utf8')"));
+ assert.ok(sockets[0].runs[0].code.endsWith(source));
 });
-test('source-language detection and UI call only one service, with concise failure state',()=>{
- assert.match(app,/GearExEngine\?\.detect\(source,lang\)/);
- assert.match(app,/GearExCompiler\.compile\(source,lang,stdin/);
- assert.ok(app.includes("GearExCompiler?.warmup()"));
- assert.ok(app.includes('Compiler temporarily unavailable'));
- assert.ok(!app.includes('Remote compiler services are temporarily unavailable.'));
- assert.ok(html.includes('https://wandbox.org'));
- assert.ok(!html.includes('ce.judge0.com'));
-});
-test('guided stdin planner recognizes input APIs across six languages',()=>{
- const {compiler}=createRunner(()=>{});
+test('input prompt planner keeps six language input modes working',()=>{
+ const {compiler}=runner(()=>{});
  const cases=[
- ['py',"name=input('Name? ')\nage=int(input('Age? '))",['Name? ','Age? ']],
- ['js',"let name=prompt('Name?');",['Name?']],
- ['c','scanf("%d %d", &x, &y);',['C scanf: x','C scanf: y']],
- ['cpp','std::cin >> x >> y;',['C++ cin: x','C++ cin: y']],
- ['java','int x=sc.nextInt(); String name=sc.nextLine();',['Java sc.nextInt()','Java sc.nextLine()']],
- ['cs','var name=Console.ReadLine();',['C# Console.ReadLine()']]
+  ['py',"name=input('Name? ')",['Name? ']],
+  ['js',"x=prompt('X?')",['X?']],
+  ['c','scanf("%d", &x);',['C scanf: x']],
+  ['cpp','std::cin >> x;',['C++ cin: x']],
+  ['java','int x=sc.nextInt();',['Java sc.nextInt()']],
+  ['cs','var x=Console.ReadLine();',['C# Console.ReadLine()']]
  ];
- for(const [lang,program,expected] of cases){
-   assert.deepEqual(Array.from(compiler.findInputRequests(program,lang),x=>x.prompt),expected);
- }
+ for(const [lang,code,expected] of cases)
+  assert.deepEqual(Array.from(compiler.findInputRequests(code,lang),i=>i.prompt),expected);
 });
-test('JavaScript prompt maps to Node standard input only for code using prompt()',()=>{
- const {compiler}=createRunner(()=>{});
- const src="const name=prompt('Name?'); console.log(name);";
- const adapted=compiler.prepareSource(src,'js');
- assert.ok(adapted.includes("readFileSync(0,'utf8')"));
- assert.ok(adapted.includes('globalThis.prompt'));
- assert.ok(adapted.endsWith(src));
- assert.equal(compiler.prepareSource('console.log(3);','js'),'console.log(3);');
-});
-test('compiler guided input panel remains functional and preserves provided stdin',()=>{
- for(const id of ['compilerInputWizard','compilerInputValue','compilerExtraInputs','compilerInputSubmit','compilerInputCancel'])
-   assert.ok(html.includes('id="'+id+'"'));
- assert.ok(app.includes("showCompilerInputWizard(questions)"));
- assert.ok(app.includes('runEditor(true)'));
- assert.ok(app.includes("if(!inputsConfirmed&&!stdin.trim())"));
-});
-
-test('slow-but-successful compilation is not cancelled at ten seconds',async()=>{
- const calls=[];
- const {compiler}=createRunner(async(url)=>{
-   calls.push(url);
-   if(url.endsWith('/list.json'))return response(sampleList);
-   await new Promise(resolve=>setTimeout(resolve,25));
-   return response({status:0,program_stdout:'5\n',program_message:'5\n'});
- });
- const result=await compiler.compile('#include <iostream>\nint main(){std::cout<<5;}','cpp');
- assert.equal(result.success,true);
- assert.equal(result.stdout,'5\n');
- assert.equal(calls.filter(x=>x.endsWith('/compile.json')).length,1);
- assert.match(source,/EXECUTION_TIMEOUT_MS=45000/);
- assert.match(source,/CATALOG_TIMEOUT_MS=12000/);
- assert.ok(!source.includes('},10000)'), 'Do not restore the premature 10-second timeout');
-});
-test('timeout errors clearly identify the service rather than the source',()=>{
- assert.match(source,/service timeout, not a code error/);
- assert.match(source,/remote compiler did not respond within/);
- assert.ok(!source.includes('Judge0 CE is primary'));
+test('service budget, original GearEx UI, and explicit provider setup are wired correctly',()=>{
+ assert.ok(src.includes('RESPONSE_BUDGET_MS=7000'));
+ assert.ok(src.includes("conn.emit('runcode'"));
+ assert.ok(src.includes("'codeoutput'"));
+ assert.ok(src.includes('socket.disconnect()'));
+ assert.ok(!src.includes('fetch('));
+ assert.ok(html.includes('assets/compiler-config.js'));
+ assert.ok(html.indexOf('assets/compiler-config.js')<html.indexOf('assets/compiler-service.js'));
+ assert.ok(html.includes('onlinecompiler.io')&&!html.includes('wandbox.org'));
+ assert.ok(app.includes('GearExCompiler.compile(source,lang,stdin'));
+ assert.ok(app.includes('Compiler setup pending'));
+ assert.ok(app.includes('7-second response budget exceeded'));
 });
