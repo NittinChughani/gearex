@@ -80,6 +80,7 @@ function setDialog(open){
  const dialog=$('authDialog');
  if(!dialog)return;
  if(open){
+  if(!available)announce('Cloud accounts are not yet connected. You can keep learning as a guest.');
   if(!dialog.open)dialog.showModal();
   if($('authEmail'))$('authEmail').focus();
  }else if(dialog.open)dialog.close();
