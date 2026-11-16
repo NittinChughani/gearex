@@ -154,3 +154,163 @@ Object.assign(GEAR_LESSON_GUIDES,{
 'Replace static int calls with int calls. Predict the output of calling counter twice and explain why it changes.'
 ]
 });
+
+
+Object.assign(GEAR_LESSON_GUIDES,{
+'cpp-hello':[
+'C++ is a language that turns source code into an executable program. Its syntax includes statements ending in semicolons and blocks enclosed by braces. You can write small procedural programs or build larger designs with classes. A first program is a useful way to learn where execution begins and how to display a result.',
+'#include <iostream> makes stream input/output tools available. int main() is where the program starts. std::cout is the standard output stream; the << operator sends the greeting to it. The \n inside the string creates a new line. The return 0 signals a successful finish.',
+'Stream output is useful for showing results, debugging values, and building text-based interfaces.',
+'Change the greeting to two different lines. What does adding another \n do?'
+],
+'cpp-input':[
+'An interactive program reads values that the user enters. C++ commonly uses std::cin for input and std::cout for output. The type of the destination variable tells cin how to interpret the incoming characters. Because users can enter unexpected text, a program should check that the conversion succeeded.',
+'int number{} creates an integer starting at zero. cout prints a prompt, then if (std::cin >> number) tries to read an integer and checks the stream state. On success the example prints number * 2. On failure it prints Invalid input instead of using a failed conversion.',
+'This is the foundation of calculators, menus, and programs that accept configuration from the keyboard.',
+'Enter 8 and predict the result. Then enter letters and explain why the else branch is necessary.'
+],
+'cpp-loops':[
+'A loop runs the same body repeatedly while a condition permits it. The three parts of a traditional for loop are the starting state, the condition, and the update. You can read them as “start here; keep going while this remains true; change this after every repetition.”',
+'for (int i = 1; i <= 5; ++i) starts at 1, prints the number, then increments i. It repeats with 2, 3, 4, and 5. When i becomes 6, the condition fails. std::cout << " " puts a space after each number so the output appears on one line.',
+'Counting loops are useful for generating reports, filling collections, and performing a calculation a fixed number of times.',
+'Change the starting counter to 3. Then use i += 2 and predict the numbers before compiling.'
+],
+'cpp-vectors':[
+'A std::vector is a container that stores an ordered collection of elements and grows when needed. Unlike a plain fixed-length array, you do not have to know its final size when the program starts. You still use zero-based indexing, but the vector manages the storage needed for its elements.',
+'The example starts nums with 2, 4, and 6. nums.push_back(8) adds a fourth element. The range-based for loop says “for each n in nums,” so n takes each value in order and cout prints it. The vector is responsible for managing the underlying memory as it grows.',
+'Vectors are practical for storing student scores, search results, dynamic game objects, and many other collections.',
+'Add 10 with push_back. Predict how many loop iterations run and explain why you did not have to allocate another array.'
+],
+'cpp-functions':[
+'A function names a reusable operation. Arguments provide values for its parameters. C++ can accept a parameter by value (copying it) or by reference (using the caller’s object). A const reference lets code read a value without making an unnecessary copy while promising not to modify it.',
+'greet(const std::string& name) takes a reference to text and does not return a value because its return type is void. When main calls greet("Ada"), name refers to the supplied text and cout combines it with a greeting. You can call the same function again with a different name.',
+'Functions and references are useful for organizing reusable logic without copying potentially large strings or containers.',
+'Call greet twice with different names. What difference would there be if the parameter were std::string name instead?'
+],
+'cpp-classes':[
+'A class combines information and operations that work with that information. An object is one instance of a class. Encapsulation means keeping internal data protected and offering controlled operations to the outside world; private members cannot be accessed directly from ordinary external code.',
+'Counter has a private integer named value, initially zero. Its public increment method adds one, while get returns the current value. The main function creates counter, calls increment, then prints counter.get(). The printed value comes from the method rather than direct access to value.',
+'Classes are useful when modeling accounts, timers, players, shapes, and other things with both data and behavior.',
+'Call increment twice. Explain why changing counter.value directly from main would not be allowed.'
+],
+'cpp-conditionals':[
+'Conditional statements let a program make choices. Each condition evaluates to true or false. In an if / else if / else chain, conditions are examined in order, and the first matching branch runs. Remaining branches are skipped, even if their conditions would also be true.',
+'The example has temperature = 24. It is not greater than 30, so the first branch is skipped. It is at least 18, so the second branch prints Mild. The else branch does not run. If the value were below 18, neither test would match and Cold would print.',
+'This is useful for grading thresholds, categorizing measurements, and deciding which message or action to show.',
+'Try 31, 18, and 17. Write which branch should run for each before executing.'
+],
+'cpp-strings':[
+'std::string represents text as a managed C++ object. Unlike a raw C character array, it can resize itself and provides convenient operations such as adding text or asking for its length. A string is still a sequence of characters, but the class handles much of the underlying memory management.',
+'The example starts name with "GearEx" and then uses += to append " Platform". name.size() counts the characters in the combined text, including the space. cout displays both the length and the combined string so you can connect the stored text to the result.',
+'Strings are important for names, messages, filenames, user input, and practically every text-based application.',
+'Append an exclamation mark and calculate the new size. Does the space contribute to the character count?'
+],
+'cpp-arrays':[
+'std::array stores a fixed number of elements whose size is known when the program is compiled. It behaves like a regular container but keeps the storage size fixed. Its template arguments specify the element type and the number of elements, such as std::array<int, 3>.',
+'The example initializes three integers: 3, 5, and 7. A range-based loop visits each value as n. For every item the program multiplies n by 2 and prints the result. The original elements remain unchanged because the loop variable n is a copy here.',
+'Fixed-size arrays are useful when the number of fields or sensor readings is known and does not need to grow.',
+'Predict the output, then change the range-based loop to use int& n and ask what changes if you update n.'
+],
+'cpp-references':[
+'A reference gives an existing object an additional name. A pointer stores an address; a reference acts as an alias for the referred object. When you pass an argument by non-const reference, the function can change the original value rather than a temporary copy.',
+'addFive(int& value) receives a reference to an integer. In main, score starts at 10. Calling addFive(score) binds value to that same score, and value += 5 updates it. The final cout therefore prints 15, even though the assignment happened inside the function.',
+'References are especially useful for function parameters that need to modify an existing variable or avoid expensive copies.',
+'Change score to 20. Would the result be the same if addFive accepted int value without the &? Explain.'
+],
+'cpp-constructors':[
+'A constructor is a special class member that runs when a new object is created. It gives the object a valid starting state. Constructors share the class name, have no return type, and can initialize fields using an initializer list before the constructor body executes.',
+'Point contains two integers x and y. The constructor Point(int a,int b) : x(a), y(b) sets those fields from its arguments. When the example creates Point p(4,7), x becomes 4 and y becomes 7. Calling p.sum() adds the two stored fields and returns 11.',
+'Constructors matter whenever an object must start with meaningful values, such as a point, date, account, or connection settings.',
+'Create a Point with 3 and 9. Predict p.sum() and identify where the two constructor arguments are stored.'
+],
+'cpp-inheritance':[
+'Inheritance lets a derived class reuse accessible behavior from a base class. The relationship should make conceptual sense: a Triangle is a kind of Shape. Public inheritance allows a derived object to use the base class interface while adding its own methods.',
+'The example defines Shape with a sides() method and Triangle that publicly inherits from Shape. Triangle adds corners(). A Triangle object t can call t.sides() because it inherited that member, and t.corners() because its own class defines it. These are two distinct method calls.',
+'Inheritance is useful when related objects share a common interface, though composition is often preferable when the relationship is not truly “is a.”',
+'Add another method to Shape and predict whether the Triangle instance can call it.'
+],
+'cpp-polymorphism':[
+'Runtime polymorphism allows a base-class interface to call behavior that depends on the actual derived object. A virtual member function tells C++ to choose the overriding function based on the object’s dynamic type instead of always using the base implementation.',
+'The example has a base Animal with a virtual sound() method. A derived animal defines its own version. When the program accesses the object through a base-class pointer or reference, the virtual call still finds the derived behavior. The virtual destructor also makes deleting through a base pointer safe when appropriate.',
+'This pattern is valuable in games, GUI systems, and other designs where many different object types share the same operations.',
+'Imagine adding a Cat with its own sound(). Which implementation should a base-class reference call when it refers to a Cat object?'
+],
+'cpp-templates':[
+'A template is a recipe the compiler can use to create functions or classes for multiple types. Instead of writing nearly identical versions for int, double, and other compatible types, you express the shared logic with a type parameter. The compiler produces an appropriate version when the template is used.',
+'The larger template accepts two values of the same inferred type and compares them. Calling larger(4,9) uses integers and returns 9. Calling it with decimal values creates a suitable floating-point version. The comparison logic stays the same, but the types are chosen at compile time.',
+'Templates power much of the standard library, including vector, array, algorithms, and many reusable components.',
+'Try larger(3,7) and larger(2.5,1.5). Why does a template avoid two separate function definitions?'
+],
+'cpp-algorithms':[
+'The C++ standard library includes algorithms that operate on ranges instead of requiring you to write every loop yourself. A range is often represented by a begin iterator and an end iterator. Many algorithms work with vectors, arrays, and other containers because they share iterator conventions.',
+'The example includes <algorithm> and <vector>. The vector provides the input values; the algorithm operates on a range of those values. The exact algorithm call determines whether the collection is sorted, searched, transformed, or counted. Check the expression after the algorithm name to see which range it processes.',
+'Library algorithms make programs shorter and reduce the chance of mistakes in commonly used operations.',
+'Find the algorithm call in the example. Identify its input range and predict how the vector changes or which result it returns.'
+],
+'cpp-maps':[
+'A map associates each key with a value. Imagine a dictionary: a student name is the key and the score is the value. std::map keeps keys ordered and does not allow duplicate keys. You retrieve values by key rather than remembering a numeric position in an array.',
+'The example starts with two entries, one for Ada and one for Lin. Accessing scores["Ada"] finds Ada’s associated integer. Inserting or updating an entry uses the same key/value relationship. A map is different from a vector: you ask for a named key, not “element 0.”',
+'Maps are useful for word counts, user settings, keyed records, and lookup tables.',
+'Add a score for a third student. Predict what happens if you assign another value to the existing key "Ada".'
+],
+'cpp-sets':[
+'A set stores unique values. Adding the same value repeatedly does not create duplicates. std::set also keeps its elements in sorted order, so iterating over it is different from iterating over a vector that preserves insertion order.',
+'The example constructs a set from 3, 1, 3, and 2. The repeated 3 appears only once. Because std::set is ordered, a loop prints 1, 2, and 3 rather than the original input sequence. This illustrates both uniqueness and ordering.',
+'Sets help track unique tags, prevent duplicate IDs, and determine which values occur in a dataset.',
+'Insert 2 again and add 4. Predict how many elements are in the set and their iteration order.'
+],
+'cpp-lambdas':[
+'A lambda is a function you can write directly at the place where it is needed. It is useful when an algorithm expects an operation or condition but that operation does not need a permanent function name. A capture list can give the lambda access to values from its surrounding scope.',
+'The example uses an algorithm together with a lambda expression. The lambda’s parameter represents the element being examined, and its body returns or computes a result for that element. If you see a condition such as x > 5, it is deciding whether that particular element passes the test.',
+'Lambdas make filtering, sorting with custom rules, and short callback functions easier to express.',
+'Find the lambda’s parameter and condition. Change the comparison threshold and predict which elements the algorithm will select.'
+],
+'cpp-exceptions':[
+'An exception reports a problem that normal return values may not describe conveniently. Code can throw an exception when an operation cannot complete, and another part of the program can catch it. This separates the normal path from the error path, but exceptions should not replace ordinary checks everywhere.',
+'The divide function checks whether the divisor is zero. If so, it throws std::invalid_argument rather than dividing. If the divisor is valid, it returns the integer quotient. A try/catch block at the call site can handle the exception and show an appropriate message without continuing an invalid calculation.',
+'Exceptions are useful when libraries must report failures across several layers of function calls.',
+'Call divide with a divisor of zero. Which path runs, and why is a successful numeric answer impossible?'
+],
+'cpp-files':[
+'C++ file streams let programs read from or write to filesystem data. An ofstream represents an output file. Opening a file can fail if the path is wrong or permission is denied, so a real application should check the stream before writing.',
+'The example creates an ofstream for scores.txt. If opening fails, the error branch prints a message and exits. Otherwise the stream receives text through <<, just like cout sends text to standard output. The stream closes when its object is destroyed at the end of its scope.',
+'File streams support saved reports, configuration files, exported results, and persistent notes.',
+'Change the filename and the written message. Where would the resulting file be created when the program runs?'
+],
+'cpp-smart-pointers':[
+'A smart pointer is an object that manages ownership of dynamically allocated resources. Instead of remembering to call delete manually, a unique_ptr releases the owned object when it goes out of scope. This is an example of RAII: resource lifetime is tied to an ordinary C++ object lifetime.',
+'The example uses std::make_unique<int>(42), which allocates an integer initialized to 42 and returns a unique_ptr owning it. Dereferencing with *number reads the stored integer. When main ends, the unique_ptr automatically releases its allocation.',
+'Smart pointers are useful when working with dynamic objects because they clarify ownership and help prevent leaks.',
+'Explain why manually calling delete on the object owned by a unique_ptr would be unsafe.'
+],
+'cpp-iterators':[
+'An iterator is an object that identifies a position in a container. It behaves somewhat like a pointer: you can read the current element and advance to the next one. Iterators give library algorithms a common way to work with many different kinds of containers.',
+'The example creates a vector and calls values.begin() to obtain an iterator at the first element. Dereferencing it gives the current value. Advancing the iterator moves it toward the next element. values.end() marks the position just past the last element and should not be dereferenced.',
+'Iterators connect container types with standard algorithms for searching, sorting, and transforming data.',
+'Predict the first two values seen when advancing an iterator through 10, 20, 30. What does end() represent?'
+],
+'cpp-namespaces':[
+'Namespaces group names to prevent collisions. Two libraries may both define a function called square; placing each inside its own namespace keeps their meanings separate. The :: operator identifies which namespace owns a name. You can use a using declaration or using namespace directive for convenience, but naming things explicitly often makes large programs clearer.',
+'The example defines math_tools::square. main calls math_tools::square(6), meaning “use the square function from math_tools.” That function multiplies 6 by itself and returns 36. std::cout uses the same :: idea: cout is in the standard namespace std.',
+'Namespaces are essential in projects that combine several libraries or code written by different teams.',
+'Try calling square(6) without math_tools::. Why might the compiler need a using declaration or the namespace qualifier?'
+],
+'cpp-const':[
+'const means the code should not change a particular value through that name. It is a promise that the compiler can help enforce. Const-qualified parameters also tell readers that a function is meant to read data rather than modify it. This makes code easier to reason about.',
+'The example declares const int base = 12, so base cannot later be assigned a new value. doubleIt accepts const int number and returns number * 2 without changing its input. main prints the result of applying the function to base.',
+'Const correctness is useful for preventing accidental modifications and documenting how functions use their arguments.',
+'Attempt to assign base = 20 after its declaration. Predict the compiler’s response and explain why the restriction helps.'
+],
+'cpp-move-semantics':[
+'Moving is a way for C++ objects to transfer resources instead of duplicating all their data. A copy creates another independent value; a move may reuse storage already owned by the original object. The moved-from object remains valid but its exact content often should not be assumed.',
+'The example includes <utility> for std::move and uses string objects. When the resource of one string is moved into another, the receiving string acquires the value or underlying storage. Afterward, the original string is still a valid object, but its contents are not something your code should depend on unless the type documents them.',
+'Move semantics are valuable for containers and resource-managing objects where copying a large amount of data would be expensive.',
+'Explain the difference between copying a long string and moving it. Why is it unsafe to assume the moved-from string still contains its original text?'
+],
+'cpp-file-project':[
+'A mini project combines concepts that were previously practiced one by one. Instead of just memorizing syntax, you decide how information should flow through functions, containers, loops, and output. Building a complete task is where individual programming features start to feel useful.',
+'The student-grade example stores scores in a vector, calculates their sum by visiting the elements, and divides by the count to obtain an average. It also handles an empty vector so it does not divide by zero. main provides data, calls the calculation function, and prints the result.',
+'The same structure can support a small gradebook, spending summary, or sensor dashboard.',
+'Add another grade and predict the new average. Then test the empty-vector case and explain why that guard is essential.'
+]
+});
