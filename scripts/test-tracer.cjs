@@ -311,3 +311,44 @@ test('Source editor visually highlights affected lines red and valid code green'
  assert.ok(css.includes('.trace-source-mirror-line.has-error'),'Error line style missing');
  assert.ok(css.includes('.trace-check-feedback.is-ready'),'Green ready style missing');
 });
+
+test('C++ namespace and multiple standard headers are recognized as trace setup',()=>{
+ const code='#include <iostream>\n#include <cmath>\nusing namespace std;\nint main() {\n double answer = sqrt(25);\n cout << answer << endl;\n return 0;\n}';
+ assert.equal(engine.detect(code),'cpp');
+ const check=engine.validate(code,'cpp');
+ assert.equal(check.ok,true,JSON.stringify(check.issues));
+ const trace=engine.run(code,'cpp');
+ assert.deepEqual(trace.warnings,[]);
+ assert.ok(trace.steps.some(step=>step.line===1&&step.note.includes('Header <iostream>')));
+ assert.ok(trace.steps.some(step=>step.line===2&&step.note.includes('Header <cmath>')));
+ assert.ok(trace.steps.some(step=>step.line===3&&step.note.includes('namespace std')));
+ assert.equal(resultOutput(trace),'5\n');
+ assert.ok(trace.steps.at(-1).note.includes('Program ended'));
+});
+test('C math.h header is preserved as setup and sqrt and pow execute in supported subset',()=>{
+ const code='#include <stdio.h>\n#include <math.h>\nint main(){\n double x=sqrt(81);\n double y=pow(2,3);\n printf("%d %d",x,y);\n return 0;\n}';
+ const result=engine.run(code,'c');
+ assert.deepEqual(result.warnings,[]);
+ assert.ok(result.steps.some(step=>step.note.includes('Header <math.h>')));
+ assert.equal(resultOutput(result),'9 8');
+});
+test('Header-only statements are described, not treated as runtime errors',()=>{
+ const code='#include <custom_math.h>\n#include <utility>\nusing namespace std;\nint main(){\n int value=3;\n cout << value << endl;\n return 0;\n}';
+ const check=engine.validate(code,'cpp');
+ assert.equal(check.ok,true,JSON.stringify(check.issues));
+ const result=engine.run(code,'cpp');
+ assert.deepEqual(result.warnings,[]);
+ assert.ok(result.steps.some(step=>step.note.includes('Header <custom_math.h>')));
+});
+test('Trace view includes replay on completion and respects SQL conceptual mode',()=>{
+ const html=read('index.html');
+ const trace=read('assets/gearex-trace-ui.js');
+ const css=read('assets/navigation-shell.css');
+ assert.ok(html.includes('rows="16"'));
+ assert.ok(css.includes('height:420px'));
+ assert.ok(trace.includes('traceRunAgain'));
+ assert.ok(trace.includes('Program ended'));
+ assert.ok(trace.includes('Query outline complete'));
+ assert.ok(trace.includes('Run visualizer again'));
+ assert.ok(trace.includes('prepare();index=0;render()'));
+});
