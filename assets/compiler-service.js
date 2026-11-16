@@ -1,6 +1,5 @@
-/* GearEx Compiler — resilient remote program execution.
- * Actual code runs only in isolated remote compiler services, never in page JS.
- * Judge0 CE is primary; Wandbox is a fallback for service/network failures. */
+/* GearEx Compiler — one remote Wandbox execution service.
+ * Source is compiled remotely; provider errors are not learner code errors. */
 (function(root,factory){
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
@@ -13,6 +12,8 @@ const PREF={c:/^(?:gcc|clang)/i,cpp:/^(?:gcc|clang)/i,py:/^(?:cpython|python)-?3
 const RUNTIME_ERROR=/OCI runtime error|crun: clone|Resource temporarily unavailable|runc (?:create|run) failed|failed to create (?:shim|task|container)|container (?:init|create) failed|failed to start container|service unavailable|service temporarily unavailable|system is overloaded/i;
 const CACHE_KEY='gearex-runtime-catalog-v1';
 const CACHE_TTL=24*60*60*1000;
+const CATALOG_TIMEOUT_MS=12000;
+const EXECUTION_TIMEOUT_MS=45000;
 let catalog=null,selection=null,pendingCatalog=null;
 class CompilerServiceError extends Error{
  constructor(message){super(message);this.name='CompilerServiceError';this.isServiceError=true;}
@@ -60,7 +61,7 @@ function normalize(raw){
  return {...raw,output:output||'(Program finished without printing output.)'};
 }
 function systemError(value){return RUNTIME_ERROR.test(String(value||''));}
-async function jsonRequest(url,options={},timeout=8500){
+async function jsonRequest(url,options={},timeout=CATALOG_TIMEOUT_MS){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
  try{
    const response=await fetch(url,{...options,signal:controller.signal});
@@ -73,7 +74,7 @@ async function jsonRequest(url,options={},timeout=8500){
    catch{throw new CompilerServiceError('The compiler returned an unreadable response.');}
  }catch(err){
    if(err instanceof CompilerServiceError)throw err;
-   if(err?.name==='AbortError')throw new CompilerServiceError('The compiler took too long to respond. Please try again.');
+   if(err?.name==='AbortError')throw new CompilerServiceError('The remote compiler did not respond within '+Math.round(timeout/1000)+' seconds. This is a service timeout, not a code error.');
    throw new CompilerServiceError('The compiler service is unreachable. Check your connection and try again.');
  }finally{clearTimeout(timer);}
 }
@@ -107,7 +108,7 @@ async function discover(){
  if(cachedChoices())return selection;
  if(pendingCatalog)return pendingCatalog;
  pendingCatalog=(async()=>{
-   const data=await jsonRequest(ENDPOINT+'/list.json',{},4500);
+   const data=await jsonRequest(ENDPOINT+'/list.json',{},CATALOG_TIMEOUT_MS);
    if(!Array.isArray(data))throw new CompilerServiceError('Compiler language catalog is unavailable.');
    catalog=data;
    const names={};
@@ -133,11 +134,11 @@ async function compile(source,lang,stdin='',onStatus){
  const names=await discover();
  const compiler=names[lang];
  if(!compiler)throw new CompilerServiceError('This language is not available from the compiler service right now.');
- onStatus?.('Compiling and running '+LANGUAGES[lang]+'…');
+ onStatus?.('Running '+LANGUAGES[lang]+' on Wandbox… First runs may take longer while the remote sandbox starts.');
  const raw=await jsonRequest(ENDPOINT+'/compile.json',{
    method:'POST',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({compiler,code:prepared,stdin:String(stdin||''),save:false})
- },10000);
+ },EXECUTION_TIMEOUT_MS);
  if(!raw||typeof raw!=='object')throw new CompilerServiceError('The compiler returned an invalid result.');
  const stdout=String(raw.program_stdout||'');
  const runtimeStderr=String(raw.program_stderr||'');
