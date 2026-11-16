@@ -1,5 +1,9 @@
 name: Check compiler in Chrome after Pages deployment
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/browser-compiler-smoke.yml
   workflow_run:
     workflows:
       - pages build and deployment
