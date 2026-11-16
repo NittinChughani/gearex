@@ -1,6 +1,6 @@
 /* GearEx — plain JavaScript, GitHub Pages compatible.
    User content is inserted with textContent, never interpreted as HTML.
-   Compiler execution goes to one external Wandbox runtime; input is submitted as stdin. */
+   Compiler execution uses the single OnlineCompiler.io service; optional cloud sync is separate. */
 'use strict';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
@@ -31,7 +31,7 @@ const state = {
   currentChallenge: null, visual: 'loops', loopStep: 0, arrayIndex: 0, pointerValue: 12,
   quiz: [], quizIndex: 0, quizScore: 0, quizSelected: null, quizMissed: [], quizRetry: false
 };
-function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify({theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts})); } catch { /* Browser storage may be disabled. */ } }
+function persist() { try { localStorage.setItem(STORE_KEY, JSON.stringify({theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts,drafts:state.drafts})); window.dispatchEvent(new CustomEvent('gearex:progresschange')); } catch { /* Browser storage may be disabled. */ } }
 const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
 const text = (selector, value) => { const node = $(selector); if (node) node.textContent = String(value); };
 const normal = value => String(value || '').trim().replace(/\s+/g, ' ');
@@ -275,7 +275,7 @@ function visualTabs(){setActiveButtons('[data-visual]','visual',state.visual);co
 function dashboardStatus(message){text('#dashboardMessage',message);}
 function exportProgress(){const payload={app:'GearEx',version:2,exportedAt:new Date().toISOString(),progress:{theme:state.theme,mode:state.mode,completed:[...state.completed],bookmarks:[...state.bookmarks],practiced:[...state.practiced],passed:[...state.passed],tried:[...state.tried],projects:[...state.projects],best:state.best,quizAttempts:state.quizAttempts}};payload.certificates=window.gearexExportCertificates?window.gearexExportCertificates():{};payload.lessonChecks=window.gearexExportLessonChecks?window.gearexExportLessonChecks():{};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=make('a');a.href=url;a.download='gearex-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);dashboardStatus('Your progress file was prepared for download.');}
 async function importProgress(file){if(!file)return;if(file.size>1024*1024){dashboardStatus('Import rejected: file is too large.');return;}try{const data=JSON.parse(await file.text());if(!['CodeLab Academy','GearEx'].includes(data.app)||!data.progress||typeof data.progress!=='object')throw new Error('Not a GearEx progress export.');const p=data.progress;state.completed=restoreList(p.completed,lessonIds);if(window.gearexImportLessonChecks)window.gearexImportLessonChecks(data.lessonChecks||{});state.completed=new Set([...state.completed].filter(id=>window.gearexLessonPassed?.(id)));state.bookmarks=restoreList(p.bookmarks,lessonIds);state.practiced=restoreList(p.practiced,lessonIds);state.passed=restoreList(p.passed,challengeIds);state.tried=restoreList(p.tried,challengeIds);state.projects=restoreList(p.projects,projectIds);state.quizAttempts=Math.floor(clamp(p.quizAttempts||0,0,1000000));state.best=p.best&&Number.isFinite(Number(p.best.percent))&&Number(p.best.percent)>=0&&Number(p.best.percent)<=100?{percent:Number(p.best.percent),lang:String(p.best.lang||'Quiz').slice(0,60)}:null;state.theme=['none','cyberpunk','quantum','synthwave','matrix'].includes(p.theme)?p.theme:'none';state.mode=p.mode==='dark'?'dark':'light';persist();if(window.gearexImportCertificates)window.gearexImportCertificates(data.certificates);setTheme();updateStats();renderLessons();renderRoadmap();renderChallenges();renderProjects();dashboardStatus('Progress imported successfully.');}catch(err){dashboardStatus('Import failed: '+err.message);}finally{$('#importFile').value='';}}
-const GEAR_VIEWS=new Set(['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about']);
+const GEAR_VIEWS=new Set(['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about','privacy']);
 function closeThemeMenu(refocus=false){
   const menu=$('#themeMenu'),launcher=$('#themeLauncher');
   if(!menu||!launcher)return;
