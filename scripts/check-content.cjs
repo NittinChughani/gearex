@@ -40,7 +40,7 @@ for(const p of PROJECTS){assert.ok(p.steps.length>=3&&p.acceptance.length>=2&&p.
 assert.equal(LESSONS.length,91);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','modeSwitch','themeLauncher','themeMenu','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
-for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','compiler-service.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
+for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
 console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz questions, ${CHALLENGES.length} challenges, ${PROJECTS.length} projects.`);
 
 const languages=['c','cpp','py','js','java','cs','sql'];
@@ -49,7 +49,7 @@ for(const lang of languages){
  assert.ok(course.length>=8,lang+': course needs at least eight lessons');
  assert.ok(bank.length>=8,lang+': assessment requires at least eight questions');
 }
-for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','app.js','compiler-service.js','lesson-assessments.js','gearex-features.js']){
+for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-features.js']){
  new vm.Script(fs.readFileSync(path.join(root,'assets',file),'utf8'),{filename:file});
 }
 for(const theme of ['none','cyberpunk','quantum','synthwave','matrix']) {
@@ -123,7 +123,7 @@ assert.ok(css.includes('main > [data-view][hidden]'),'Non-active views must rema
 assert.ok(app.includes("mode:state.mode")&&app.includes("theme:state.theme"),'Appearance preferences must persist in saved progress');
 assert.ok(app.includes("document.body.dataset.mode=mode"),'Appearance mode not applied to body');
 assert.ok(app.includes("if(!target)target=$('#home');"),'Invalid routes must fall back to Home');
-assert.ok(app.includes("window.addEventListener('hashchange',route);route();"),'Hash route must run at initial load and navigation');
+assert.ok(app.includes("window.addEventListener('hashchange',route);")&&app.includes('  route();'),'Hash route must run at initial load and navigation');
 assert.ok(!motion.includes('scroll reveals'),'Scroll-only navigation animations are obsolete');
 assert.ok(!/Hologram Haze|data-theme="hologram"|data-palette="hologram"/i.test([html,css,studio,readme].join('\n')),'Retired theme still included');
 const expectedViews=['home','path','learn','lessonDetail','practice','challengeDetail','playground','quiz','visualize','projects','projectDetail','dashboard','trace','certificate','about'];
@@ -140,8 +140,28 @@ assert.ok(readme.includes('built-in **Code Visualizer**'),'README must explain G
 console.log('Shell and README checks OK: independent theme/mode persistence, accessible waffle launcher and route panels.');
 
 const compilerModule=fs.readFileSync(path.join(root,'assets/compiler-service.js'),'utf8');
-assert.ok(html.includes('assets/compiler-service.js'),'Dual compiler service is not loaded');
-assert.ok(compilerModule.includes('ce.judge0.com')&&compilerModule.includes('wandbox.org'),'Compiler needs primary and backup runtimes');
+assert.ok(html.includes('assets/compiler-service.js'),'Compiler service is not loaded');
+assert.ok(compilerModule.includes('wandbox.org'),'Wandbox execution service is missing');
+assert.ok(!compilerModule.includes('ce.judge0.com'),'A second compiler service must not be reintroduced');
+assert.ok(compilerModule.includes('pendingCatalog')&&compilerModule.includes('CACHE_TTL'),'Selected runtimes should be cached');
 assert.ok(compilerModule.includes('Resource temporarily unavailable'),'OCI error detector is missing');
 assert.ok(fs.existsSync(path.join(root,'scripts','test-compiler.cjs')),'Compiler unit tests missing');
-console.log('Compiler checks OK: two execution services, source-language detection and transient-error recovery.');
+console.log('Compiler checks OK: single execution service, caching, language detection and service failure handling.');
+
+const guideContent=fs.readFileSync(path.join(root,'assets','lesson-guides.js'),'utf8');
+const guides=vm.runInNewContext(guideContent+'\nGEAR_LESSON_GUIDES;');
+const guideIds=Object.keys(guides);
+assert.equal(guideIds.length,91,'Every lesson needs a topic-specific detailed guide');
+for(const lesson of LESSONS){
+ const guide=guides[lesson.id];
+ assert.ok(Array.isArray(guide)&&guide.length===4,lesson.id+': each lesson needs four explained stages');
+ guide.forEach((part,i)=>assert.ok(typeof part==='string'&&part.length>=35,lesson.id+': stage '+i+' too short'));
+}
+assert.ok(html.includes('assets/lesson-guides.js'),'Teaching guides are not loaded');
+assert.ok(app.includes('GEAR_LESSON_GUIDES[id]'),'Lesson renderer does not show teaching guides');
+assert.ok(app.includes('Understand the concept, not just the syntax'),'Beginner teaching layout missing');
+assert.ok(traceUI.includes('Program ended')&&traceUI.includes('traceRunAgain'),'Visualizer completion/restart UI missing');
+assert.ok(css.includes('height:420px'),'Visualizer editor must be enlarged');
+assert.ok(engine.includes('Using namespace')&&engine.includes('Header '),'Header and namespace trace stage missing');
+assert.ok(!readme.includes('Judge0 CE'),'README has outdated compiler setup');
+console.log('Lesson depth OK: 91 beginner-friendly guides, four teaching sections each, updated visualization and compiler.');
