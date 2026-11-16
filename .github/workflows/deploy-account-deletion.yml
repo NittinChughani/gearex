@@ -2,7 +2,7 @@ name: Deploy GearEx account deletion
 
 on:
   push:
-    branches: [main]
+    branches: [main, gearex-final-experience-accounts]
     paths:
       - 'supabase/functions/delete-account/**'
       - 'supabase/config.toml'
