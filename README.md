@@ -25,11 +25,13 @@ No signup is needed. The website is open-source, built with HTML, CSS and JavaSc
 
 GearEx remains entirely usable as a **guest**: all seven language tracks, the compiler, Code Visualizer, lessons, quizzes and certificates remain available without creating an account.
 
-The final-development branch includes a personalized dashboard with a **display name, user-selected profile photo**, animated progress cards, Continue Learning recommendations, and a saved-program gallery. A signed-in Supabase account can privately synchronize completed lessons, scores, certificates and code drafts across devices. On a first sign-in, the learner explicitly chooses whether to import existing guest progress; code-draft conflicts preserve a second copy.
+The live website includes a personalized dashboard with a **display name, user-selected profile photo**, animated progress cards, Continue Learning recommendations, and a saved-program gallery. A signed-in Supabase account can privately synchronize completed lessons, scores, certificates and code drafts across devices. On a first sign-in, the learner explicitly chooses whether to import existing guest progress; code-draft conflicts preserve a second copy.
 
-**Activation status:** the account frontend and secure SQL/Storage policies have been implemented, but **Supabase project URL and publishable key are intentionally blank** until the project owner configures their own Supabase project. Google/email authentication and cloud sync **have not been verified against a live project**. The stable public website continues operating independently on `main` until production checks pass.
+**Live status:** the public Supabase configuration is connected. Google sign-in, cloud lesson progress and score sync, and profile name/photo persistence have been manually tested. Automated content, compiler, account-model and guest browser checks pass. Email magic-link sign-in and full multi-account privacy checks have not been confirmed end-to-end for this release.
 
-**First-time Supabase setup:** [Follow the beginner-friendly step-by-step guide](docs/SUPABASE_SETUP.md), covering database RLS, private profile photo storage, Google OAuth, email magic links, redirect URLs, and a secure account-deletion Edge Function.
+**Account deletion status:** the browser and secure Edge Function code are included, but deployment of `delete-account` remains **incomplete** because the GitHub Actions deployment workflow lacks a `SUPABASE_ACCESS_TOKEN` repository secret. Until deployment and a disposable-account test succeed, do not treat in-app deletion as working. The browser reports server unavailability instead of claiming deletion succeeded.
+
+**Supabase setup for maintainers and forks:** [Read the setup and secure deployment guide](docs/SUPABASE_SETUP.md), including database RLS, private photo storage, authentication redirects and the account-deletion function.
 
 
 
