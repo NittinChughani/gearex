@@ -144,11 +144,13 @@ When code uses a recognized input command and the standard-input box is empty, G
 **Technical limitation:** the hosted compiler services take standard input **before** execution; they do not provide a live interactive terminal session. GearEx collects values in advance and passes them to the compiler as stdin, then shows the real program output. Programs with input requirements that cannot be determined statically may need additional lines entered manually. The Code Visualizer is different: it can actually pause and ask during its supported execution trace.
 
 
-Actual code execution is prepared for **[OnlineCompiler.io](https://onlinecompiler.io/)** through its browser WebSocket API, using the original GearEx editor rather than an embedded third-party editor. The new API supports **C, C++, Python, JavaScript, Java, C# and SQLite**, with built-in standard headers. Programs are sent unchanged, except for the already-documented Node `prompt()` stdin adapter.
+Actual code execution uses **[OnlineCompiler.io](https://onlinecompiler.io/)** through its browser WebSocket API, using the original GearEx editor rather than an embedded third-party editor. The new API supports **C, C++, Python, JavaScript, Java, C# and SQLite**, with built-in standard headers. Programs are sent unchanged, except for the already-documented Node `prompt()` stdin adapter.
 
-**One-time activation required:** create a **public WebSocket/widget key** in your OnlineCompiler.io Widgets dashboard, restrict its allowed domain to `https://nittinchughani.github.io`, and set `widgetKey` in `assets/compiler-config.js`. This type of key is intended for public client-side pages and cannot call the secret REST API. **Do not paste a secret REST API key into GearEx's frontend.** Until the widget key is provided, GearEx displays an honest setup notice and **cannot run source code**. Visitors will not need accounts once activated.
+**Configured:** GearEx uses a public WebSocket/widget key supplied by the site owner, stored in `assets/compiler-config.js`. The key is designed for browser use and should remain restricted to `https://nittinchughani.github.io` in the provider dashboard. It is **not** a private REST API key; never publish private credentials. Visitors do not need an account to run code.
 
 **Responsiveness:** the compiler reuses an authenticated WebSocket, does not repeatedly poll an execution job, and gives each Run action a **7-second visible response budget**. If no result has returned at the deadline, GearEx stops waiting and reports a service delay rather than an error in the code. The provider's published 2026 medians for small programs were under this budget for all seven languages, but this is not a latency guarantee, and larger source files or overload can exceed it. The user may retry manually; GearEx does not silently resubmit. The provider remains responsible for sandbox availability and runtime support.
+
+**Live verification:** the public widget key connected successfully from a GitHub Actions runner using the intended GitHub Pages origin. C, C++, Python, JavaScript, Java, C# and SQL programs all returned real output within seven seconds, as did an intentional C++ syntax error. These are samples, not a guarantee of speed for all programs or locations. The [real provider smoke check](https://github.com/NittinChughani/gearex/actions/runs/43880876135) records actual response times.
 
 **Privacy:** source code and standard input are sent to the external execution service. Do not include credentials or personal information. Refer to the provider's data policy if submitting sensitive material.
 
@@ -178,7 +180,7 @@ gearex/
 │   ├── navigation-shell.css      # Light/dark switch, palettes, view transitions
 │   ├── studio-motion.js          # View animation and staggered cards
 │   ├── app.js                    # Hash routing, lessons, compiler UI, progress
-│   ├── compiler-config.js        # Public, domain-restricted browser widget key (activation required)
+│   ├── compiler-config.js        # Public browser widget key (configured by site owner)
 │   ├── compiler-service.js       # Single WebSocket execution client with 7-second UI budget
 │   ├── lesson-guides.js          # 91 detailed, topic-specific beginner explanations
 │   ├── gearex-engine.js          # Built-in teaching interpreter
