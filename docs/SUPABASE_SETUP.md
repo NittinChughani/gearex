@@ -1,6 +1,6 @@
 # Connect GearEx to Supabase — beginner's step-by-step guide
 
-**Release status (16 November 2026):** The public GearEx website on `main` has connected Supabase login, private progress sync and profile features, with owner-verified Google sign-in and persistence. **Account deletion is not yet live:** the `delete-account` function is committed, but server deployment and a disposable-account deletion test are outstanding. The deployment workflow reports that its GitHub Actions `SUPABASE_ACCESS_TOKEN` secret is missing. This guide is primarily for maintainers, self-hosters and forks; guest lessons, editor, compiler, quizzes, certificates and local progress also work without an account.
+**Release status (16 November 2026):** The public GearEx website on `main` has connected Supabase login, private progress sync and profile features, with owner-verified Google sign-in and persistence. The `delete-account` Edge Function has been deployed directly to the GearEx Supabase project and is **ACTIVE**. Live checks confirm the CORS preflight (200) and correctly rejected anonymous requests (401), missing confirmation (400), unauthorized origins (403), and unsupported methods (405). **A full deletion using a disposable signed-in account has not yet been verified.** The automated health-check workflow no longer requires an expiring Supabase access token. This guide is primarily for maintainers, self-hosters and forks; guest lessons, editor, compiler, quizzes, certificates and local progress also work without an account.
 
 > **Never share or commit:** the database password, the Supabase **secret/service_role** key, Google OAuth Client Secret, or your Supabase access token. The **project URL** and **publishable** key are designed to be present in a public frontend, but only with Row Level Security configured.
 
@@ -126,6 +126,9 @@ On your computer:
 Why \`--no-verify-jwt\`? The public Edge Function gateway may reject the newer publishable/JWT combination; **the function still performs a server-side \`auth.getUser(token)\` check before taking any action**. Never change it to accept an arbitrary user ID from the request.
 
 Official docs: https://supabase.com/docs/guides/functions
+
+
+**Deployment and monitoring for the live GearEx project:** The function is already deployed to Supabase. [GitHub's account-deletion workflow](../.github/workflows/deploy-account-deletion.yml) now performs *read-only* live endpoint tests when its workflow/source file changes, once weekly, and when manually invoked. It intentionally **does not deploy code** and does **not** need `SUPABASE_ACCESS_TOKEN`; no token rotation is required for monitoring. When editing `supabase/functions/delete-account/index.ts`, deploy the new version deliberately using the connected Supabase integration or the CLI before claiming it is live. The old failed GitHub deployment runs are historical and do not indicate that the currently deployed function is missing. A full disposable-account deletion test is still necessary for end-to-end verification.
 
 ## 8. Test two accounts, a guest, and actual cloud saves
 
