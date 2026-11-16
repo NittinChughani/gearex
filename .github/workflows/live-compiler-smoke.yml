@@ -5,6 +5,7 @@ on:
       - onlinecompiler-fast-browser-runtime
     paths:
       - .github/workflows/live-compiler-smoke.yml
+      - scripts/test-onlinecompiler-live.cjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,5 +20,5 @@ jobs:
           node-version: '22'
       - name: Install Socket.IO client for integration check
         run: npm install --no-save --no-package-lock --ignore-scripts socket.io-client@4.8.4
-      - name: Run live C++, invalid C++ and Python program with supplied widget key
+      - name: Run live execution across seven GearEx languages and C++ diagnostics
         run: node scripts/test-onlinecompiler-live.cjs
