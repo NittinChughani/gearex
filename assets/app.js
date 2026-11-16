@@ -1,6 +1,6 @@
 /* GearEx — plain JavaScript, GitHub Pages compatible.
    User content is inserted with textContent, never interpreted as HTML.
-   Multi-language compilation is OPTIONAL and runs on the third-party Wandbox service. */
+   Compiler execution goes to one external Wandbox runtime; input is submitted as stdin. */
 'use strict';
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
@@ -224,9 +224,14 @@ async function runEditor(inputsConfirmed=false){
      }else if(c)resultBox.append(make('p','section-note','The detected language differs from the challenge language, so this run was not graded.'));
    }
  }catch(error){
-   text('#compilerOutput','Execution service unavailable.\n'+(error?.message||'Please try again later.')+'\n\nThe code has not been executed. Try again when a compiler service is available.');
-   info.textContent='Remote compiler services are temporarily unavailable.';
-   resultBox.append(make('p','run-error','The error comes from the remote execution service, not necessarily from your code.'));
+   const service=error?.isServiceError===true;
+   text('#compilerOutput',service?
+     'Compiler temporarily unavailable. Your code has not been judged.\n'+error.message:
+     'Unable to run this program.\n'+(error?.message||'Unknown error.'));
+   info.textContent=service?'Execution service unavailable':'Execution not completed';
+   resultBox.append(make('p',service?'run-info':'run-error',service?
+     'This is a compiler service issue, not a code error. Try again later.':
+     'The request could not be completed.'));
  }finally{button.disabled=false;button.textContent='▶ Run code';}
 }
 function visualTabs(){setActiveButtons('[data-visual]','visual',state.visual);const root=$('#visualContent');root.replaceChildren();
@@ -318,6 +323,8 @@ function init(){text('#year',new Date().getFullYear());setTheme();updateStats();
  $('#clearOutput').addEventListener('click',()=>{text('#compilerOutput','Output cleared.');$('#runResult').replaceChildren();});
  $('#compilerInputWizard').addEventListener('submit',submitCompilerInput);
   $('#compilerInputCancel').addEventListener('click',()=>{closeCompilerInputWizard();text('#compilerOutput','Input collection cancelled; program was not run.');});
-  $('#runCode').addEventListener('click',()=>runEditor());window.addEventListener('hashchange',route);route();
+  $('#runCode').addEventListener('click',()=>runEditor());window.addEventListener('hashchange',route);
+  window.addEventListener('gearex:viewchange',event=>{if(event.detail.view==='playground')window.GearExCompiler?.warmup();});
+  route();
 }
 init();
