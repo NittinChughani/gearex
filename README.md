@@ -21,6 +21,18 @@ Reading code is one thing. Understanding what happens inside a program is anothe
 
 No signup is needed. The website is open-source, built with HTML, CSS and JavaScript, and hosted on GitHub Pages.
 
+## Optional accounts and personal learning space
+
+GearEx remains entirely usable as a **guest**: all seven language tracks, the compiler, Code Visualizer, lessons, quizzes and certificates remain available without creating an account.
+
+The final-development branch includes a personalized dashboard with a **display name, user-selected profile photo**, animated progress cards, Continue Learning recommendations, and a saved-program gallery. A signed-in Supabase account can privately synchronize completed lessons, scores, certificates and code drafts across devices. On a first sign-in, the learner explicitly chooses whether to import existing guest progress; code-draft conflicts preserve a second copy.
+
+**Activation status:** the account frontend and secure SQL/Storage policies have been implemented, but **Supabase project URL and publishable key are intentionally blank** until the project owner configures their own Supabase project. Google/email authentication and cloud sync **have not been verified against a live project**. The stable public website continues operating independently on `main` until production checks pass.
+
+**First-time Supabase setup:** [Follow the beginner-friendly step-by-step guide](docs/SUPABASE_SETUP.md), covering database RLS, private profile photo storage, Google OAuth, email magic links, redirect URLs, and a secure account-deletion Edge Function.
+
+
+
 ## What you can learn
 
 | Language | Lessons | Focus areas |
@@ -182,6 +194,10 @@ gearex/
 │   ├── app.js                    # Hash routing, lessons, compiler UI, progress
 │   ├── compiler-config.js        # Public browser widget key (configured by site owner)
 │   ├── compiler-service.js       # Single WebSocket execution client with 7-second UI budget
+│   ├── account-ui.css            # Personalized animated guest/account dashboard
+│   ├── gearex-account-data.js    # Normalized, conflict-aware learning snapshots
+│   ├── gearex-accounts.js        # Guest-first auth, sync and private profile photos
+│   ├── supabase-config.js        # Public project URL/key (blank until activated)
 │   ├── lesson-guides.js          # 91 detailed, topic-specific beginner explanations
 │   ├── gearex-engine.js          # Built-in teaching interpreter
 │   ├── gearex-trace-ui.js        # Code Visualizer stack/heap interface
@@ -192,7 +208,8 @@ gearex/
 │   ├── challenges.js            # C/C++ practice
 │   ├── projects.js              # C/C++ project briefs
 │   └── readme/                  # Original explanatory diagrams
-├── docs/                          # Curriculum and development notes
+├── docs/                          # Curriculum, setup and development notes
+├── supabase/                      # RLS schema and secure deletion Edge Function
 ├── scripts/                       # Validation and unit tests
 └── .github/workflows/            # CI validation
 ```
@@ -203,13 +220,16 @@ gearex/
 node scripts/check-content.cjs
 node --test scripts/test-tracer.cjs
 node --test scripts/test-compiler.cjs
+node --test scripts/test-accounts.cjs
 ```
+
+Local browser checks for guest profiles, code saving and responsive layout are available through `scripts/test-account-browser.cjs` and the dedicated GitHub Actions browser workflow (Playwright required).
 
 GitHub Actions checks JavaScript syntax, curriculum integrity and visualizer behavior. GearEx remains a static website that can be deployed directly to GitHub Pages.
 
 ## Progress, privacy and collaboration
 
-Saved themes, lesson progress, scores, bookmarks and drafts are stored using your browser's **localStorage**. The Dashboard includes **Export progress** and **Import progress**; local settings and achievements don't automatically sync between devices.
+**Guests:** themes, progress, lesson scores, bookmarks, optional photos and drafts are stored in this device's **localStorage**. The dashboard supports Export/Import progress and saved programs. **Signed-in users (after Supabase is configured):** learning snapshots and photos sync to private account records, protected by Supabase Row Level Security; email is managed by Supabase Auth. Browser code execution still sends source and program input to OnlineCompiler.io. No signup is needed. Users can remove profile photos and request secure account deletion using the project-owner-deployed Edge Function. See the in-site Privacy view.
 
 Contributions that improve lesson quality, compiler reliability, tracing coverage, accessibility, testing and translations are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
