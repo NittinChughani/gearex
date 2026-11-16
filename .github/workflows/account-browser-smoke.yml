@@ -1,0 +1,44 @@
+name: GearEx final account and mobile browser smoke
+on:
+  push:
+    branches:
+      - gearex-final-experience-accounts
+    paths:
+      - .github/workflows/account-browser-smoke.yml
+      - scripts/test-account-browser.cjs
+      - assets/app.js
+      - assets/gearex-accounts.js
+      - assets/gearex-account-data.js
+      - assets/account-ui.css
+      - index.html
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guest-and-profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install chromium --with-deps
+      - name: Start local GearEx website
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/gearex-site.log 2>&1 &
+          sleep 2
+      - name: Test guest dashboard, avatar upload, save code and mobile layout
+        env:
+          GEAREX_TEST_URL: http://127.0.0.1:8765/
+        run: node scripts/test-account-browser.cjs
+      - name: Upload failure or success screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gearex-account-browser
+          path: gearex-accounts-*.png
+          if-no-files-found: ignore
