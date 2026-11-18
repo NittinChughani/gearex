@@ -2,7 +2,7 @@
 // Deployed-site browser smoke test. Executes actual programs through GearEx's own UI.
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-const url='https://nittinchughani.github.io/gearex/#playground';
+const url=process.env.GEAREX_BROWSER_URL||'https://gearex.vercel.app/#playground';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 (async()=>{
  const browser=await chromium.launch({headless:true});
@@ -22,13 +22,13 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
    const started=Date.now();
    await page.locator('#runCode').click();
    await page.locator('#runResult '+(wantSuccess?'.run-success':'.run-error'))
-     .waitFor({state:'visible',timeout:10500});
+     .waitFor({state:'visible',timeout:22000});
    const elapsed=Date.now()-started;
    const out=await page.locator('#compilerOutput').innerText();
    assert.ok(expectedOutput.test(out),label+' output incorrect: '+out.slice(0,750));
    assert.ok(!/temporarily unavailable|setup pending|service delay/i.test(out),
      label+' resulted in service error: '+out.slice(0,750));
-   assert.ok(elapsed<=9000,label+' took longer than expected: '+elapsed+'ms');
+   assert.ok(elapsed<=20000,label+' took longer than cold-start limit: '+elapsed+'ms');
    console.log(label+' browser check: '+elapsed+'ms, '+(wantSuccess?'output':'expected compiler error')+
      ', excerpt='+JSON.stringify(out.slice(0,120)));
   };
@@ -44,6 +44,17 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   await run({label:'Python output',lang:'py',
    code:'print(42)',wantSuccess:true,expectedOutput:/42/});
 
+  // Guided input appears on-demand and is highlighted instead of staying below the fold.
+  await page.locator('#editorLanguage').selectOption('cpp');
+  await page.locator('#codeEditor').fill('#include <iostream>\nint main(){int n;std::cin>>n;std::cout<<n;}');
+  await page.locator('#stdinInput').fill('');
+  await page.locator('#runCode').click();
+  await page.locator('#compilerInputWizard').waitFor({state:'visible',timeout:4000});
+  await page.waitForFunction(()=>document.getElementById('compilerInputWizard')?.classList.contains('gearex-spotlight'));
+  await page.locator('#compilerInputValue').fill('17');
+  await page.locator('#compilerInputWizard button[type="submit"]').click();
+  await page.locator('#runResult .run-success').waitFor({state:'visible',timeout:22000});
+  assert.match(await page.locator('#compilerOutput').innerText(),/17/);
   assert.deepEqual(errors,[],'Unexpected JS errors: '+errors.join('; '));
   await page.screenshot({path:'gear-compiler-browser.png'});
   console.log('Deployed GearEx browser smoke tests PASS');
