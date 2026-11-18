@@ -4,11 +4,16 @@
 // Never copy the service-role key to the GearEx frontend.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const allowedOrigins = new Set(
-  (Deno.env.get('GEAREX_ALLOWED_ORIGINS') ||
-    'https://nittinchughani.github.io,http://localhost:8000,http://127.0.0.1:8000')
-  .split(',').map(x=>x.trim()).filter(Boolean)
-);
+// Always allow the two official GearEx deployments. Extra origins can be
+// configured for maintainers without unintentionally removing production access.
+const allowedOrigins = new Set([
+  'https://gearex.vercel.app',
+  'https://nittinchughani.github.io',
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
+  ...(Deno.env.get('GEAREX_ALLOWED_ORIGINS') || '')
+    .split(',').map(x=>x.trim()).filter(Boolean)
+]);
 function response(origin:string, status:number, body:Record<string,unknown>){
   return new Response(JSON.stringify(body),{
     status,headers:{
