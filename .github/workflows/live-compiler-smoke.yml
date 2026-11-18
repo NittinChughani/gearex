@@ -2,10 +2,12 @@ name: Live compiler integration smoke check
 on:
   push:
     branches:
-      - onlinecompiler-fast-browser-runtime
+      - main
     paths:
       - .github/workflows/live-compiler-smoke.yml
       - scripts/test-onlinecompiler-live.cjs
+      - assets/compiler-service.js
+      - assets/compiler-config.js
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,5 +22,7 @@ jobs:
           node-version: '22'
       - name: Install Socket.IO client for integration check
         run: npm install --no-save --no-package-lock --ignore-scripts socket.io-client@4.8.4
-      - name: Run live execution across seven GearEx languages and C++ diagnostics
+      - name: Run Vercel-origin live execution across seven languages
+        env:
+          GEAREX_TEST_ORIGIN: https://gearex.vercel.app
         run: node scripts/test-onlinecompiler-live.cjs
