@@ -58,6 +58,21 @@ jobs:
           }
           echo 'PASS: browser preflight and GearEx CORS origin'
 
+          # Ensure the production Vercel host can invoke deletion from browsers.
+          vercel_origin='https://gearex.vercel.app'
+          check_status 200 --request OPTIONS "$endpoint" \
+            --header "Origin: $vercel_origin" \
+            --header 'Access-Control-Request-Method: POST' \
+            --header 'Access-Control-Request-Headers: authorization,apikey,content-type'
+          grep -qi "^access-control-allow-origin: $vercel_origin" "$headers" || {
+            echo '::error::Missing Vercel Access-Control-Allow-Origin response header.'
+            exit 1
+          }
+          check_status 401 --request POST "$endpoint" \
+            --header "Origin: $vercel_origin" --header 'Content-Type: application/json' \
+            --data '{"confirmation":"DELETE"}'
+          echo 'PASS: Vercel browser preflight, CORS and anonymous rejection'
+
           # No valid bearer token is used. THESE REQUESTS CANNOT DELETE AN ACCOUNT.
           check_status 401 --request POST "$endpoint" \
             --header "Origin: $origin" --header 'Content-Type: application/json' \
