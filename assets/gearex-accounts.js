@@ -36,9 +36,10 @@ function avatarLetter(name){
  const clean=String(name||'Learner').trim();
  return clean.charAt(0).toUpperCase()||'G';
 }
-function announce(msg){
+function announce(msg,type){
  if($('cloudStatus'))$('cloudStatus').textContent=msg;
  if($('authMessage'))$('authMessage').textContent=msg;
+ if(type)window.GearExFeedback?.toast(msg,type);
 }
 let client=null,user=null,profile=null,transitioning=false,avatarUrl=null;
 let dirty=false,reset=false,uploadTimer=null,syncing=false,authReady=false;
@@ -260,11 +261,12 @@ function transformPhoto(file){
 async function changePhoto(file){
  if(!file)return;
  announce('Preparing your new profile picture…');
+ window.GearExFeedback?.busy('Saving profile picture…','Preparing and uploading your photo securely.');
  try{
   const {blob,preview}=await transformPhoto(file);
   if(!user){
    if(!put(GUEST_PHOTO,preview))throw Error('Device storage is full. Use a smaller image.');
-   updateAvatar(preview);refreshIdentity();announce('Profile picture saved on this device.');
+   updateAvatar(preview);refreshIdentity();announce('Profile picture saved successfully on this device.','success');
   }else{
    const path=user.id+'/avatar.webp';
    const {error}=await client.storage.from('gearex-avatars').upload(path,blob,
@@ -276,37 +278,47 @@ async function changePhoto(file){
     avatar_path:path,updated_at:new Date().toISOString()
    },{onConflict:'user_id'});
    if(saved.error)throw saved.error;
-   await refreshAvatar();refreshIdentity();announce('Your profile picture was saved privately.');
+   await refreshAvatar();refreshIdentity();announce('Profile picture changed successfully.','success');
   }
- }catch(err){announce('Could not update photo: '+String(err.message||err).slice(0,150));}
- finally{if($('profileAvatarInput'))$('profileAvatarInput').value='';}
+ }catch(err){announce('Could not update photo: '+String(err.message||err).slice(0,150),'error');}
+ finally{window.GearExFeedback?.idle();if($('profileAvatarInput'))$('profileAvatarInput').value='';}
 }
 async function removePhoto(){
- if(user){
-  if(!profile?.avatar_path)return;
-  const {error}=await client.storage.from('gearex-avatars').remove([profile.avatar_path]);
-  if(error){announce(error.message);return;}
-  profile.avatar_path=null;
-  const saved=await client.from('gearex_profiles').upsert({
-   user_id:user.id,display_name:profile.display_name||'',avatar_path:null,
-   updated_at:new Date().toISOString()
-  },{onConflict:'user_id'});
-  if(saved.error){announce(saved.error.message);return;}
- }else put(GUEST_PHOTO,'');
- updateAvatar(null);refreshIdentity();announce('Profile picture removed.');
+ window.GearExFeedback?.busy('Removing profile picture…','Updating your private profile.');
+ try{
+  if(user){
+   if(!profile?.avatar_path)return;
+   const {error}=await client.storage.from('gearex-avatars').remove([profile.avatar_path]);
+   if(error)throw error;
+   profile.avatar_path=null;
+   const saved=await client.from('gearex_profiles').upsert({
+    user_id:user.id,display_name:profile.display_name||'',avatar_path:null,
+    updated_at:new Date().toISOString()
+   },{onConflict:'user_id'});
+   if(saved.error)throw saved.error;
+  }else put(GUEST_PHOTO,'');
+  updateAvatar(null);refreshIdentity();announce('Profile picture removed successfully.','success');
+ }catch(error){announce('Could not remove profile picture: '+String(error.message||error).slice(0,140),'error');}
+ finally{window.GearExFeedback?.idle();}
 }
 async function saveName(){
  const name=String($('profileName')?.value||'').trim().replace(/\s+/g,' ').slice(0,60);
- if(!name){announce('Enter a display name first.');return;}
+ if(!name){announce('Enter a display name first.','error');return;}
  if(!user){
-  put(GUEST_NAME,name);refreshIdentity();announce('Name saved on this device.');return;
+  put(GUEST_NAME,name);refreshIdentity();announce('Profile name changed successfully on this device.','success');return;
  }
- const saved=await client.from('gearex_profiles').upsert({
-  user_id:user.id,display_name:name,avatar_path:profile?.avatar_path||null,
-  updated_at:new Date().toISOString()
- },{onConflict:'user_id'});
- if(saved.error){announce('Name could not be saved: '+saved.error.message);return;}
- profile={...(profile||{}),display_name:name};refreshIdentity();announce('Profile updated.');
+ const button=$('saveProfile');if(button)button.disabled=true;
+ window.GearExFeedback?.busy('Saving profile name…','Syncing this change to your account.');
+ try{
+  const saved=await client.from('gearex_profiles').upsert({
+   user_id:user.id,display_name:name,avatar_path:profile?.avatar_path||null,
+   updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  if(saved.error)throw saved.error;
+  profile={...(profile||{}),display_name:name};refreshIdentity();
+  announce('Profile name changed successfully.','success');
+ }catch(error){announce('Profile name could not be saved: '+String(error.message||error).slice(0,150),'error');}
+ finally{window.GearExFeedback?.idle();if(button)button.disabled=false;}
 }
 async function requestMagicLink(event){
  event.preventDefault();
