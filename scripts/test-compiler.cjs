@@ -130,5 +130,10 @@ test('service budget, original GearEx UI, and explicit provider setup are wired 
  assert.ok(html.includes('onlinecompiler.io')&&!html.includes('wandbox.org'));
  assert.ok(app.includes('GearExCompiler.compile(source,lang,stdin'));
  assert.ok(app.includes('Compiler setup pending'));
- assert.ok(app.includes('7-second response budget exceeded'));
+ assert.ok(app.includes('Compiler response timed out'));
+ assert.ok(app.includes('focusCompilerOutput()'),'Compiler should auto-scroll to execution output');
+ assert.ok(app.includes("pane:$('#compilerInputWizard')"),'Compiler input wizard should auto-scroll into view');
+ assert.ok(src.includes('COLD_RESPONSE_BUDGET_MS=18000'),'First connection must allow cold startup');
+ assert.ok(src.includes('tryAllTransports:true'),'Transport fallback must be enabled');
+ assert.ok(src.includes('First connection delayed. Trying an alternate connection'),'Only connection retries should be described');
 });
