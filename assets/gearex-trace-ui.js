@@ -244,14 +244,22 @@
         result=candidate;
         index=Math.min(oldIndex+1,result.steps.length-1);
         render();
+        // After an answer, highlight updated output unless another prompt appears.
+        if(!(result.pendingInput&&index===result.steps.length-1)){
+          const consoleOutput=target.querySelector('.runtime-console');
+          window.GearExFeedback?.focus(consoleOutput,{pane:consoleOutput?.parentElement||target});
+        }
         if(resumeAuto && !(result.pendingInput&&index===result.steps.length-1))startAuto();
       });
       target.append(form);
-      input.focus({preventScroll:true});
       status.textContent='Waiting for input '+(prompt.index+1)+' · '+E.LABEL[result.lang];
     }
     const active=target.querySelector('.trace-code-row.active');
     if(active)active.scrollIntoView({block:'nearest',behavior:'auto'});
+    if(result.pendingInput&&index===last){
+      const form=target.querySelector('#traceInputForm');
+      window.GearExFeedback?.focus(form?.querySelector('input'),{pane:form,input:true});
+    }
   }
   function showDiagnostics(issues,language){
     stop();closeChooser();result=null;
