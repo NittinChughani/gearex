@@ -14,9 +14,10 @@ const SOCKET_IO_CDN='https://cdn.socket.io/4.8.4/socket.io.min.js';
 const SOCKET_IO_INTEGRITY='sha384-fBrXvbDtHoeKWJ/hcA6M+YGueiDW+h45I7V6F2kD1S8bOkrF9rZYPLVkCR6BLR/1';
 const LANGUAGES={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
 const RUNTIMES={c:'gcc-15',cpp:'g++-15',py:'python-3.14',js:'nodejs-24',java:'openjdk-25',cs:'dotnet-csharp-10',sql:'sqlite-3'};
-const RESPONSE_BUDGET_MS=7000;
-const SOCKET_CONNECT_BUDGET_MS=2800;
-let clientPromise=null,socket=null,busy=false;
+const RESPONSE_BUDGET_MS=7000; // warm connection: fast execution feedback
+const COLD_RESPONSE_BUDGET_MS=18000; // first visit: allow socket library + network startup
+const SOCKET_CONNECT_BUDGET_MS=7200;
+let clientPromise=null,socket=null,busy=false,connecting=null;
 class CompilerServiceError extends Error{
  constructor(message,code='service_unavailable'){
   super(message);this.name='CompilerServiceError';this.isServiceError=true;this.code=code;
@@ -80,7 +81,7 @@ function loadSocketClient(){
    if(settled)return;settled=true;clearTimeout(timer);
    if(error){script.remove();reject(error);}else resolve(client);
   };
-  const timer=setTimeout(()=>done(new CompilerServiceError('Compiler connection library loading took too long.','client_unavailable')),3000);
+  const timer=setTimeout(()=>done(new CompilerServiceError('Compiler connection library loading took too long.','client_unavailable')),6000);
   script.src=SOCKET_IO_CDN;
   script.async=true;
   script.integrity=SOCKET_IO_INTEGRITY;
@@ -104,13 +105,14 @@ async function ensureSocket(maxWait=SOCKET_CONNECT_BUDGET_MS){
  const io=await loadSocketClient();
  if(!socket){
   socket=io(ENDPOINT,{
-   autoConnect:false,reconnection:false,transports:['websocket','polling'],
+   autoConnect:false,reconnection:false,transports:['websocket','polling'],tryAllTransports:true,
    auth:{token:getWidgetKey()},timeout:maxWait
   });
  }
  const active=socket;
  if(active.connected)return active;
- return new Promise((resolve,reject)=>{
+ if(connecting)return connecting;
+ connecting=new Promise((resolve,reject)=>{
   let finished=false;
   const cleanup=()=>{clearTimeout(timer);active.off('connect',connected);active.off('connect_error',failed);active.off('disconnect',closed);};
   const done=(error)=>{
@@ -118,14 +120,22 @@ async function ensureSocket(maxWait=SOCKET_CONNECT_BUDGET_MS){
    if(error){disconnect();reject(error);}else resolve(active);
   };
   const connected=()=>done(null);
-  const failed=()=>done(new CompilerServiceError('Compiler connection was rejected. Check the website widget key and allowed domain.','connection_rejected'));
+  const failed=error=>{
+   const detail=String(error?.message||'');
+   const rejected=/origin|domain|api.?key|invalid|forbidden|unauthori[sz]ed|bad key|authentication/i.test(detail);
+   done(new CompilerServiceError(rejected?
+     'The compiler provider rejected this site or widget key. The site owner must allow https://gearex.vercel.app in OnlineCompiler.io widget-key settings.':
+     'Could not establish a compiler connection. Please check your network and retry.',
+     rejected?'connection_rejected':'connection_lost'));
+  };
   const closed=()=>done(new CompilerServiceError('Compiler connection closed before execution.','connection_lost'));
   const timer=setTimeout(()=>done(makeTimeout('Unable to connect to the compiler within the time limit.','connect_timeout')),maxWait);
   active.once('connect',connected);
   active.once('connect_error',failed);
   active.once('disconnect',closed);
   active.connect();
- });
+ }).finally(()=>{connecting=null;});
+ return connecting;
 }
 async function warmup(){
  if(!isConfigured())return false;
@@ -153,21 +163,23 @@ async function compile(source,lang,stdin='',onStatus){
  if(!isConfigured())throw new CompilerServiceError(
   'Compiler activation pending. The site owner needs to add the public, domain-restricted widget key.','setup_required');
  busy=true;
- const started=Date.now(),deadline=started+RESPONSE_BUDGET_MS;
+ const started=Date.now(),wasWarm=!!socket?.connected,deadline=started+(wasWarm?RESPONSE_BUDGET_MS:COLD_RESPONSE_BUDGET_MS);
  try{
   onStatus?.('Connecting to the code runner…');
-  let connectionTimer;
   let conn;
-  try{
-   conn=await Promise.race([
-    ensureSocket(Math.min(SOCKET_CONNECT_BUDGET_MS,Math.max(1,deadline-Date.now()))),
-    new Promise((_,reject)=>{
-     connectionTimer=setTimeout(()=>reject(makeTimeout('Compiler connection exceeded the response budget.')),Math.max(1,deadline-Date.now()));
-    })
-   ]);
-  }finally{clearTimeout(connectionTimer);}
-  const remaining=deadline-Date.now();
-  if(remaining<=0)throw makeTimeout('Compiler connection took longer than 7 seconds.');
+  for(let attempt=0;attempt<2;attempt++){
+   try{
+    conn=await ensureSocket(Math.min(SOCKET_CONNECT_BUDGET_MS,Math.max(1,deadline-Date.now()-1000)));
+    break;
+   }catch(error){
+    // Retry only the handshake, never an already-submitted program: no duplicate runs.
+    const transient=error?.code==='connect_timeout'||error?.code==='connection_lost';
+    if(!transient||attempt===1||deadline-Date.now()<4000)throw error;
+    onStatus?.('First connection delayed. Trying an alternate connection…');
+   }
+  }
+  const remaining=Math.min(RESPONSE_BUDGET_MS,deadline-Date.now());
+  if(!conn||remaining<=0)throw makeTimeout('Compiler connection took too long. Please try again.');
   onStatus?.('Running '+LANGUAGES[lang]+'…');
   return await new Promise((resolve,reject)=>{
    let settled=false;
@@ -178,7 +190,7 @@ async function compile(source,lang,stdin='',onStatus){
    };
    const onDisconnect=()=>done(new CompilerServiceError('Connection to the compiler was interrupted.','connection_lost'));
    const timer=setTimeout(()=>{
-    disconnect();done(makeTimeout('The compiler did not return a result within 7 seconds. This is a service delay, not a code error.'));
+    disconnect();done(makeTimeout('The compiler did not return a result in time. The execution provider may be busy; your code has not been judged.'));
    },remaining);
    conn.once('codeoutput',onResult);
    conn.once('disconnect',onDisconnect);
@@ -188,6 +200,10 @@ async function compile(source,lang,stdin='',onStatus){
   });
  }finally{busy=false;}
 }
+// Open the connection quietly after page load so a learner's first Run is usually warm.
+if(root?.addEventListener)root.addEventListener('load',()=>{
+ setTimeout(()=>{if(isConfigured()&&!busy)warmup();},850);
+},{once:true});
 return {compile,warmup,disconnect,getWidgetKey,isConfigured,parseExecution,
  findInputRequests,prepareSource,RUNTIMES,LANGUAGES,RESPONSE_BUDGET_MS,CompilerServiceError};
 });
