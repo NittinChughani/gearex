@@ -322,20 +322,29 @@ async function saveName(){
 }
 async function requestMagicLink(event){
  event.preventDefault();
- if(!client){announce('Sign-in service is not configured yet.');return;}
+ if(!client){announce('Sign-in service is not configured yet.','error');return;}
  const email=String($('authEmail')?.value||'').trim();
- if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){announce('Enter a valid email address.');return;}
- const {error}=await client.auth.signInWithOtp({
-  email,options:{emailRedirectTo:location.origin+location.pathname}
- });
- announce(error?'Email sign-in failed: '+error.message:'Check your email for a secure GearEx sign-in link.');
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){announce('Enter a valid email address.','error');return;}
+ window.GearExFeedback?.busy('Sending sign-in link…','Checking your email login request.');
+ try{
+  const {error}=await client.auth.signInWithOtp({
+   email,options:{emailRedirectTo:location.origin+location.pathname}
+  });
+  if(error)throw error;
+  announce('Sign-in link requested. Check your email.','success');
+ }catch(error){announce('Email sign-in failed: '+String(error.message||error).slice(0,160),'error');}
+ finally{window.GearExFeedback?.idle();}
 }
 async function googleSignIn(){
- if(!client){announce('Google sign-in needs the Supabase project configured first.');return;}
- const {error}=await client.auth.signInWithOAuth({
-  provider:'google',options:{redirectTo:location.origin+location.pathname}
- });
- if(error)announce('Google sign-in failed: '+error.message);
+ if(!client){announce('Google sign-in needs the Supabase project configured first.','error');return;}
+ window.GearExFeedback?.busy('Connecting to Google…','Opening the secure Google sign-in page.');
+ try{
+  const {error}=await client.auth.signInWithOAuth({
+   provider:'google',options:{redirectTo:location.origin+location.pathname}
+  });
+  if(error)throw error;
+ }catch(error){announce('Google sign-in failed: '+String(error.message||error).slice(0,150),'error');}
+ finally{window.GearExFeedback?.idle();}
 }
 async function deleteAccount(){
  if(!client||!user||deletingAccount)return;
