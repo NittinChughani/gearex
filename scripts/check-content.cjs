@@ -152,6 +152,19 @@ assert.ok(!readme.includes('Wandbox'),'README must document current compiler ser
 assert.ok(fs.existsSync(path.join(root,'scripts','test-compiler.cjs')),'Compiler unit tests missing');
 console.log('Compiler checks OK: single WebSocket service, source preservation, activation and 7-second UI deadline.');
 
+const feedbackJs=fs.readFileSync(path.join(root,'assets','gearex-feedback.js'),'utf8');
+const feedbackCss=fs.readFileSync(path.join(root,'assets','gearex-feedback.css'),'utf8');
+const accountUi=fs.readFileSync(path.join(root,'assets','gearex-accounts.js'),'utf8');
+assert.ok(html.includes('assets/gearex-feedback.js')&&html.includes('assets/gearex-feedback.css'),'Feedback JS/CSS must be loaded');
+assert.ok(html.indexOf('assets/gearex-feedback.js')<html.indexOf('assets/app.js'),'Feedback must initialize before app and accounts');
+new vm.Script(feedbackJs,{filename:'gearex-feedback.js'});
+assert.ok(feedbackJs.includes('aria-live')&&feedbackJs.includes('scrollIntoView'),'Accessible feedback and scroll guidance required');
+assert.ok(feedbackCss.includes('.gearex-spotlight')&&feedbackCss.includes('.gearex-busy'),'Focus and loading styles missing');
+assert.ok(app.includes('focusCompilerOutput()')&&app.includes("pane:$('#compilerInputWizard')"),'Compiler input/output guidance missing');
+assert.ok(traceUI.includes("querySelector('#traceInputForm')")&&traceUI.includes("querySelector('.runtime-console')"),'Visualizer input/output guidance missing');
+assert.ok(accountUi.includes("GearExFeedback?.busy('Deleting your GearEx account")&&accountUi.includes('GearExFeedback?.flash('),'Account deletion needs loading and persistent success feedback');
+console.log('Feedback checks OK: responsive alerts, account progress UI and guided input/output navigation.');
+
 const guideContent=fs.readFileSync(path.join(root,'assets','lesson-guides.js'),'utf8');
 const guides=vm.runInNewContext(guideContent+'\nGEAR_LESSON_GUIDES;');
 const guideIds=Object.keys(guides);
