@@ -1,0 +1,5 @@
+# GearEx public site: https://gearex.vercel.app/
+User-agent: *
+Allow: /
+
+Sitemap: https://gearex.vercel.app/sitemap.xml
