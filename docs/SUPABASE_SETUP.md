@@ -1,6 +1,6 @@
 # Connect GearEx to Supabase — beginner's step-by-step guide
 
-**Release status (16 November 2026):** The public GearEx website on `main` has connected Supabase login, private progress sync and profile features, with owner-verified Google sign-in and persistence. The `delete-account` Edge Function has been deployed directly to the GearEx Supabase project and is **ACTIVE**. Live checks confirm the CORS preflight (200) and correctly rejected anonymous requests (401), missing confirmation (400), unauthorized origins (403), and unsupported methods (405). **A full deletion using a disposable signed-in account has not yet been verified.** The automated health-check workflow no longer requires an expiring Supabase access token. This guide is primarily for maintainers, self-hosters and forks; guest lessons, editor, compiler, quizzes, certificates and local progress also work without an account.
+**Release status (18 November 2026):** GearEx is live at `https://gearex.vercel.app/` with public Google sign-in and cloud progress persistence confirmed. The `delete-account` Edge Function is ACTIVE (v2); its browser origin allowlist includes Vercel and the previous GitHub Pages origin. Actual account deletion was tested on GitHub Pages before the Vercel migration. Reconfirm deletion on Vercel with a disposable account. The GitHub Actions health check uses no expiring Supabase token.
 
 > **Never share or commit:** the database password, the Supabase **secret/service_role** key, Google OAuth Client Secret, or your Supabase access token. The **project URL** and **publishable** key are designed to be present in a public frontend, but only with Row Level Security configured.
 
@@ -32,13 +32,14 @@
 
 1. In Supabase open **Authentication → URL Configuration**.
 2. Set **Site URL** to:
-   \`https://nittinchughani.github.io/gearex/\`
-3. Add this exact URL to **Redirect URLs**:
-   \`https://nittinchughani.github.io/gearex/\`
+   \`https://gearex.vercel.app/\`
+3. Add the Vercel address to **Redirect URLs**, and keep the legacy GitHub Pages redirect:
+   \`https://gearex.vercel.app/**\`
+   `https://nittinchughani.github.io/gearex/`
 4. For local development, also add \`http://localhost:8000/\` and \`http://127.0.0.1:8000/\` if needed. These are testing addresses, not public GearEx domains.
 5. Save.
 
-GearEx uses a browser-based PKCE auth flow. After successful Google or email login, Supabase redirects back to the URL above. Revisit these settings when a **real custom domain** is selected later; that is **not** part of this build.
+GearEx uses a browser-based PKCE auth flow. After successful Google or email login, Supabase redirects back to one of the allowed website URLs. Keep both URLs while both deployments are used.
 
 Official docs: https://supabase.com/docs/guides/auth/redirect-urls
 
@@ -59,7 +60,8 @@ This step needs both **Google Cloud** and Supabase. Do not copy your Google Clie
 1. Open https://console.cloud.google.com/ and create/select a Google Cloud project for GearEx.
 2. Go to **Google Auth Platform → Branding** and set up the OAuth consent screen for GearEx. Choose the appropriate audience and fill required app/contact information.
 3. Go to **Clients → Create client → Web application**.
-4. Under **Authorized JavaScript origins**, enter:
+4. Under **Authorized JavaScript origins**, use the applicable GearEx origins for this OAuth client:
+   `https://gearex.vercel.app`
    \`https://nittinchughani.github.io\`
 5. Under **Authorized redirect URIs**, enter your Supabase callback URL, usually:
    \`https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback\`
@@ -67,7 +69,7 @@ This step needs both **Google Cloud** and Supabase. Do not copy your Google Clie
 6. In Google Cloud, create the OAuth client. Copy the **Client ID** and **Client Secret** into **Supabase → Authentication → Sign In / Providers → Google**, then enable Google.
 7. Save the Google provider. If the consent screen is in testing mode, add permitted test accounts, then complete Google's relevant review/publication steps before a broader release.
 
-Important: Google's callback goes to **Supabase**, not directly to \`/gearex/\`. Supabase then redirects your user back to the allowed GearEx site URL.
+Important: Google's callback goes to **Supabase**, not directly to Vercel or GitHub Pages. Supabase then redirects the user back to an allowed GearEx site URL.
 
 Official docs: https://supabase.com/docs/guides/auth/social-sign-in/auth-google
 
@@ -108,10 +110,10 @@ On your computer:
    \`\`\`
 
 3. The repository includes \`supabase/config.toml\` with function JWT gateway verification turned off **only because the function itself validates the caller against Supabase Auth**. Do not remove that verification from the function.
-4. Restrict permitted browser origins:
+4. Keep browser origins restricted. The function's built-in allowlist covers both official GearEx deployments and localhost. The following optional secret can include these origins explicitly (and additional trusted origins for a fork):
 
    \`\`\`bash
-   npx supabase secrets set GEAREX_ALLOWED_ORIGINS="https://nittinchughani.github.io,http://localhost:8000,http://127.0.0.1:8000"
+   npx supabase secrets set GEAREX_ALLOWED_ORIGINS="https://gearex.vercel.app,https://nittinchughani.github.io,http://localhost:8000,http://127.0.0.1:8000"
    \`\`\`
 
 5. Deploy the deletion function:
@@ -128,7 +130,7 @@ Why \`--no-verify-jwt\`? The public Edge Function gateway may reject the newer p
 Official docs: https://supabase.com/docs/guides/functions
 
 
-**Deployment and monitoring for the live GearEx project:** The function is already deployed to Supabase. [GitHub's account-deletion workflow](../.github/workflows/deploy-account-deletion.yml) now performs *read-only* live endpoint tests when its workflow/source file changes, once weekly, and when manually invoked. It intentionally **does not deploy code** and does **not** need `SUPABASE_ACCESS_TOKEN`; no token rotation is required for monitoring. When editing `supabase/functions/delete-account/index.ts`, deploy the new version deliberately using the connected Supabase integration or the CLI before claiming it is live. The old failed GitHub deployment runs are historical and do not indicate that the currently deployed function is missing. A full disposable-account deletion test is still necessary for end-to-end verification.
+**Deployment and monitoring for the live GearEx project:** The function is already deployed to Supabase. [GitHub's account-deletion workflow](../.github/workflows/deploy-account-deletion.yml) now performs *read-only* live endpoint tests when its workflow/source file changes, once weekly, and when manually invoked. It intentionally **does not deploy code** and does **not** need `SUPABASE_ACCESS_TOKEN`; no token rotation is required for monitoring. When editing `supabase/functions/delete-account/index.ts`, deploy the new version deliberately using the connected Supabase integration or the CLI before claiming it is live. The old failed GitHub deployment runs are historical and do not indicate that the currently deployed function is missing. Account deletion was manually tested on the original GitHub Pages site; Vercel still needs a disposable-account end-to-end test. The workflow additionally checks Vercel-origin CORS preflight and anonymous denial.
 
 ## 8. Test two accounts, a guest, and actual cloud saves
 
@@ -162,4 +164,4 @@ The repository's automated unit tests and local browser tests cannot prove real 
 
 Before opening GearEx broadly to learners, review its privacy copy, terms, support contact, email sender configuration, data retention/deletion, database quotas, and legal requirements for any younger audience. Accounts should remain **optional**, and profile images are **private by default**.
 
-**Do not launch a new domain yet.** First connect the project, verify end-to-end authentication, and complete the remaining product checks. When it is time for the permanent domain, update Supabase Redirect URLs, Google Authorized JavaScript origins and the deletion-function allowed origins.
+**Live hosting:** GearEx now uses `https://gearex.vercel.app/` as its primary site and keeps GitHub Pages as a secondary deployment. If changing domains again, update Supabase authentication redirects, relevant Google OAuth origin settings, the deletion-function origin allowlist, and any compiler-provider origin restrictions.
