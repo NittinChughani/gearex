@@ -5,13 +5,13 @@ const {io}=require('socket.io-client');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
-const config=fs.readFileSync('assets/compiler-config.js','utf8');
-const sandbox={window:{}};
-vm.runInNewContext(config,sandbox,{filename:'compiler-config.js'});
-const key=sandbox.window.GearExCompilerConfig?.widgetKey;
-assert.ok(key&&key.length>20,'Public widget key missing');
 const origin=process.env.GEAREX_TEST_ORIGIN||'https://gearex.vercel.app';
 assert.ok(/^https:\/\/[^/]+$/.test(origin),'Use an HTTPS origin, without a path');
+const config=fs.readFileSync('assets/compiler-config.js','utf8');
+const sandbox={window:{location:{origin}}};
+vm.runInNewContext(config,sandbox,{filename:'compiler-config.js'});
+const key=sandbox.window.GearExCompilerConfig?.widgetKey;
+assert.ok(key&&key.length>20,'No public widget key configured for '+origin);
 const socket=io('https://api.onlinecompiler.io',{
  transports:['websocket','polling'],tryAllTransports:true,auth:{token:key},reconnection:false,timeout:9000,
  extraHeaders:{Origin:origin}
