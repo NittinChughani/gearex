@@ -10,14 +10,16 @@ const sandbox={window:{}};
 vm.runInNewContext(config,sandbox,{filename:'compiler-config.js'});
 const key=sandbox.window.GearExCompilerConfig?.widgetKey;
 assert.ok(key&&key.length>20,'Public widget key missing');
+const origin=process.env.GEAREX_TEST_ORIGIN||'https://gearex.vercel.app';
+assert.ok(/^https:\/\/[^/]+$/.test(origin),'Use an HTTPS origin, without a path');
 const socket=io('https://api.onlinecompiler.io',{
- transports:['websocket','polling'],auth:{token:key},reconnection:false,timeout:5000,
- extraHeaders:{Origin:'https://nittinchughani.github.io'}
+ transports:['websocket','polling'],tryAllTransports:true,auth:{token:key},reconnection:false,timeout:9000,
+ extraHeaders:{Origin:origin}
 });
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function connect(){
  return new Promise((resolve,reject)=>{
-  const timer=setTimeout(()=>reject(new Error('connect exceeded 6 seconds')),6000);
+  const timer=setTimeout(()=>reject(new Error('connect exceeded 10 seconds for '+origin)),10000);
   socket.once('connect',()=>{clearTimeout(timer);resolve()});
   socket.once('connect_error',err=>{clearTimeout(timer);reject(new Error('connection refused: '+err.message))});
  });
@@ -49,7 +51,7 @@ function run(label,compiler,code,input,expectedSuccess,pattern){
 (async()=>{
  try{
   await connect();
-  console.log('WebSocket connected: public widget key accepted (intended GitHub Pages origin)');
+  console.log('WebSocket connected: widget key accepted for '+origin);
   const cases=[
    ['C++ headers + stdin','g++-15','#include <iostream>\n#include <cmath>\nusing namespace std;\nint main(){int n;cin>>n;cout<<sqrt(n)<<endl;}','25\n',true,/5/],
    ['C++ compiler error','g++-15','#include <iostream>\nint main(){int value = ; cout << value;}','',false,/error|expected/i],
