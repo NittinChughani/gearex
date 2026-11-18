@@ -1,10 +1,22 @@
-/* GearEx compiler configuration.
- * Public OnlineCompiler.io WebSocket/widget key supplied by the site owner.
- * IMPORTANT: Use a Widgets/WebSocket key, NOT a secret REST API key.
- * In OnlineCompiler.io -> Widgets, allow the primary gearex.vercel.app origin.\n * Keep nittinchughani.github.io allowed as well if the provider supports multiple\n * origins per key; otherwise use a separate scoped widget key for that site.
- * Visitors never need an account; this key is intentionally safe for a public page.
- * This key is intentionally visible in source; it is NOT a secret REST credential.
+/* GearEx compiler configuration — domain-scoped PUBLIC widget keys.
+ * These OnlineCompiler.io Widgets/WebSocket keys are designed for browsers.
+ * NEVER put a private REST API or Supabase service-role secret in this file.
+ *
+ * Keep the current GearEx editor: the same widget key works with the documented
+ * Socket.IO WebSocket API. Loading widget.js would add a separate editor.
+ *
+ * OnlineCompiler.io allows one approved website per key. Do not swap domains:
+ * Vercel uses its own widget, GitHub Pages keeps the original widget.
  */
-window.GearExCompilerConfig=Object.freeze({
-  widgetKey:'e334daaffea0b59dbc20e57ae34b2113'
-});
+(function(root){
+ 'use strict';
+ const widgetKeys=Object.freeze({
+  'https://gearex.vercel.app':'8249c2654adad1b10f4c6aa5cd453a61',
+  'https://nittinchughani.github.io':'e334daaffea0b59dbc20e57ae34b2113'
+ });
+ const origin=root?.location?.origin||'';
+ root.GearExCompilerConfig=Object.freeze({
+  widgetKeys,
+  widgetKey:Object.hasOwn(widgetKeys,origin)?widgetKeys[origin]:''
+ });
+})(window);
