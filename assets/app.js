@@ -172,6 +172,7 @@ function showCompilerInputWizard(plan){
  $('#compilerExtraInputs').value='';
  $('#compilerInputWizard').hidden=false;
  updateCompilerInputPrompt();
+ window.GearExFeedback?.focus($('#compilerInputValue'),{pane:$('#compilerInputWizard'),input:true});
 }
 function updateCompilerInputPrompt(){
  const request=inputPlan[inputPosition];
@@ -180,7 +181,7 @@ function updateCompilerInputPrompt(){
  text('#compilerInputStep','Input '+(inputPosition+1)+' of '+inputPlan.length);
  text('#compilerInputSubmit',inputPosition===inputPlan.length-1?'Run with these inputs':'Next input');
  $('#compilerInputValue').value='';
- $('#compilerInputValue').focus();
+ // The feedback helper manages focus without jumping to a hidden section.
 }
 function submitCompilerInput(event){
  event.preventDefault();
@@ -194,12 +195,16 @@ function submitCompilerInput(event){
  closeCompilerInputWizard();
  runEditor(true);
 }
+function focusCompilerOutput(){
+ const output=$('#compilerOutput');
+ window.GearExFeedback?.focus(output,{pane:output?.closest('.console-pane')||output});
+}
 async function runEditor(inputsConfirmed=false){
  const button=$('#runCode'),source=$('#codeEditor').value;
  let stdin=$('#stdinInput').value;
  let lang=$('#editorLanguage').value;
- if(!source.trim()){text('#compilerOutput','Write some code before running it.');return;}
- if(source.length>24000||stdin.length>4000){text('#compilerOutput','Please keep code below 24,000 characters and input below 4,000 characters.');return;}
+ if(!source.trim()){text('#compilerOutput','Write some code before running it.');focusCompilerOutput();return;}
+ if(source.length>24000||stdin.length>4000){text('#compilerOutput','Please keep code below 24,000 characters and input below 4,000 characters.');focusCompilerOutput();return;}
  const inferred=window.GearExEngine?.detect(source,lang)||lang;
  const names={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
  if(Object.hasOwn(names,inferred)&&inferred!==lang){
@@ -211,7 +216,7 @@ async function runEditor(inputsConfirmed=false){
    closeCompilerInputWizard();
    text('#compilerOutput','Compiler setup pending. GearEx is switching to a faster seven-language execution service. The site owner must activate its public, domain-restricted WebSocket key; no code has been submitted.');
    const out=$('#runResult');out.replaceChildren(make('p','run-info','Compiler activation is required before this feature can run code. The Code Visualizer remains available.'));
-   return;
+   focusCompilerOutput();return;
  }
  if(!inputsConfirmed&&!stdin.trim()){
    const questions=window.GearExCompiler?.findInputRequests(source,lang)||[];
@@ -221,6 +226,8 @@ async function runEditor(inputsConfirmed=false){
      return;
    }
  }
+ // Scroll directly to the results for programs with or without input.
+ focusCompilerOutput();
  button.disabled=true;button.textContent='▶ Running…';
  const resultBox=$('#runResult');resultBox.replaceChildren();
  const info=make('p','section-note','Detected '+names[lang]+' · Preparing execution…');
@@ -233,6 +240,7 @@ async function runEditor(inputsConfirmed=false){
      info.textContent='Detected '+names[lang]+' · '+message;
    });
    text('#compilerOutput',result.output.slice(0,20000));
+   focusCompilerOutput();
    const seconds=((performance.now()-startTime)/1000).toFixed(1);
    info.textContent=names[lang]+' · '+result.backend+' · '+seconds+'s';
    resultBox.append(make('p',result.success?'run-success':'run-error',
@@ -258,11 +266,13 @@ async function runEditor(inputsConfirmed=false){
    const service=error?.isServiceError===true;
    const setup=error?.code==='setup_required';
    const deadline=error?.code==='response_budget';
+   const originDenied=error?.code==='connection_rejected';
    text('#compilerOutput',setup?
      'Compiler setup pending. The website owner must activate the execution service before code can run.':
-     service?(deadline?'No result returned within 7 seconds.\n':'Execution service issue.\n')+error.message+'\nYour program has not been judged.':
+     service?(deadline?'The compiler was slow to respond.\n':originDenied?'Compiler connection rejected.\n':'Execution service issue.\n')+error.message+'\nYour program has not been judged.':
      'Unable to run this program.\n'+(error?.message||'Unknown error.'));
-   info.textContent=setup?'Compiler activation pending':deadline?'7-second response budget exceeded':service?'Execution service unavailable':'Execution not completed';
+   info.textContent=setup?'Compiler activation pending':deadline?'Compiler response timed out':originDenied?'Check compiler provider allowed origins':service?'Execution service unavailable':'Execution not completed';
+   focusCompilerOutput();
    resultBox.append(make('p',service?'run-info':'run-error',service?
      'Your source is not necessarily wrong. GearEx will not keep retrying or leave the Run button spinning.':
      'The request could not be completed.'));
