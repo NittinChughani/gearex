@@ -208,10 +208,15 @@ function restoreGuest(){
 }
 async function signOut(){
  if(!client||!user)return;
- if(dirty||syncing)await syncNow();
- const {error}=await client.auth.signOut();
- if(error){announce('Could not sign out: '+error.message);return;}
- restoreGuest();
+ window.GearExFeedback?.busy('Signing out…','Switching back to your private guest workspace.');
+ try{
+  if(dirty||syncing)await syncNow();
+  const {error}=await client.auth.signOut();
+  if(error)throw error;
+  window.GearExFeedback?.flash('Signed out successfully.');
+  restoreGuest();
+ }catch(error){announce('Could not sign out: '+String(error.message||error).slice(0,150),'error');}
+ finally{window.GearExFeedback?.idle();}
 }
 function onChange(event,session){
  if(event==='INITIAL_SESSION')return;
@@ -354,6 +359,7 @@ async function deleteAccount(){
  const button=$('accountDelete');
  if(button)button.disabled=true;
  announce('Deleting account and private data…');
+ window.GearExFeedback?.busy('Deleting your GearEx account…','Removing your cloud profile, progress and private photo. Please keep this page open.');
  let deleted=false;
  try{
   const {data,error}=await client.functions.invoke('delete-account',{body:{confirmation:'DELETE'}});
@@ -365,11 +371,11 @@ async function deleteAccount(){
    }catch{}
    if(/failed to send a request|failed to fetch|networkerror/i.test(reason))
     reason='The deletion service could not be reached. Its deployment or browser access needs attention';
-   announce('Account deletion unavailable: '+reason+'. Your account remains active.');
+   announce('Account deletion unavailable: '+reason+'. Your account remains active.','error');
    return;
   }
   if(data?.ok!==true){
-   announce('Deletion was not confirmed by the server. Your account has not been marked as deleted.');
+   announce('Deletion was not confirmed by the server. Your account has not been marked as deleted.','error');
    return;
   }
   deleted=true;
@@ -383,12 +389,14 @@ async function deleteAccount(){
   try{writeSnapshot(parse(get(GUEST),blank()));put(OWNER,'guest');}
   catch{try{localStorage.removeItem(OWNER);}catch{}}
   announce('Account deleted. Returning to guest mode…');
+  window.GearExFeedback?.flash('Your account and cloud data were deleted successfully.');
   location.hash='dashboard';
   location.reload();
  }catch(err){
-  if(!deleted)announce('Account deletion unavailable: '+String(err.message||err).slice(0,160)+'. Your account remains active.');
-  else announce('Your account was deleted, but local cleanup needs a page refresh.');
+  if(!deleted)announce('Account deletion unavailable: '+String(err.message||err).slice(0,160)+'. Your account remains active.','error');
+  else announce('Your account was deleted, but local cleanup needs a page refresh.','error');
  }finally{
+  window.GearExFeedback?.idle();
   if(!deleted){deletingAccount=false;if(button)button.disabled=false;}
  }
 }
