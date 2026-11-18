@@ -20,6 +20,7 @@ jobs:
           node --check assets/projects.js
           node --check assets/app.js
           node --check assets/compiler-service.js
+          node --check assets/gearex-feedback.js
           node --check assets/lesson-assessments.js
           node --check assets/gearex-engine.js
           node --check assets/gearex-trace-ui.js
