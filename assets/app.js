@@ -278,8 +278,15 @@ async function runEditor(inputsConfirmed=false){
    info.textContent=setup?'Compiler activation pending':deadline?'Compiler response timed out':originDenied?'Check compiler provider allowed origins':service?'Execution service unavailable':'Execution not completed';
    focusCompilerOutput();
    resultBox.append(make('p',service?'run-info':'run-error',service?
-     'Your source is not necessarily wrong. GearEx will not keep retrying or leave the Run button spinning.':
+     'Your source is not necessarily wrong. The program was not silently rerun.':
      'The request could not be completed.'));
+   // Explicit user action only; never automatically resubmit a possibly queued job.
+   if(service&&!setup&&!originDenied&&error?.code!=='usage_limit'){
+    const retry=make('button','button secondary compact','↻ Try running again');
+    retry.type='button';
+    retry.addEventListener('click',()=>runEditor(true));
+    resultBox.append(retry);
+   }
  }finally{button.disabled=false;button.textContent='▶ Run code';}
 }
 function visualTabs(){setActiveButtons('[data-visual]','visual',state.visual);const root=$('#visualContent');root.replaceChildren();
