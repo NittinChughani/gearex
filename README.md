@@ -4,11 +4,11 @@
   <p><strong>Don't just run the code. Follow it.</strong></p>
   <p>A free, open-source programming workbench built around practice, understanding, and visible progress.</p>
   <p>
-    <a href="https://nittinchughani.github.io/gearex/"><img alt="Launch GearEx" src="https://img.shields.io/badge/OPEN_GEAREX-1F7B7B?style=for-the-badge&logoColor=white"></a>
+    <a href="https://gearex.vercel.app/"><img alt="Launch GearEx" src="https://img.shields.io/badge/OPEN_GEAREX-1F7B7B?style=for-the-badge&logoColor=white"></a>
     <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/LICENSE-MIT-465863?style=for-the-badge"></a>
     <img alt="7 Languages" src="https://img.shields.io/badge/LANGUAGES-7-2F5969?style=for-the-badge">
   </p>
-  <p><a href="https://nittinchughani.github.io/gearex/">Visit the website</a> · <a href="docs/CURRICULUM.md">Explore the curriculum</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+  <p><a href="https://gearex.vercel.app/">Visit the website</a> · <a href="docs/CURRICULUM.md">Explore the curriculum</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 </div>
 
 ---
@@ -19,7 +19,7 @@ Reading code is one thing. Understanding what happens inside a program is anothe
 
 **GearEx** brings guided programming lessons, practical coding challenges, a built-in **Code Visualizer**, assessments and course certificates together in one place. It helps learners trace fundamental code operations and see how variables, function calls, stack frames and heap objects change.
 
-No signup is needed. The website is open-source, built with HTML, CSS and JavaScript, and hosted on GitHub Pages.
+No signup is needed. The website is open-source, built with HTML, CSS and JavaScript, and hosted primarily on Vercel, with GitHub Pages retained as a secondary deployment.
 
 ## Optional accounts and personal learning space
 
@@ -27,9 +27,9 @@ GearEx remains entirely usable as a **guest**: all seven language tracks, the co
 
 The live website includes a personalized dashboard with a **display name, user-selected profile photo**, animated progress cards, Continue Learning recommendations, and a saved-program gallery. A signed-in Supabase account can privately synchronize completed lessons, scores, certificates and code drafts across devices. On a first sign-in, the learner explicitly chooses whether to import existing guest progress; code-draft conflicts preserve a second copy.
 
-**Live status:** the public Supabase configuration is connected. Google sign-in, cloud lesson progress and score sync, and profile name/photo persistence have been manually tested. Automated content, compiler, account-model and guest browser checks pass. Email magic-link sign-in and full multi-account privacy checks have not been confirmed end-to-end for this release.
+**Live status (18 November 2026):** GearEx is live at **[gearex.vercel.app](https://gearex.vercel.app/)**. Google sign-in works for public users, and cloud lesson progress persists on Vercel after refreshing. Profile name/photo persistence has been manually tested with Supabase. Automated content, compiler, account-model and guest browser checks pass; email magic-link sign-in and full multi-account privacy checks have not been confirmed end-to-end for this release.
 
-**Account deletion status (16 November 2026):** the `delete-account` Edge Function is deployed and **ACTIVE** in the GearEx Supabase project. Live checks confirm the browser preflight (200), rejection of anonymous deletion (401), missing confirmation (400), unauthorized origins (403), and unsupported methods (405). Cloud profile/progress foreign keys use `ON DELETE CASCADE`, and avatar storage is private. A full deletion through a disposable signed-in account has **not** yet been verified; do not claim end-to-end deletion is tested. The [account deletion health workflow](.github/workflows/deploy-account-deletion.yml) checks the live endpoint on changes and weekly **without a Supabase access token**; it does not deploy new function code.
+**Account deletion status (18 November 2026):** the `delete-account` Supabase Edge Function is deployed and **ACTIVE (v2)**. It now allows browser requests from both `https://gearex.vercel.app` and the previous GitHub Pages origin, while requiring a verified Supabase session and explicit `DELETE` confirmation. An actual signed-in account deletion was successfully tested on the previous GitHub Pages deployment; the new Vercel origin needs a final disposable-account end-to-end test. Cloud profile/progress foreign keys use `ON DELETE CASCADE`, and avatar storage is private. The [account deletion health workflow](.github/workflows/deploy-account-deletion.yml) checks the live endpoint on changes and weekly **without a Supabase access token**; it does not deploy new function code.
 
 **Supabase setup for maintainers and forks:** [Read the setup and secure deployment guide](docs/SUPABASE_SETUP.md), including database RLS, private photo storage, authentication redirects and the account-deletion function.
 
@@ -160,7 +160,7 @@ When code uses a recognized input command and the standard-input box is empty, G
 
 Actual code execution uses **[OnlineCompiler.io](https://onlinecompiler.io/)** through its browser WebSocket API, using the original GearEx editor rather than an embedded third-party editor. The new API supports **C, C++, Python, JavaScript, Java, C# and SQLite**, with built-in standard headers. Programs are sent unchanged, except for the already-documented Node `prompt()` stdin adapter.
 
-**Configured:** GearEx uses a public WebSocket/widget key supplied by the site owner, stored in `assets/compiler-config.js`. The key is designed for browser use and should remain restricted to `https://nittinchughani.github.io` in the provider dashboard. It is **not** a private REST API key; never publish private credentials. Visitors do not need an account to run code.
+**Configured:** GearEx uses a public WebSocket/widget key supplied by the site owner, stored in `assets/compiler-config.js`. This is designed for browser use and is **not** a private REST API key; never publish private credentials. If the compiler provider uses an origin allowlist, permit both `https://gearex.vercel.app` and `https://nittinchughani.github.io` in its dashboard so code execution works on both deployments. Visitors do not need an account to run code.
 
 **Responsiveness:** the compiler reuses an authenticated WebSocket, does not repeatedly poll an execution job, and gives each Run action a **7-second visible response budget**. If no result has returned at the deadline, GearEx stops waiting and reports a service delay rather than an error in the code. The provider's published 2026 medians for small programs were under this budget for all seven languages, but this is not a latency guarantee, and larger source files or overload can exceed it. The user may retry manually; GearEx does not silently resubmit. The provider remains responsible for sandbox availability and runtime support.
 
@@ -172,7 +172,7 @@ The Code Visualizer is separate from the Compiler and works locally in the brows
 
 ## Getting started
 
-**[Open the live website](https://nittinchughani.github.io/gearex/)** to begin immediately, or run a local copy:
+**[Open the live website](https://gearex.vercel.app/)** to begin immediately, or run a local copy:
 
 ```bash
 git clone https://github.com/NittinChughani/gearex.git
@@ -227,7 +227,7 @@ node --test scripts/test-accounts.cjs
 
 Local browser checks for guest profiles, code saving and responsive layout are available through `scripts/test-account-browser.cjs` and the dedicated GitHub Actions browser workflow (Playwright required).
 
-GitHub Actions checks JavaScript syntax, curriculum integrity and visualizer behavior. GearEx remains a static website that can be deployed directly to GitHub Pages.
+GitHub Actions checks JavaScript syntax, curriculum integrity and visualizer behavior. GearEx remains a static website; the GitHub `main` branch is connected to Vercel for automatic deployments, and GitHub Pages remains an option.
 
 ## Progress, privacy and collaboration
 
