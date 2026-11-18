@@ -162,13 +162,15 @@ Actual code execution uses **[OnlineCompiler.io](https://onlinecompiler.io/)** t
 
 **Configured:** GearEx uses a public WebSocket/widget key supplied by the site owner, stored in `assets/compiler-config.js`. This is designed for browser use and is **not** a private REST API key; never publish private credentials. If the compiler provider uses an origin allowlist, permit both `https://gearex.vercel.app` and `https://nittinchughani.github.io` in its dashboard so code execution works on both deployments. Visitors do not need an account to run code.
 
-**Responsiveness:** the compiler reuses an authenticated WebSocket, does not repeatedly poll an execution job, and gives each Run action a **7-second visible response budget**. If no result has returned at the deadline, GearEx stops waiting and reports a service delay rather than an error in the code. The provider's published 2026 medians for small programs were under this budget for all seven languages, but this is not a latency guarantee, and larger source files or overload can exceed it. The user may retry manually; GearEx does not silently resubmit. The provider remains responsible for sandbox availability and runtime support.
+**Responsiveness:** GearEx prewarms and reuses an authenticated WebSocket. Normal warm runs retain a **7-second execution-response budget**. A brand-new visit allows up to **18 seconds total** to accommodate a cold connection and initial execution; only a failed connection handshake may be retried, **never a submitted program**. The UI distinguishes provider delays from code errors and guides focus to input or output. Actual runtime performance and availability depend on the external provider and the learner's network.
 
-**Live verification:** the public widget key connected successfully from a GitHub Actions runner using the intended GitHub Pages origin. C, C++, Python, JavaScript, Java, C# and SQL programs all returned real output within seven seconds, as did an intentional C++ syntax error. These are samples, not a guarantee of speed for all programs or locations. The [real provider smoke check](https://github.com/NittinChughani/gearex/actions/runs/43880876135) records actual response times.
+**Verification:** earlier live smoke tests successfully executed C, C++, Python, JavaScript, Java, C# and SQL with the GitHub Pages origin, including an intentional compiler error. The current [Vercel-origin smoke workflow](.github/workflows/live-compiler-smoke.yml) checks the new production origin; successful local/simulated connection tests do not guarantee a specific provider account's origin allowlist, limits or real-browser behavior. The [earlier GitHub Pages provider smoke run](https://github.com/NittinChughani/gearex/actions/runs/43880876135) is retained for reference.
 
 **Privacy:** source code and standard input are sent to the external execution service. Do not include credentials or personal information. Refer to the provider's data policy if submitting sensitive material.
 
 The Code Visualizer is separate from the Compiler and works locally in the browser for its supported teaching subset.
+
+**Interaction feedback:** the Compiler and Visualizer scroll to and briefly highlight requested input and produced output. Profile changes, photo uploads, account deletion, sign-in and progress imports have visible progress states; user-initiated changes show accessible confirmation or error toasts. Successful account deletion displays confirmation after returning to guest mode.
 
 ## Getting started
 
@@ -195,7 +197,9 @@ gearex/
 │   ├── studio-motion.js          # View animation and staggered cards
 │   ├── app.js                    # Hash routing, lessons, compiler UI, progress
 │   ├── compiler-config.js        # Public browser widget key (configured by site owner)
-│   ├── compiler-service.js       # Single WebSocket execution client with 7-second UI budget
+│   ├── compiler-service.js       # Prewarmed WebSocket, cold-start budget, execution guard
+│   ├── gearex-feedback.js        # Accessible notifications and guided scroll highlights
+│   ├── gearex-feedback.css       # Responsive feedback visual styles
 │   ├── account-ui.css            # Personalized animated guest/account dashboard
 │   ├── gearex-account-data.js    # Normalized, conflict-aware learning snapshots
 │   ├── gearex-accounts.js        # Guest-first auth, sync and private profile photos
