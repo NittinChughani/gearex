@@ -8,6 +8,7 @@ const EventEmitter=require('node:events');
 const src=fs.readFileSync(path.join(__dirname,'../assets/compiler-service.js'),'utf8');
 const app=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+const widgetConfigSrc=fs.readFileSync(path.join(__dirname,'../assets/compiler-config.js'),'utf8');
 class MockSocket extends EventEmitter{
  constructor(onRun){
   super();this.connected=false;this.onRun=onRun;this.runs=[];this.disconnects=0;
@@ -50,6 +51,32 @@ test('single browser execution engine maps all seven languages to installed runt
  assert.equal(compiler.RESPONSE_BUDGET_MS,7000);
  assert.ok(!src.includes('wandbox.org')&&!src.includes('ce.judge0.com'),'Remove unreliable open guest compiler endpoints');
 });
+
+test('production origins select their own widget keys and unknown origins fail closed',()=>{
+ const configFor=origin=>{
+  const sandbox={window:{location:{origin}}};
+  vm.runInNewContext(widgetConfigSrc,sandbox,{filename:'compiler-config.js'});
+  return sandbox.window.GearExCompilerConfig;
+ };
+ const vercel=configFor('https://gearex.vercel.app');
+ const github=configFor('https://nittinchughani.github.io');
+ const unknown=configFor('https://unexpected-domain.example');
+ const local=configFor('http://localhost:8000');
+ assert.equal(typeof vercel.widgetKey,'string');
+ assert.match(vercel.widgetKey,/^[a-f0-9]{32}$/);
+ assert.match(github.widgetKey,/^[a-f0-9]{32}$/);
+ assert.notEqual(vercel.widgetKey,github.widgetKey,'Each domain requires a distinct public widget key');
+ assert.equal(unknown.widgetKey,'','Unknown sites must not borrow a production widget key');
+ assert.equal(local.widgetKey,'','Localhost must not send requests using production widget keys');
+ assert.deepEqual(Object.keys(vercel.widgetKeys).sort(),[
+  'https://gearex.vercel.app','https://nittinchughani.github.io'
+ ].sort());
+ const mockVercel=runner(()=>{}, {key:vercel.widgetKey});
+ const mockGithub=runner(()=>{}, {key:github.widgetKey});
+ assert.equal(mockVercel.compiler.getWidgetKey(),vercel.widgetKey);
+ assert.equal(mockGithub.compiler.getWidgetKey(),github.widgetKey);
+});
+
 test('C++ standard library code and input are transmitted unchanged and real stdout appears',async()=>{
  const {compiler,sockets}=runner((payload,reply)=>reply(response('5\n')));
  const program='#include <iostream>\n#include <cmath>\nusing namespace std;\nint main(){int n;cin>>n;cout<<sqrt(n)<<endl;}';
