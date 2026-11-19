@@ -64,7 +64,7 @@ The live website includes a personalized dashboard with a **display name, user-s
 
 ## Lessons that teach from the beginning
 
-Every one of the **91 lessons** now has a full, topic-specific learning guide. Instead of leaving a new learner with a short definition, each lesson provides four readable stages:
+Every one of the **131 lessons** now has a full, topic-specific learning guide. Instead of leaving a new learner with a short definition, each lesson provides four readable stages:
 
 | Stage | What you'll understand |
 |:--|:--|
