@@ -54,52 +54,165 @@ body[data-mode="dark"] .certificate-paper.gx-cert{color:var(--gx-ink)}
 body[data-mode="light"] .certificate-paper.gx-cert p,
 body[data-mode="dark"] .certificate-paper.gx-cert p{color:var(--gx-muted)}
 body[data-mode="light"] .certificate-paper.gx-cert-c p.gx-statement,
-body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-statement{color:#d4e4ec}
+body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-statement{color:#586a7c}
 body[data-mode="light"] .certificate-paper.gx-cert-c p.gx-disclaimer,
-body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-disclaimer{color:#adc7d5}
+body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-disclaimer{color:#75899a}
 
-/* 01 — C: Midnight engineering blueprint, luminous drafting grid and circuits.
-   Horizontal three-part construction, never a split ivory diploma. */
+/* 01 — C: a light, formal systems-programming diploma.
+   Polished ivory stock, engraved navy linework and a restrained technical seal.
+   The original logo and certificate record remain unaltered. */
 .certificate-paper.gx-cert-c{
-  --gx-ink:#f2fbff;--gx-muted:#b3cbd7;--gx-line:#365667;
-  padding:28px 36px 24px;background-color:#0d2331;
+  --gx-ink:#23364d;--gx-muted:#607184;--gx-line:#ccd5dc;--gx-accent:#3c637f;
+  position:relative;
+  padding:34px 40px 26px;
+  color:#23364d;
+  background-color:#fdfcf9;
   background-image:
-    linear-gradient(#ffffff0c 1px,transparent 1px),
-    linear-gradient(90deg,#ffffff0c 1px,transparent 1px),
-    radial-gradient(circle at 91% 20%,#1685a638,transparent 34%);
-  background-size:25px 25px,25px 25px,auto;
-  border:2px solid #2b7186;color:#f2fbff
+    radial-gradient(ellipse at 91% 26%,#dce9f178,transparent 42%),
+    radial-gradient(ellipse at 3% 99%,#e7edf077,transparent 45%),
+    linear-gradient(90deg,transparent 0 96%,#aac1d025 96% 96.3%,transparent 96.3%);
+  border:2px solid #849caf;
+  border-radius:10px;
+  box-shadow:
+    inset 0 0 0 6px #fcfaf5,
+    inset 0 0 0 8px #bdc9d3,
+    0 14px 38px rgba(30,55,77,.12);
 }
-.gx-cert-c .gx-c-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:20px;border-bottom:1px solid #5477878c}
-.gx-cert-c .gx-c-docket{font:700 10px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.08em;color:#91b9c6;text-align:right}
-.gx-cert-c .gx-c-body{display:grid;grid-template-columns:minmax(0,1fr) 225px;gap:17px;align-items:center;min-height:270px;padding:24px 0}
+.certificate-paper.gx-cert-c::before,
+.certificate-paper.gx-cert-c::after{
+  content:"";display:block;position:absolute;
+  width:43px;height:43px;pointer-events:none;z-index:0
+}
+.certificate-paper.gx-cert-c::before{
+  top:17px;left:17px;
+  border-left:2px solid #849caf;
+  border-top:2px solid #849caf
+}
+.certificate-paper.gx-cert-c::after{
+  bottom:17px;right:17px;
+  border-bottom:2px solid #849caf;
+  border-right:2px solid #849caf
+}
+.gx-cert-c .gx-c-header{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:0 6px 21px;
+  border-bottom:1px solid #b9c8d2
+}
+.gx-cert-c .gx-brand{color:#29425a}
+.gx-cert-c .gx-wordmark{letter-spacing:.23em;color:#29425a}
+.gx-cert-c .gx-c-docket{
+  font:700 10px/1.55 ui-monospace,Consolas,monospace;
+  letter-spacing:.09em;color:#587387;text-align:right;
+  max-width:220px
+}
+.gx-cert-c .gx-c-body{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 220px;gap:22px;
+  align-items:center;min-height:282px;padding:30px 8px 26px
+}
 .gx-cert-c .gx-c-message{min-width:0}
-.gx-cert-c .gx-c-message .gx-overline{color:#7ee8ed}
-.gx-cert-c h2.gx-title{font-family:ui-monospace,Consolas,monospace;color:#f3fdff;font-weight:700;font-size:clamp(28px,3.2vw,41px);letter-spacing:-.04em}
-.gx-cert-c .gx-recipient-name{color:#b3f5ff}
-.gx-cert-c .gx-recipient .gx-overline{color:#b2c8d5}
-.gx-cert-c p.gx-statement{color:#d4e4ec}
-.gx-cert-c .gx-c-illustration{position:relative;display:grid;place-items:center;width:205px;height:205px;border:1px dashed #5da3b05e;border-radius:50%;justify-self:end}
-.gx-cert-c .gx-c-illustration::before{content:"";position:absolute;inset:20px;border:1px solid #4099b28c;border-radius:50%;box-shadow:0 0 28px #0de0ef14,inset 0 0 35px #0de0ef10}
-.gx-cert-c .gx-c-illustration::after{content:"";position:absolute;inset:-9px 50% auto auto;width:19px;height:19px;border:3px solid #a7eaf3;border-radius:50%;background:#0d2331}
-.gx-cert-c .gx-c-glyph{font:800 95px/1 ui-monospace,Consolas,monospace;color:#b4ecf6;z-index:1;text-shadow:0 0 30px #46d9f04d}
-.gx-cert-c .gx-c-orbit{position:absolute;bottom:30px;font:700 12px ui-monospace,monospace;color:#5cb6c7;letter-spacing:.3em}
-.gx-cert-c .gx-c-diagram-label{position:absolute;bottom:-22px;left:0;width:100%;font:700 9px ui-monospace,monospace;letter-spacing:.12em;text-align:center;color:#86b8c6}
-.gx-cert-c .gx-c-traces{position:absolute;inset:-17px;pointer-events:none}
-.gx-cert-c .gx-c-traces span{position:absolute;width:25px;height:1px;background:#78d8e3}
+.gx-cert-c .gx-c-message .gx-overline{
+  color:#496c85;font-family:ui-monospace,Consolas,monospace;
+  font-size:10px;letter-spacing:.18em
+}
+.gx-cert-c h2.gx-title{
+  font-family:Georgia,"Times New Roman",serif;
+  color:#203951;font-size:clamp(31px,3.55vw,45px);
+  font-weight:700;line-height:1.13;letter-spacing:-.025em;
+  margin:12px 0 20px
+}
+.gx-cert-c .gx-recipient{margin:19px 0 13px}
+.gx-cert-c .gx-recipient-name{
+  color:#2c506c;
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:700;
+  border-bottom:1px solid #b3c5d1;
+  padding-bottom:8px;
+  display:inline-block;
+  max-width:100%;
+  min-width:185px
+}
+.gx-cert-c .gx-recipient .gx-overline{color:#728292}
+.gx-cert-c p.gx-statement{color:#586a7c}
+.gx-cert-c .gx-c-illustration{
+  position:relative;display:grid;place-items:center;
+  width:200px;height:200px;justify-self:end;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff 0%,#f1f5f6 71%,#edf1f3 100%);
+  border:1px solid #b6c8d4;
+  outline:5px double #d0dce4;
+  outline-offset:4px
+}
+.gx-cert-c .gx-c-illustration::before{
+  content:"";position:absolute;inset:19px;
+  border:1px solid #8aa9bc;
+  border-radius:50%;
+  box-shadow:inset 0 0 0 6px #eef4f7
+}
+.gx-cert-c .gx-c-illustration::after{
+  content:"";position:absolute;top:-12px;left:50%;
+  transform:translateX(-50%);height:8px;width:35px;
+  border-top:1px solid #7496ac;
+  border-bottom:1px solid #7496ac;
+  background:#fdfcf9
+}
+.gx-cert-c .gx-c-glyph{
+  position:relative;z-index:1;
+  font:700 93px/1 Georgia,"Times New Roman",serif;
+  color:#3b6681;
+  text-shadow:none
+}
+.gx-cert-c .gx-c-orbit{
+  position:absolute;bottom:27px;
+  font:700 12px ui-monospace,Consolas,monospace;
+  color:#7a98a8;letter-spacing:.24em
+}
+.gx-cert-c .gx-c-diagram-label{
+  position:absolute;bottom:-37px;left:-10%;
+  width:120%;text-align:center;
+  font:700 9px/1.4 ui-monospace,Consolas,monospace;
+  letter-spacing:.11em;color:#5e7b8d
+}
+.gx-cert-c .gx-c-traces{position:absolute;inset:-16px;pointer-events:none}
+.gx-cert-c .gx-c-traces span{position:absolute;width:19px;height:1px;background:#95b1c1}
 .gx-cert-c .gx-c-traces span:nth-child(1){top:17%;left:0}
 .gx-cert-c .gx-c-traces span:nth-child(2){top:41%;right:-3px;transform:rotate(45deg)}
 .gx-cert-c .gx-c-traces span:nth-child(3){bottom:27%;left:0;transform:rotate(-45deg)}
 .gx-cert-c .gx-c-traces span:nth-child(4){bottom:7%;right:22%}
 .gx-cert-c .gx-c-traces span:nth-child(5){top:2%;right:31%}
-.gx-cert-c .gx-c-scores{grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid #416474}
-.gx-cert-c .gx-c-scores .gx-metric{background:#122e3dd9;border:0;border-radius:0;padding:14px 12px;border-right:1px solid #416474}
+.gx-cert-c .gx-c-scores{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0;
+  border-top:1px solid #9bb1c0;
+  border-bottom:1px solid #9bb1c0;
+  background:#f1f5f6
+}
+.gx-cert-c .gx-c-scores .gx-metric{
+  background:transparent;border:0;border-radius:0;
+  padding:15px 13px;
+  border-right:1px solid #c3d2dc
+}
 .gx-cert-c .gx-c-scores .gx-metric:last-child{border-right:0}
-.gx-cert-c .gx-metric-label{color:#84b4c4}
-.gx-cert-c .gx-metric-value{color:#e0f7fc;font:700 12px/1.5 ui-monospace,Consolas,monospace}
-.gx-cert-c .gx-footer{margin-top:18px;border-color:#406172}
-.gx-cert-c .gx-issuer strong,.gx-cert-c .gx-issued strong{color:#f2fbff}
-.gx-cert-c .gx-footer-label,.gx-cert-c p.gx-disclaimer{color:#adc7d5}
+.gx-cert-c .gx-metric-label{
+  color:#687e91;
+  font-size:9px;letter-spacing:.09em
+}
+.gx-cert-c .gx-metric-value{
+  color:#29445b;
+  font:700 12px/1.5 ui-monospace,Consolas,monospace
+}
+.gx-cert-c .gx-footer{
+  position:relative;z-index:1;
+  margin-top:21px;padding:17px 5px 0;
+  border-color:#c2d0da
+}
+.gx-cert-c .gx-issuer strong,
+.gx-cert-c .gx-issued strong{color:#2a4056}
+.gx-cert-c .gx-footer-label,
+.gx-cert-c p.gx-disclaimer{color:#75899a}
 
 /* 02 — C++: asymmetrical royal-blue engineering spine / warm ivory editorial. */
 .certificate-paper.gx-cert-cpp{
@@ -303,11 +416,11 @@ body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-disclaimer{color:#adc7d
   .gx-cert-c .gx-c-header{align-items:flex-start}
   .gx-cert-c .gx-c-docket{font-size:9px;max-width:128px}
   .gx-cert-c .gx-c-body{display:flex;flex-direction:column;align-items:stretch;gap:24px;padding:25px 0}
-  .gx-cert-c .gx-c-illustration{align-self:center;width:125px;height:125px;margin-bottom:10px}
+  .gx-cert-c .gx-c-illustration{align-self:center;width:125px;height:125px;margin-bottom:24px}
   .gx-cert-c .gx-c-glyph{font-size:60px}
   .gx-cert-c .gx-c-scores{grid-template-columns:1fr 1fr}
   .gx-cert-c .gx-c-scores .gx-metric:nth-child(2){border-right:0}
-  .gx-cert-c .gx-c-scores .gx-metric:nth-child(-n+2){border-bottom:1px solid #416474}
+  .gx-cert-c .gx-c-scores .gx-metric:nth-child(-n+2){border-bottom:1px solid #c3d2dc}
   .gx-cert-cpp{display:block!important}
   .gx-cert-cpp .gx-cpp-spine{min-height:190px;padding:21px 24px}
   .gx-cert-cpp .gx-cpp-edition{margin-top:12px}
