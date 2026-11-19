@@ -1,0 +1,26 @@
+/* GearEx original-logo certificate collection. All variants retain the same legal/score record. */
+.certificate-paper{isolation:isolate;border:2px solid var(--cert-accent,#2e5f82);background:#fffefa;background-image:radial-gradient(ellipse at 6% 2%,var(--cert-soft,#e5edf3),transparent 44%),radial-gradient(ellipse at 98% 96%,var(--cert-soft,#e5edf3),transparent 42%);box-shadow:inset 0 0 0 7px #fffefa,inset 0 0 0 8px color-mix(in srgb,var(--cert-accent) 28%,white);padding:34px 42px 46px}
+.certificate-paper:before,.certificate-paper:after{border:1px solid color-mix(in srgb,var(--cert-accent) 25%,transparent);border-radius:0;transform:rotate(45deg);width:190px;height:190px;z-index:-1}
+.certificate-paper:before{top:-140px;left:-140px}.certificate-paper:after{bottom:-145px;right:-145px}
+.cert-premium-head{display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid color-mix(in srgb,var(--cert-accent) 24%,white);padding-bottom:17px;margin-bottom:28px}
+.cert-crest{display:flex;align-items:center;gap:12px;color:var(--cert-accent)}
+.cert-original-logo{width:43px;height:43px;object-fit:contain;display:block;filter:none}
+.cert-brand-name{font-size:16px;font-weight:900;letter-spacing:.19em}
+.cert-track-seal{font:700 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;border:1px solid color-mix(in srgb,var(--cert-accent) 36%,white);color:var(--cert-accent);padding:9px 13px;border-radius:999px}
+.cert-brand-watermark{position:absolute;top:52%;left:50%;width:min(44%,260px);height:auto;transform:translate(-50%,-50%);opacity:.045;z-index:-1;pointer-events:none}
+.certificate-paper .cert-kicker{color:var(--cert-accent);letter-spacing:.36em;font-size:11px}
+.certificate-paper h2{color:#18243b;position:relative}
+.cert-track-line{font-size:12px!important;letter-spacing:.12em;text-transform:uppercase;color:var(--cert-accent)!important;margin:8px auto 26px!important}
+.certificate-paper .cert-name{color:var(--cert-accent)}
+.certificate-paper .cert-meta{border-top:1px solid color-mix(in srgb,var(--cert-accent) 24%,white);border-bottom:1px solid color-mix(in srgb,var(--cert-accent) 24%,white)}
+.certificate-paper .cert-sign{color:var(--cert-accent)}
+.cert-theme-c{--cert-pattern:repeating-linear-gradient(90deg,transparent 0 34px,#2e5f8209 35px 36px)}
+.cert-theme-cpp{--cert-pattern:repeating-linear-gradient(135deg,transparent 0 25px,#254b9a0b 26px 27px)}
+.cert-theme-py{--cert-pattern:radial-gradient(circle at 20% 40%,#366c9a0b 0 4px,transparent 5px)}
+.cert-theme-js{--cert-pattern:repeating-linear-gradient(0deg,transparent 0 32px,#806b1309 33px 34px)}
+.cert-theme-java{--cert-pattern:repeating-linear-gradient(90deg,transparent 0 52px,#9b473909 53px 54px)}
+.cert-theme-cs{--cert-pattern:radial-gradient(circle at 20% 20%,#67419d10 0 2px,transparent 3px)}
+.cert-theme-sql{--cert-pattern:repeating-linear-gradient(0deg,transparent 0 28px,#157e7b0b 29px 30px)}
+.certificate-paper{background-image:var(--cert-pattern),radial-gradient(ellipse at 6% 2%,var(--cert-soft),transparent 44%),radial-gradient(ellipse at 98% 96%,var(--cert-soft),transparent 42%)}
+@media(max-width:600px){.certificate-paper{padding:24px 18px 34px}.cert-premium-head{gap:8px}.cert-track-seal{font-size:9px;padding:7px 8px}.cert-original-logo{width:34px;height:34px}.cert-brand-name{font-size:13px}}
+@media print{.certificate-paper{border:4px solid var(--cert-accent)!important;min-height:95vh;print-color-adjust:exact;-webkit-print-color-adjust:exact}.cert-brand-watermark{opacity:.045!important}}
