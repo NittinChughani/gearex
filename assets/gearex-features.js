@@ -2,6 +2,15 @@
 'use strict';
 (() => {
   const LANG={c:'C',cpp:'C++',py:'Python',js:'JavaScript',java:'Java',cs:'C#',sql:'SQL'};
+  const CERT_STYLES={
+    c:{accent:'#2e5f82',soft:'#dceaf1',motif:'circuit',symbol:'C',subtitle:'Foundations of systems programming'},
+    cpp:{accent:'#254b9a',soft:'#e1e9fa',motif:'geometry',symbol:'C++',subtitle:'Engineering with modern C++'},
+    py:{accent:'#366c9a',soft:'#f3e9c4',motif:'flow',symbol:'Py',subtitle:'Problem solving with Python'},
+    js:{accent:'#806b13',soft:'#fff3bf',motif:'web',symbol:'JS',subtitle:'Building for the modern web'},
+    java:{accent:'#9b4739',soft:'#f4e4dd',motif:'architecture',symbol:'J',subtitle:'Object-oriented software development'},
+    cs:{accent:'#67419d',soft:'#ebe2f7',motif:'framework',symbol:'C#',subtitle:'Application development with C#'},
+    sql:{accent:'#157e7b',soft:'#d9f1ec',motif:'data',symbol:'SQL',subtitle:'Data management and querying'}
+  };
   const $=s=>document.querySelector(s);
   const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=String(txt);return n;};
   const btn=(text,fn,cls='button secondary compact')=>{const b=el('button',cls,text);b.type='button';b.addEventListener('click',fn);return b;};
@@ -88,8 +97,22 @@
     root.append(form);root.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function paper(s,lang,name){
-    const root=el('article','certificate-paper');
-    root.append(el('p','cert-kicker','GEAREX / LEARNING RECORD'),el('h2','','Certificate of Course Completion'),el('p','','Awarded to'));
+    const theme=CERT_STYLES[lang];
+    const root=el('article','certificate-paper cert-theme-'+lang);
+    root.style.setProperty('--cert-accent',theme.accent);
+    root.style.setProperty('--cert-soft',theme.soft);
+    root.dataset.motif=theme.motif;
+    const crest=el('div','cert-crest');
+    const logo=el('img','cert-original-logo');
+    logo.src='assets/favicon.svg';logo.alt='';logo.width=43;logo.height=43;
+    crest.append(logo,el('span','cert-brand-name','GEAREX'));
+    const head=el('header','cert-premium-head');
+    head.append(crest,el('span','cert-track-seal',theme.symbol+' · CERTIFIED'));
+    root.append(head);
+    const watermark=el('img','cert-brand-watermark');
+    watermark.src='assets/favicon.svg';watermark.alt='';watermark.setAttribute('aria-hidden','true');
+    root.append(watermark);
+    root.append(el('p','cert-kicker','GEAREX'),el('h2','','Certificate of Course Completion'),el('p','cert-track-line',theme.subtitle),el('p','','Awarded to'));
     root.append(el('div','cert-name',name));
     root.append(el('p','','For finishing the '+LANG[lang]+' learning path and successfully completing the final assessment.'));
     const meta=el('div','cert-meta');
