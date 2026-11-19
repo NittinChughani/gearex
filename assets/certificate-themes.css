@@ -48,6 +48,16 @@
 .gx-cert .gx-issuer strong,.gx-cert .gx-issued strong{font-size:12px;color:var(--gx-ink);overflow-wrap:anywhere}
 .gx-cert p.gx-disclaimer{grid-column:1/-1;font-size:9px;line-height:1.45;color:var(--gx-muted);padding-top:4px}
 
+/* Beat page-appearance overrides without modifying global light/dark mode. */
+body[data-mode="light"] .certificate-paper.gx-cert,
+body[data-mode="dark"] .certificate-paper.gx-cert{color:var(--gx-ink)}
+body[data-mode="light"] .certificate-paper.gx-cert p,
+body[data-mode="dark"] .certificate-paper.gx-cert p{color:var(--gx-muted)}
+body[data-mode="light"] .certificate-paper.gx-cert-c p.gx-statement,
+body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-statement{color:#d4e4ec}
+body[data-mode="light"] .certificate-paper.gx-cert-c p.gx-disclaimer,
+body[data-mode="dark"] .certificate-paper.gx-cert-c p.gx-disclaimer{color:#adc7d5}
+
 /* 01 — C: Midnight engineering blueprint, luminous drafting grid and circuits.
    Horizontal three-part construction, never a split ivory diploma. */
 .certificate-paper.gx-cert-c{
