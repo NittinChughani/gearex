@@ -563,4 +563,248 @@ Object.assign(GEAR_LESSON_GUIDES,{
 ]
 });
 
+/* Complete teaching guides for the expanded non-C/C++ curriculum. */
+Object.assign(GEAR_LESSON_GUIDES,{
+  "py-gearex-9": [
+    "File reading with with is an important skill because use a context manager to close files reliably.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. The context manager closes the file even if an error occurs.",
+    "Walk through the example one statement at a time. The syntax pattern is with open(...) as f:. Read the code from top to bottom. The context manager closes the file even if an error occurs. The sample's expected result is GearEx. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, file reading with with helps keep logic organized and easier to maintain. The context manager closes the file even if an error occurs. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Change the written message and read it back. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-10": [
+    "Handling exceptions is an important skill because catch expected errors without hiding unrelated bugs.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Catch specific exceptions instead of a broad bare except.",
+    "Walk through the example one statement at a time. The syntax pattern is try / except ValueError. Read the code from top to bottom. Catch specific exceptions instead of a broad bare except. The sample's expected result is Invalid number. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, handling exceptions helps keep logic organized and easier to maintain. Catch specific exceptions instead of a broad bare except. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Handle a missing dictionary key separately. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-11": [
+    "Tuples and sets is an important skill because use immutable sequences and unique collections.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A tuple keeps its items fixed; a set removes duplicates.",
+    "Walk through the example one statement at a time. The syntax pattern is tuple = (a,b); set = {a,b}. Read the code from top to bottom. A tuple keeps its items fixed; a set removes duplicates. The sample's expected result is 3 2. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, tuples and sets helps keep logic organized and easier to maintain. A tuple keeps its items fixed; a set removes duplicates. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Try unpacking the tuple into two variables. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-12": [
+    "List comprehensions is an important skill because build a new list from an iterable with a concise expression.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Comprehensions produce a list; a generator expression is lazy.",
+    "Walk through the example one statement at a time. The syntax pattern is [expression for item in iterable]. Read the code from top to bottom. Comprehensions produce a list; a generator expression is lazy. The sample's expected result is [1, 4, 9, 16]. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, list comprehensions helps keep logic organized and easier to maintain. Comprehensions produce a list; a generator expression is lazy. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Filter the squares to only even results. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-13": [
+    "Classes and methods is an important skill because model objects with instance attributes and behavior.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. self refers to the instance receiving the method call.",
+    "Walk through the example one statement at a time. The syntax pattern is class Name: def method(self):. Read the code from top to bottom. self refers to the instance receiving the method call. The sample's expected result is 1. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, classes and methods helps keep logic organized and easier to maintain. self refers to the instance receiving the method call. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a reset method to Counter. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-14": [
+    "Modules and imports is an important skill because reuse standard-library functionality across files.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A module groups reusable names and code.",
+    "Walk through the example one statement at a time. The syntax pattern is import module; module.function(). Read the code from top to bottom. A module groups reusable names and code. The sample's expected result is 9. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, modules and imports helps keep logic organized and easier to maintain. A module groups reusable names and code. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Try math.factorial on a small positive integer. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-15": [
+    "JSON serialization is an important skill because exchange structured data using JSON text.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. JSON strings are text, not Python dictionary objects.",
+    "Walk through the example one statement at a time. The syntax pattern is json.dumps(value); json.loads(text). Read the code from top to bottom. JSON strings are text, not Python dictionary objects. The sample's expected result is Python. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, json serialization helps keep logic organized and easier to maintain. JSON strings are text, not Python dictionary objects. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Serialize a list of two learner names. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "py-gearex-16": [
+    "Sorting with key functions is an important skill because control sorting with custom keys and stable ordering.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. sorted returns a new list without modifying the original.",
+    "Walk through the example one statement at a time. The syntax pattern is sorted(items, key=callable). Read the code from top to bottom. sorted returns a new list without modifying the original. The sample's expected result is ['al', 'Bea', 'Zoe']. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, sorting with key functions helps keep logic organized and easier to maintain. sorted returns a new list without modifying the original. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Sort words by length using key=len. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-9": [
+    "Array map and filter is an important skill because transform and select items without manually managing indexes.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. map creates a new array; filter keeps matching elements.",
+    "Walk through the example one statement at a time. The syntax pattern is array.filter(fn).map(fn). Read the code from top to bottom. map creates a new array; filter keeps matching elements. The sample's expected result is 20,40. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, array map and filter helps keep logic organized and easier to maintain. map creates a new array; filter keeps matching elements. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Map all numbers to their squares. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-10": [
+    "Objects and destructuring is an important skill because read named fields from objects using destructuring.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Destructuring extracts properties; it does not rename the object.",
+    "Walk through the example one statement at a time. The syntax pattern is const {field} = object. Read the code from top to bottom. Destructuring extracts properties; it does not rename the object. The sample's expected result is Ada 92. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, objects and destructuring helps keep logic organized and easier to maintain. Destructuring extracts properties; it does not rename the object. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a role field and destructure it. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-11": [
+    "Template literals is an important skill because embed expressions directly into readable strings.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Template literals use backticks rather than quotes.",
+    "Walk through the example one statement at a time. The syntax pattern is `text ${expression}`. Read the code from top to bottom. Template literals use backticks rather than quotes. The sample's expected result is Learn JavaScript!. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, template literals helps keep logic organized and easier to maintain. Template literals use backticks rather than quotes. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a numeric score expression to the template. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-12": [
+    "Sets and Maps is an important skill because store unique values and key-value pairs.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A Map supports keys beyond plain object property strings.",
+    "Walk through the example one statement at a time. The syntax pattern is new Set(items); new Map(entries). Read the code from top to bottom. A Map supports keys beyond plain object property strings. The sample's expected result is 2 3. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, sets and maps helps keep logic organized and easier to maintain. A Map supports keys beyond plain object property strings. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Increment the visits value in the map. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-13": [
+    "Promises is an important skill because represent the eventual outcome of asynchronous work.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A Promise can be pending, fulfilled or rejected.",
+    "Walk through the example one statement at a time. The syntax pattern is promise.then(callback). Read the code from top to bottom. A Promise can be pending, fulfilled or rejected. The sample's expected result is 14. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, promises helps keep logic organized and easier to maintain. A Promise can be pending, fulfilled or rejected. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Chain another then to transform the value. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-14": [
+    "Async and await is an important skill because write asynchronous workflows with readable sequential syntax.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. await pauses the async function, not the whole JavaScript runtime.",
+    "Walk through the example one statement at a time. The syntax pattern is async function f(){await promise;}. Read the code from top to bottom. await pauses the async function, not the whole JavaScript runtime. The sample's expected result is 42. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, async and await helps keep logic organized and easier to maintain. await pauses the async function, not the whole JavaScript runtime. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add try/catch around a rejected promise. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-15": [
+    "Classes and constructors is an important skill because create reusable objects with class syntax.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Class methods are shared through the prototype.",
+    "Walk through the example one statement at a time. The syntax pattern is class Name { constructor(){} }. Read the code from top to bottom. Class methods are shared through the prototype. The sample's expected result is Hi Ada. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, classes and constructors helps keep logic organized and easier to maintain. Class methods are shared through the prototype. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a score property to the constructor. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "js-gearex-16": [
+    "Error handling is an important skill because use try/catch to handle failures at a clear boundary.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Do not swallow unexpected errors silently.",
+    "Walk through the example one statement at a time. The syntax pattern is try { ... } catch (error) { ... }. Read the code from top to bottom. Do not swallow unexpected errors silently. The sample's expected result is Invalid JSON. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, error handling helps keep logic organized and easier to maintain. Do not swallow unexpected errors silently. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Log error.message for debugging. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-9": [
+    "String operations is an important skill because work with immutable String values and their methods.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Strings are immutable: methods return new values.",
+    "Walk through the example one statement at a time. The syntax pattern is text.length(); text.toUpperCase(). Read the code from top to bottom. Strings are immutable: methods return new values. The sample's expected result is GEAREX. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, string operations helps keep logic organized and easier to maintain. Strings are immutable: methods return new values. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Print the string length. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-10": [
+    "Arrays and iteration is an important skill because process fixed-size arrays using an enhanced for loop.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Array length is a field, not a method.",
+    "Walk through the example one statement at a time. The syntax pattern is for (int item : array). Read the code from top to bottom. Array length is a field, not a method. The sample's expected result is 12. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, arrays and iteration helps keep logic organized and easier to maintain. Array length is a field, not a method. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Find the largest array element. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-11": [
+    "ArrayList collections is an important skill because grow a list dynamically and access elements by index.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. ArrayList is resizable; arrays have fixed length.",
+    "Walk through the example one statement at a time. The syntax pattern is list.add(item); list.get(index). Read the code from top to bottom. ArrayList is resizable; arrays have fixed length. The sample's expected result is Java. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, arraylist collections helps keep logic organized and easier to maintain. ArrayList is resizable; arrays have fixed length. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add two elements and print size(). First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-12": [
+    "Constructors is an important skill because initialize object state when a new instance is created.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A constructor has the same name as its class and no return type.",
+    "Walk through the example one statement at a time. The syntax pattern is new ClassName(argument). Read the code from top to bottom. A constructor has the same name as its class and no return type. The sample's expected result is Code. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, constructors helps keep logic organized and easier to maintain. A constructor has the same name as its class and no return type. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a second field initialized by the constructor. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-13": [
+    "Inheritance and overrides is an important skill because extend a class and specialize its behavior.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Overridden methods are selected by the runtime object type.",
+    "Walk through the example one statement at a time. The syntax pattern is class Child extends Parent. Read the code from top to bottom. Overridden methods are selected by the runtime object type. The sample's expected result is meow. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, inheritance and overrides helps keep logic organized and easier to maintain. Overridden methods are selected by the runtime object type. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a Dog subclass with a different sound. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-14": [
+    "Interfaces is an important skill because define a contract implemented by different classes.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Interface references can hold any compatible implementation.",
+    "Walk through the example one statement at a time. The syntax pattern is class Name implements Interface. Read the code from top to bottom. Interface references can hold any compatible implementation. The sample's expected result is Ready. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, interfaces helps keep logic organized and easier to maintain. Interface references can hold any compatible implementation. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Implement a second class using the same interface. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-15": [
+    "Exceptions is an important skill because handle an expected runtime exception precisely.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Catch the narrowest exception that your code can handle.",
+    "Walk through the example one statement at a time. The syntax pattern is try { } catch (ExceptionType e) { }. Read the code from top to bottom. Catch the narrowest exception that your code can handle. The sample's expected result is Bad number. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, exceptions helps keep logic organized and easier to maintain. Catch the narrowest exception that your code can handle. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Try parsing a valid integer. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "java-gearex-16": [
+    "HashMap and generics is an important skill because store and retrieve values by typed keys.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Generics help the compiler check key and value types.",
+    "Walk through the example one statement at a time. The syntax pattern is Map<K,V>; map.put(key,value). Read the code from top to bottom. Generics help the compiler check key and value types. The sample's expected result is 5. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, hashmap and generics helps keep logic organized and easier to maintain. Generics help the compiler check key and value types. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add another key and print the map size. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-9": [
+    "Arrays and foreach is an important skill because iterate safely through a fixed collection.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Arrays have fixed length; use List<T> for dynamic size.",
+    "Walk through the example one statement at a time. The syntax pattern is foreach (var item in items). Read the code from top to bottom. Arrays have fixed length; use List<T> for dynamic size. The sample's expected result is 12. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, arrays and foreach helps keep logic organized and easier to maintain. Arrays have fixed length; use List<T> for dynamic size. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Print each array value on a separate line. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-10": [
+    "Lists and generics is an important skill because store typed items in a resizable list.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Generic lists enforce element types at compile time.",
+    "Walk through the example one statement at a time. The syntax pattern is List<T>.Add(value). Read the code from top to bottom. Generic lists enforce element types at compile time. The sample's expected result is 3. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, lists and generics helps keep logic organized and easier to maintain. Generic lists enforce element types at compile time. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Remove one item and print the new count. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-11": [
+    "Dictionaries is an important skill because look up values by unique keys.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Indexing a missing key throws; TryGetValue avoids that.",
+    "Walk through the example one statement at a time. The syntax pattern is Dictionary<TKey,TValue>. Read the code from top to bottom. Indexing a missing key throws; TryGetValue avoids that. The sample's expected result is 95. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, dictionaries helps keep logic organized and easier to maintain. Indexing a missing key throws; TryGetValue avoids that. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Use TryGetValue to handle a missing key. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-12": [
+    "Properties and encapsulation is an important skill because expose controlled access to object state.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Properties provide a public API without exposing fields directly.",
+    "Walk through the example one statement at a time. The syntax pattern is public Type Name { get; set; }. Read the code from top to bottom. Properties provide a public API without exposing fields directly. The sample's expected result is Ada. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, properties and encapsulation helps keep logic organized and easier to maintain. Properties provide a public API without exposing fields directly. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add an integer Score property. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-13": [
+    "Inheritance and virtual methods is an important skill because override behavior through a base-class reference.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Dynamic dispatch calls the derived override at runtime.",
+    "Walk through the example one statement at a time. The syntax pattern is virtual / override. Read the code from top to bottom. Dynamic dispatch calls the derived override at runtime. The sample's expected result is meow. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, inheritance and virtual methods helps keep logic organized and easier to maintain. Dynamic dispatch calls the derived override at runtime. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Create a Dog override. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-14": [
+    "Interfaces is an important skill because specify capabilities that multiple types can implement.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Interfaces define a contract, not an object instance.",
+    "Walk through the example one statement at a time. The syntax pattern is interface IName { ... }. Read the code from top to bottom. Interfaces define a contract, not an object instance. The sample's expected result is Ready. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, interfaces helps keep logic organized and easier to maintain. Interfaces define a contract, not an object instance. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Create another class implementing ILabel. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-15": [
+    "Exception handling is an important skill because recover from expected conversion errors.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Prefer TryParse for normal validation rather than exceptions.",
+    "Walk through the example one statement at a time. The syntax pattern is try { } catch (FormatException) { }. Read the code from top to bottom. Prefer TryParse for normal validation rather than exceptions. The sample's expected result is Invalid. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, exception handling helps keep logic organized and easier to maintain. Prefer TryParse for normal validation rather than exceptions. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Try int.TryParse for user input. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "cs-gearex-16": [
+    "LINQ queries is an important skill because express filtering and projections over collections.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. LINQ can defer execution until the result is enumerated.",
+    "Walk through the example one statement at a time. The syntax pattern is items.Where(predicate).Select(mapper). Read the code from top to bottom. LINQ can defer execution until the result is enumerated. The sample's expected result is 2,4. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, linq queries helps keep logic organized and easier to maintain. LINQ can defer execution until the result is enumerated. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Use Select to double each number. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-9": [
+    "INNER JOIN is an important skill because combine rows whose keys match in two tables.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. INNER JOIN excludes rows without a matching partner.",
+    "Walk through the example one statement at a time. The syntax pattern is SELECT ... FROM a JOIN b ON a.id=b.id. Read the code from top to bottom. INNER JOIN excludes rows without a matching partner. The sample's expected result is Ada | 42. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, inner join helps keep logic organized and easier to maintain. INNER JOIN excludes rows without a matching partner. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Change the join condition to see which rows match. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-10": [
+    "LEFT JOIN is an important skill because keep every left-side row even when no right-side match exists.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Unmatched right-side columns become NULL.",
+    "Walk through the example one statement at a time. The syntax pattern is LEFT JOIN ... ON .... Read the code from top to bottom. Unmatched right-side columns become NULL. The sample's expected result is Ada | NULL. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, left join helps keep logic organized and easier to maintain. Unmatched right-side columns become NULL. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Compare the same query with INNER JOIN. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-11": [
+    "GROUP BY is an important skill because summarize rows into groups with aggregate functions.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Every selected nonaggregate expression must follow grouping rules.",
+    "Walk through the example one statement at a time. The syntax pattern is GROUP BY column. Read the code from top to bottom. Every selected nonaggregate expression must follow grouping rules. The sample's expected result is A | 2; B | 1. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, group by helps keep logic organized and easier to maintain. Every selected nonaggregate expression must follow grouping rules. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Use SUM on a numeric column grouped by category. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-12": [
+    "HAVING is an important skill because filter aggregate groups after grouping.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. WHERE filters rows before grouping; HAVING filters groups.",
+    "Walk through the example one statement at a time. The syntax pattern is GROUP BY ... HAVING COUNT(*) > 1. Read the code from top to bottom. WHERE filters rows before grouping; HAVING filters groups. The sample's expected result is A | 2. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, having helps keep logic organized and easier to maintain. WHERE filters rows before grouping; HAVING filters groups. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Change the threshold to include all groups. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-13": [
+    "Subqueries is an important skill because use a query result inside another query.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A scalar subquery must return at most one row.",
+    "Walk through the example one statement at a time. The syntax pattern is WHERE value > (SELECT ...). Read the code from top to bottom. A scalar subquery must return at most one row. The sample's expected result is Ada. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, subqueries helps keep logic organized and easier to maintain. A scalar subquery must return at most one row. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Use a subquery to compute a comparison threshold. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-14": [
+    "Primary and foreign keys is an important skill because protect entity identity and table relationships.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Foreign keys refer to an existing parent key when enforcement is enabled.",
+    "Walk through the example one statement at a time. The syntax pattern is PRIMARY KEY; REFERENCES table(column). Read the code from top to bottom. Foreign keys refer to an existing parent key when enforcement is enabled. The sample's expected result is tables created. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, primary and foreign keys helps keep logic organized and easier to maintain. Foreign keys refer to an existing parent key when enforcement is enabled. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a NOT NULL constraint to a required column. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-15": [
+    "Indexes and query plans is an important skill because speed up selective lookups with an index.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. Indexes can speed reads but add storage and write overhead.",
+    "Walk through the example one statement at a time. The syntax pattern is CREATE INDEX name ON table(column). Read the code from top to bottom. Indexes can speed reads but add storage and write overhead. The sample's expected result is idx_catalog_title. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, indexes and query plans helps keep logic organized and easier to maintain. Indexes can speed reads but add storage and write overhead. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Use EXPLAIN QUERY PLAN to inspect an indexed search. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ],
+  "sql-gearex-16": [
+    "Views and reusable queries is an important skill because save a SELECT statement as a reusable virtual table.. Before trying the code, identify the input values, the operations performed, and the data returned or displayed. A regular view stores a query definition rather than duplicated rows.",
+    "Walk through the example one statement at a time. The syntax pattern is CREATE VIEW name AS SELECT .... Read the code from top to bottom. A regular view stores a query definition rather than duplicated rows. The sample's expected result is Python. Confirm the output using the compiler, then repeat the calculation or reasoning manually.",
+    "In a larger application, views and reusable queries helps keep logic organized and easier to maintain. A regular view stores a query definition rather than duplicated rows. When using this technique in a real project, test ordinary inputs and edge cases before relying on the result.",
+    "Practice task: Add a second column to the view. First predict what will happen, then run your edited code and explain the difference. If an error occurs, inspect the error message and compare your code with the syntax reference."
+  ]
+});
+
 Object.freeze(GEAR_LESSON_GUIDES);
