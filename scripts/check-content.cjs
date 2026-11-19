@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const root = path.join(__dirname, '..');
-const source = ['data.js', 'gearex-courses.js', 'challenges.js', 'projects.js'].map(name => fs.readFileSync(path.join(root, 'assets', name), 'utf8')).join('\n');
+const source = ['data.js', 'gearex-courses.js', 'gearex-courses-advanced.js', 'challenges.js', 'projects.js'].map(name => fs.readFileSync(path.join(root, 'assets', name), 'utf8')).join('\n');
 const data = vm.runInNewContext(source + '\n({LESSONS,QUESTIONS,CHALLENGES,PROJECTS})');
 const {LESSONS, QUESTIONS, CHALLENGES, PROJECTS} = data;
 function checkUnique(name, list) {
@@ -37,10 +37,10 @@ for (const c of CHALLENGES) {
   assert.ok(typeof c.hint==='string'&&c.hint.length>10,`${c.id}: missing hint`);
 }
 for(const p of PROJECTS){assert.ok(p.steps.length>=3&&p.acceptance.length>=2&&p.starter.length>30,`${p.id}: missing project guidance`);}
-assert.equal(LESSONS.length,91);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
+assert.equal(LESSONS.length,131);assert.equal(QUESTIONS.length,113);assert.equal(CHALLENGES.length,138);assert.equal(PROJECTS.length,12);
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 for (const selector of ['lessonGrid','challengeGrid','quizContent','codeEditor','compilerOutput','visualContent','dashboardLessons','projectContent','modeSwitch','themeLauncher','themeMenu','traceSource','traceSteps','certificateGrid','certificateExam','certificateView'])assert.ok(html.includes(`id="${selector}"`),`Missing DOM node ${selector}`);
-for (const filename of ['data.js','gearex-courses.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
+for (const filename of ['data.js','gearex-courses.js','gearex-courses-advanced.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-engine.js','gearex-trace-ui.js','gearex-features.js','studio-motion.js'])assert.ok(html.includes(`assets/${filename}`),`Missing script tag ${filename}`);
 console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz questions, ${CHALLENGES.length} challenges, ${PROJECTS.length} projects.`);
 
 const languages=['c','cpp','py','js','java','cs','sql'];
@@ -49,7 +49,7 @@ for(const lang of languages){
  assert.ok(course.length>=8,lang+': course needs at least eight lessons');
  assert.ok(bank.length>=8,lang+': assessment requires at least eight questions');
 }
-for(const file of ['data.js','gearex-courses.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-features.js']){
+for(const file of ['data.js','gearex-courses.js','gearex-courses-advanced.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-features.js']){
  new vm.Script(fs.readFileSync(path.join(root,'assets',file),'utf8'),{filename:file});
 }
 for(const theme of ['none','cyberpunk','quantum','synthwave','matrix']) {
@@ -72,7 +72,7 @@ const sandbox={
  persist(){},updateStats(){},renderRoadmap(){},renderLessons(){}
 };
 const verified=vm.runInNewContext(source+'\n'+checks+'\nLESSONS.map(lesson=>({id:lesson.id,items:window.gearexLessonQuestions(lesson)}))',sandbox);
-assert.equal(verified.length,91,'Must generate lesson checks for all 91 lessons');
+assert.equal(verified.length,131,'Must generate lesson checks for all 131 lessons');
 for(const lesson of verified){
  assert.equal(lesson.items.length,5,lesson.id+': exactly five questions required');
  for(const question of lesson.items){
@@ -91,7 +91,7 @@ assert.ok(engine.includes('function run('),'Native execution engine is missing')
 assert.ok(engine.includes('frames:copy('),'Stack snapshots are missing');
 assert.ok(engine.includes('heap:copy('),'Heap snapshots are missing');
 assert.ok(traceUI.includes('GearExEngine'),'Trace UI must use the local engine');
-assert.ok(html.includes('<title>GearEx | Learn Programming Languages</title>'),'Browser tab title outdated');
+assert.ok(html.includes('<title>GearEx — Free Programming Lessons, Online Compiler & Code Visualizer</title>'),'Browser tab title outdated');
 for(const pathName of ['assets/studio.css','assets/navigation-shell.css','assets/studio-motion.js','assets/gearex-engine.js','assets/gearex-trace-ui.js'])
  assert.ok(fs.existsSync(path.join(root,pathName)),pathName+' missing');
 assert.ok(html.includes('assets/studio.css'),'Missing GearEx studio styles');
