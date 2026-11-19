@@ -232,6 +232,7 @@
           gx('div','gx-sql-row',el('span','','Language'),el('strong','',LANG[lang])),
           gx('div','gx-sql-row',el('span','','Lesson checks · 70% weight'),el('strong','',s.earned+'/'+s.possible+'  ·  '+s.lessonMarks+'/70')),
           gx('div','gx-sql-row',el('span','','Final assessment · 30% weight'),el('strong','',s.record.score+'/'+s.record.total+'  ·  '+s.examMarks+'/30')),
+          gx('div','gx-sql-row',el('span','','Secured marks'),el('strong','',s.total+'/100')),
           gx('div','gx-sql-row',el('span','','Overall performance'),el('strong','',performance(s.total)))
         ),
         gxFooter(s)
