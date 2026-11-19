@@ -46,7 +46,7 @@ console.log(`Content OK: ${LESSONS.length} lessons, ${QUESTIONS.length} quiz que
 const languages=['c','cpp','py','js','java','cs','sql'];
 for(const lang of languages){
  const course=LESSONS.filter(x=>x.lang===lang),bank=QUESTIONS.filter(x=>x.lang===lang);
- assert.ok(course.length>=8,lang+': course needs at least eight lessons');
+ assert.ok(course.length >= (lang==='c'?25:lang==='cpp'?26:16),lang+': curriculum lesson count is too low');
  assert.ok(bank.length>=8,lang+': assessment requires at least eight questions');
 }
 for(const file of ['data.js','gearex-courses.js','gearex-courses-advanced.js','challenges.js','projects.js','lesson-guides.js','app.js','compiler-service.js','lesson-assessments.js','gearex-features.js']){
@@ -104,7 +104,7 @@ for(const file of publicFiles){
  assert.ok(!/<iframe\b/i.test(contents),'Embedded third-party visualizer detected in '+file);
 }
 assert.ok(!html.includes('<iframe'),'An embedded third-party visualizer must not be present');
-console.log('GearEx validation OK: 7 language tracks, 455 lesson checks, original trace engine, local controls, and new design.');
+console.log('GearEx validation OK: 7 language tracks, 655 lesson checks, original trace engine, local controls, and new design.');
 
 const css=fs.readFileSync(path.join(root,'assets','navigation-shell.css'),'utf8');
 const studio=fs.readFileSync(path.join(root,'assets','studio.css'),'utf8');
@@ -168,7 +168,7 @@ console.log('Feedback checks OK: responsive alerts, account progress UI and guid
 const guideContent=fs.readFileSync(path.join(root,'assets','lesson-guides.js'),'utf8');
 const guides=vm.runInNewContext(guideContent+'\nGEAR_LESSON_GUIDES;');
 const guideIds=Object.keys(guides);
-assert.equal(guideIds.length,91,'Every lesson needs a topic-specific detailed guide');
+assert.equal(guideIds.length,131,'Every lesson needs a topic-specific detailed guide');
 for(const lesson of LESSONS){
  const guide=guides[lesson.id];
  assert.ok(Array.isArray(guide)&&guide.length===4,lesson.id+': each lesson needs four explained stages');
@@ -181,4 +181,4 @@ assert.ok(traceUI.includes('Program ended')&&traceUI.includes('traceRunAgain'),'
 assert.ok(css.includes('height:420px'),'Visualizer editor must be enlarged');
 assert.ok(engine.includes('Using namespace')&&engine.includes('Header '),'Header and namespace trace stage missing');
 assert.ok(!readme.includes('Judge0 CE'),'README has outdated compiler setup');
-console.log('Lesson depth OK: 91 beginner-friendly guides, four teaching sections each, updated visualization and compiler.');
+console.log('Lesson depth OK: 131 beginner-friendly guides, four teaching sections each, updated visualization and compiler.');
