@@ -15,6 +15,7 @@ jobs:
         run: |
           node --check assets/data.js
           node --check assets/gearex-courses.js
+          node --check assets/gearex-courses-advanced.js
           node --check assets/lesson-guides.js
           node --check assets/challenges.js
           node --check assets/projects.js
@@ -31,6 +32,8 @@ jobs:
           node --check assets/gearex-accounts.js
       - name: Validate educational content
         run: node scripts/check-content.cjs
+      - name: Certificate layout and brand regression tests
+        run: node --test scripts/test-certificate-layout.cjs
       - name: Trace engine unit tests
         run: node --test scripts/test-tracer.cjs
       - name: Navigation and appearance tests
